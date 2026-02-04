@@ -1,7 +1,20 @@
-import { Calendar, Bell, User } from "lucide-react";
+import { Calendar, Bell, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Header = () => {
+  const { signOut, user } = useAuth();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed out",
+      description: "You have been signed out successfully.",
+    });
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between">
@@ -29,9 +42,16 @@ const Header = () => {
             <Bell className="h-5 w-5" />
             <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
           </Button>
-          <Button variant="ghost" size="icon">
-            <User className="h-5 w-5" />
-          </Button>
+          {user && (
+            <>
+              <Button variant="ghost" size="icon">
+                <User className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign out">
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>
