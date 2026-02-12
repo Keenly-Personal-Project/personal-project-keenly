@@ -15,22 +15,22 @@ const authSchema = z.object({
 });
 
 const floatingHellos = [
-  { text: "你好!", lang: "Chinese", top: "8%", left: "5%", size: "text-2xl", rotate: "-12deg", opacity: "0.18" },
-  { text: "こんにちは!", lang: "Japanese", top: "15%", right: "8%", size: "text-3xl", rotate: "8deg", opacity: "0.15" },
-  { text: "Bonjour!", lang: "French", top: "35%", left: "3%", size: "text-xl", rotate: "15deg", opacity: "0.2" },
-  { text: "Ciao!", lang: "Italian", bottom: "30%", right: "5%", size: "text-4xl", rotate: "-8deg", opacity: "0.12" },
-  { text: "Halo!", lang: "Indonesian", bottom: "12%", left: "8%", size: "text-lg", rotate: "20deg", opacity: "0.22" },
-  { text: "Γεια σου!", lang: "Greek", top: "55%", right: "4%", size: "text-2xl", rotate: "-18deg", opacity: "0.16" },
-  { text: "Olá!", lang: "Portuguese", bottom: "45%", left: "6%", size: "text-3xl", rotate: "5deg", opacity: "0.14" },
-  { text: "Hallo!", lang: "German", top: "75%", right: "10%", size: "text-xl", rotate: "-6deg", opacity: "0.2" },
-  { text: "你好!", lang: "Chinese", bottom: "8%", right: "18%", size: "text-lg", rotate: "12deg", opacity: "0.13" },
-  { text: "Bonjour!", lang: "French", top: "5%", right: "25%", size: "text-lg", rotate: "-5deg", opacity: "0.17" },
-  { text: "こんにちは!", lang: "Japanese", bottom: "20%", left: "18%", size: "text-xl", rotate: "10deg", opacity: "0.15" },
-  { text: "Ciao!", lang: "Italian", top: "25%", left: "15%", size: "text-lg", rotate: "-15deg", opacity: "0.19" },
-  { text: "Halo!", lang: "Indonesian", top: "65%", left: "2%", size: "text-2xl", rotate: "7deg", opacity: "0.13" },
-  { text: "Γεια σου!", lang: "Greek", bottom: "5%", left: "30%", size: "text-lg", rotate: "-10deg", opacity: "0.16" },
-  { text: "Olá!", lang: "Portuguese", top: "10%", left: "28%", size: "text-2xl", rotate: "18deg", opacity: "0.11" },
-  { text: "Hallo!", lang: "German", top: "45%", right: "15%", size: "text-3xl", rotate: "-3deg", opacity: "0.14" },
+  { text: "你好!", lang: "Chinese", top: "8%", left: "5%", size: "text-4xl", rotate: "-12deg", opacity: "0.3" },
+  { text: "こんにちは!", lang: "Japanese", top: "15%", right: "8%", size: "text-5xl", rotate: "8deg", opacity: "0.28" },
+  { text: "Bonjour!", lang: "French", top: "35%", left: "3%", size: "text-3xl", rotate: "15deg", opacity: "0.32" },
+  { text: "Ciao!", lang: "Italian", bottom: "30%", right: "5%", size: "text-6xl", rotate: "-8deg", opacity: "0.25" },
+  { text: "Halo!", lang: "Indonesian", bottom: "12%", left: "8%", size: "text-2xl", rotate: "20deg", opacity: "0.35" },
+  { text: "Γεια σου!", lang: "Greek", top: "55%", right: "4%", size: "text-4xl", rotate: "-18deg", opacity: "0.28" },
+  { text: "Olá!", lang: "Portuguese", bottom: "45%", left: "6%", size: "text-5xl", rotate: "5deg", opacity: "0.26" },
+  { text: "Hallo!", lang: "German", top: "75%", right: "10%", size: "text-3xl", rotate: "-6deg", opacity: "0.32" },
+  { text: "你好!", lang: "Chinese", bottom: "8%", right: "18%", size: "text-2xl", rotate: "12deg", opacity: "0.27" },
+  { text: "Bonjour!", lang: "French", top: "5%", right: "25%", size: "text-3xl", rotate: "-5deg", opacity: "0.3" },
+  { text: "こんにちは!", lang: "Japanese", bottom: "20%", left: "18%", size: "text-3xl", rotate: "10deg", opacity: "0.28" },
+  { text: "Ciao!", lang: "Italian", top: "25%", left: "15%", size: "text-2xl", rotate: "-15deg", opacity: "0.32" },
+  { text: "Halo!", lang: "Indonesian", top: "65%", left: "2%", size: "text-4xl", rotate: "7deg", opacity: "0.25" },
+  { text: "Γεια σου!", lang: "Greek", bottom: "5%", left: "30%", size: "text-2xl", rotate: "-10deg", opacity: "0.28" },
+  { text: "Olá!", lang: "Portuguese", top: "10%", left: "28%", size: "text-4xl", rotate: "18deg", opacity: "0.24" },
+  { text: "Hallo!", lang: "German", top: "45%", right: "15%", size: "text-5xl", rotate: "-3deg", opacity: "0.26" },
 ];
 
 const Auth = () => {
