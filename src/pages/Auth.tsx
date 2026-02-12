@@ -164,7 +164,7 @@ const Auth = () => {
       </div>
 
       {/* Center content */}
-      <div className="flex-1 flex flex-col items-center justify-center z-10">
+      <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] z-10">
         {/* Greeting */}
         <div className="text-center mb-6">
           <h1 className="text-5xl font-bold text-foreground mb-2" style={{ fontFamily: "'Kablammo', cursive" }}>
