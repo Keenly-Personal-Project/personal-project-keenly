@@ -31,6 +31,17 @@ const floatingHellos = [
   { text: "Γεια σου!", lang: "Greek", bottom: "5%", left: "30%", size: "text-2xl", rotate: "-10deg", opacity: "0.28" },
   { text: "Olá!", lang: "Portuguese", top: "10%", left: "28%", size: "text-4xl", rotate: "18deg", opacity: "0.24" },
   { text: "Hallo!", lang: "German", top: "45%", right: "15%", size: "text-5xl", rotate: "-3deg", opacity: "0.26" },
+  { text: "Merhaba!", lang: "Turkish", top: "38%", left: "22%", size: "text-3xl", rotate: "6deg", opacity: "0.24" },
+  { text: "Sawubona!", lang: "Zulu", top: "50%", right: "22%", size: "text-2xl", rotate: "-14deg", opacity: "0.3" },
+  { text: "Namaste!", lang: "Hindi", top: "42%", left: "35%", size: "text-4xl", rotate: "11deg", opacity: "0.2" },
+  { text: "Annyeong!", lang: "Korean", top: "58%", right: "28%", size: "text-3xl", rotate: "-7deg", opacity: "0.27" },
+  { text: "Hej!", lang: "Swedish", top: "32%", right: "30%", size: "text-2xl", rotate: "16deg", opacity: "0.3" },
+  { text: "Salam!", lang: "Arabic", top: "62%", left: "25%", size: "text-4xl", rotate: "-4deg", opacity: "0.22" },
+  { text: "Aloha!", lang: "Hawaiian", top: "48%", left: "10%", size: "text-3xl", rotate: "9deg", opacity: "0.28" },
+  { text: "Shalom!", lang: "Hebrew", top: "55%", left: "38%", size: "text-2xl", rotate: "-11deg", opacity: "0.25" },
+  { text: "Kamusta!", lang: "Filipino", bottom: "35%", right: "25%", size: "text-3xl", rotate: "4deg", opacity: "0.23" },
+  { text: "Xin chào!", lang: "Vietnamese", top: "30%", left: "40%", size: "text-2xl", rotate: "-9deg", opacity: "0.26" },
+  { text: "Habari!", lang: "Swahili", bottom: "25%", left: "32%", size: "text-3xl", rotate: "13deg", opacity: "0.22" },
 ];
 
 const Auth = () => {
