@@ -24,18 +24,13 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-primary">
-          <span className="text-primary-foreground text-lg font-bold tracking-wide" style={{ fontFamily: "'Kablammo', cursive" }}>keenly</span>
+        {/* Date - left side, bigger */}
+        <div className="flex items-center">
+          <span className="text-lg md:text-xl font-semibold text-foreground">{formattedDate}</span>
         </div>
 
-        {/* Date in center */}
-        <div className="hidden md:flex items-center">
-          <span className="text-sm font-medium text-muted-foreground">{formattedDate}</span>
-        </div>
-
-        {/* Action icons */}
-        <div className="flex items-center gap-1">
+        {/* Right side: logo + icons */}
+        <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="relative" title="Notifications">
             <Bell className="h-5 w-5" />
             <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
@@ -53,6 +48,9 @@ const Header = () => {
               </Button>
             </>
           )}
+          <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-primary ml-2">
+            <span className="text-primary-foreground text-lg font-bold tracking-wide" style={{ fontFamily: "'Kablammo', cursive" }}>keenly</span>
+          </div>
         </div>
       </div>
     </header>
