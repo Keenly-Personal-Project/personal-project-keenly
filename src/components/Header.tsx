@@ -19,10 +19,9 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Calendar className="h-5 w-5 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-primary">
+            <span className="text-primary-foreground text-lg font-bold tracking-wide" style={{ fontFamily: "'Kablammo', cursive" }}>keenly</span>
           </div>
-          <span className="text-xl font-bold text-foreground">Keenly</span>
         </div>
 
         <nav className="hidden md:flex items-center gap-6">
