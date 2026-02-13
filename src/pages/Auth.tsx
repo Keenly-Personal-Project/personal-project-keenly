@@ -15,33 +15,33 @@ const authSchema = z.object({
 });
 
 const floatingHellos = [
-  { text: "你好!", lang: "Chinese", top: "8%", left: "5%", size: "text-4xl", rotate: "-12deg", opacity: "0.3" },
-  { text: "こんにちは!", lang: "Japanese", top: "15%", right: "8%", size: "text-5xl", rotate: "8deg", opacity: "0.28" },
-  { text: "Bonjour!", lang: "French", top: "35%", left: "3%", size: "text-3xl", rotate: "15deg", opacity: "0.32" },
-  { text: "Ciao!", lang: "Italian", bottom: "30%", right: "5%", size: "text-6xl", rotate: "-8deg", opacity: "0.25" },
-  { text: "Halo!", lang: "Indonesian", bottom: "12%", left: "8%", size: "text-2xl", rotate: "20deg", opacity: "0.35" },
-  { text: "Γεια σου!", lang: "Greek", top: "55%", right: "4%", size: "text-4xl", rotate: "-18deg", opacity: "0.28" },
-  { text: "Olá!", lang: "Portuguese", bottom: "45%", left: "6%", size: "text-5xl", rotate: "5deg", opacity: "0.26" },
-  { text: "Hallo!", lang: "German", top: "75%", right: "10%", size: "text-3xl", rotate: "-6deg", opacity: "0.32" },
-  { text: "你好!", lang: "Chinese", bottom: "8%", right: "18%", size: "text-2xl", rotate: "12deg", opacity: "0.27" },
-  { text: "Bonjour!", lang: "French", top: "5%", right: "25%", size: "text-3xl", rotate: "-5deg", opacity: "0.3" },
-  { text: "こんにちは!", lang: "Japanese", bottom: "20%", left: "18%", size: "text-3xl", rotate: "10deg", opacity: "0.28" },
-  { text: "Ciao!", lang: "Italian", top: "25%", left: "15%", size: "text-2xl", rotate: "-15deg", opacity: "0.32" },
-  { text: "Halo!", lang: "Indonesian", top: "65%", left: "2%", size: "text-4xl", rotate: "7deg", opacity: "0.25" },
-  { text: "Γεια σου!", lang: "Greek", bottom: "5%", left: "30%", size: "text-2xl", rotate: "-10deg", opacity: "0.28" },
-  { text: "Olá!", lang: "Portuguese", top: "10%", left: "28%", size: "text-4xl", rotate: "18deg", opacity: "0.24" },
-  { text: "Hallo!", lang: "German", top: "45%", right: "15%", size: "text-5xl", rotate: "-3deg", opacity: "0.26" },
-  { text: "Merhaba!", lang: "Turkish", top: "38%", left: "22%", size: "text-3xl", rotate: "6deg", opacity: "0.24" },
-  { text: "Sawubona!", lang: "Zulu", top: "50%", right: "22%", size: "text-2xl", rotate: "-14deg", opacity: "0.3" },
-  { text: "Namaste!", lang: "Hindi", top: "42%", left: "35%", size: "text-4xl", rotate: "11deg", opacity: "0.2" },
-  { text: "Annyeong!", lang: "Korean", top: "58%", right: "28%", size: "text-3xl", rotate: "-7deg", opacity: "0.27" },
-  { text: "Hej!", lang: "Swedish", top: "32%", right: "30%", size: "text-2xl", rotate: "16deg", opacity: "0.3" },
-  { text: "Salam!", lang: "Arabic", top: "62%", left: "25%", size: "text-4xl", rotate: "-4deg", opacity: "0.22" },
-  { text: "Aloha!", lang: "Hawaiian", top: "48%", left: "10%", size: "text-3xl", rotate: "9deg", opacity: "0.28" },
-  { text: "Shalom!", lang: "Hebrew", top: "55%", left: "38%", size: "text-2xl", rotate: "-11deg", opacity: "0.25" },
-  { text: "Kamusta!", lang: "Filipino", bottom: "35%", right: "25%", size: "text-3xl", rotate: "4deg", opacity: "0.23" },
-  { text: "Xin chào!", lang: "Vietnamese", top: "30%", left: "40%", size: "text-2xl", rotate: "-9deg", opacity: "0.26" },
-  { text: "Habari!", lang: "Swahili", bottom: "25%", left: "32%", size: "text-3xl", rotate: "13deg", opacity: "0.22" },
+  { text: "你好!", lang: "Chinese", top: "3%", left: "2%", size: "text-4xl", rotate: "-12deg", opacity: "0.3" },
+  { text: "こんにちは!", lang: "Japanese", top: "6%", right: "3%", size: "text-5xl", rotate: "8deg", opacity: "0.28" },
+  { text: "Bonjour!", lang: "French", top: "20%", left: "1%", size: "text-3xl", rotate: "15deg", opacity: "0.32" },
+  { text: "Ciao!", lang: "Italian", bottom: "8%", right: "2%", size: "text-6xl", rotate: "-8deg", opacity: "0.25" },
+  { text: "Halo!", lang: "Indonesian", bottom: "3%", left: "4%", size: "text-2xl", rotate: "20deg", opacity: "0.35" },
+  { text: "Γεια σου!", lang: "Greek", top: "70%", right: "1%", size: "text-4xl", rotate: "-18deg", opacity: "0.28" },
+  { text: "Olá!", lang: "Portuguese", bottom: "35%", left: "1%", size: "text-5xl", rotate: "5deg", opacity: "0.26" },
+  { text: "Hallo!", lang: "German", top: "88%", right: "6%", size: "text-3xl", rotate: "-6deg", opacity: "0.32" },
+  { text: "你好!", lang: "Chinese", bottom: "2%", right: "30%", size: "text-2xl", rotate: "12deg", opacity: "0.27" },
+  { text: "Bonjour!", lang: "French", top: "2%", right: "35%", size: "text-3xl", rotate: "-5deg", opacity: "0.3" },
+  { text: "こんにちは!", lang: "Japanese", bottom: "15%", left: "25%", size: "text-3xl", rotate: "10deg", opacity: "0.28" },
+  { text: "Ciao!", lang: "Italian", top: "12%", left: "20%", size: "text-2xl", rotate: "-15deg", opacity: "0.32" },
+  { text: "Halo!", lang: "Indonesian", top: "80%", left: "1%", size: "text-4xl", rotate: "7deg", opacity: "0.25" },
+  { text: "Γεια σου!", lang: "Greek", bottom: "1%", left: "45%", size: "text-2xl", rotate: "-10deg", opacity: "0.28" },
+  { text: "Olá!", lang: "Portuguese", top: "4%", left: "42%", size: "text-4xl", rotate: "18deg", opacity: "0.24" },
+  { text: "Hallo!", lang: "German", top: "50%", right: "2%", size: "text-5xl", rotate: "-3deg", opacity: "0.26" },
+  { text: "Merhaba!", lang: "Turkish", top: "35%", left: "1%", size: "text-3xl", rotate: "6deg", opacity: "0.24" },
+  { text: "Sawubona!", lang: "Zulu", top: "55%", right: "4%", size: "text-2xl", rotate: "-14deg", opacity: "0.3" },
+  { text: "Namaste!", lang: "Hindi", top: "92%", left: "20%", size: "text-4xl", rotate: "11deg", opacity: "0.2" },
+  { text: "Annyeong!", lang: "Korean", top: "15%", right: "1%", size: "text-3xl", rotate: "-7deg", opacity: "0.27" },
+  { text: "Hej!", lang: "Swedish", top: "2%", right: "18%", size: "text-2xl", rotate: "16deg", opacity: "0.3" },
+  { text: "Salam!", lang: "Arabic", top: "78%", left: "35%", size: "text-4xl", rotate: "-4deg", opacity: "0.22" },
+  { text: "Aloha!", lang: "Hawaiian", top: "45%", left: "1%", size: "text-3xl", rotate: "9deg", opacity: "0.28" },
+  { text: "Shalom!", lang: "Hebrew", bottom: "5%", left: "55%", size: "text-2xl", rotate: "-11deg", opacity: "0.25" },
+  { text: "Kamusta!", lang: "Filipino", bottom: "20%", right: "1%", size: "text-3xl", rotate: "4deg", opacity: "0.23" },
+  { text: "Xin chào!", lang: "Vietnamese", top: "30%", right: "3%", size: "text-2xl", rotate: "-9deg", opacity: "0.26" },
+  { text: "Habari!", lang: "Swahili", bottom: "30%", left: "50%", size: "text-3xl", rotate: "13deg", opacity: "0.22" },
 ];
 
 const Auth = () => {
@@ -167,11 +167,10 @@ const Auth = () => {
       ))}
 
       {/* Top left logo */}
-      <div className="flex items-center gap-1 mb-8 z-10">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary">
-          <span className="text-primary-foreground text-xl font-bold" style={{ fontFamily: "'Kablammo', cursive" }}>K</span>
+      <div className="mb-8 z-10">
+        <div className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-primary">
+          <span className="text-primary-foreground text-2xl font-bold tracking-wide" style={{ fontFamily: "'Kablammo', cursive" }}>keenly</span>
         </div>
-        <span className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Kablammo', cursive" }}>eenly</span>
       </div>
 
       {/* Center content */}
@@ -223,7 +222,7 @@ const Auth = () => {
             <CardFooter className="flex flex-col gap-4 px-8 pb-8">
               <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLogin ? 'Sign in' : 'Sign up'}
+                {isLogin ? 'Log in' : 'Sign up'}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 {isLogin ? "Don't have an account? " : 'Already have an account? '}
@@ -233,7 +232,7 @@ const Auth = () => {
                   className="text-primary hover:underline font-medium"
                   disabled={isLoading}
                 >
-                  {isLogin ? 'Sign up' : 'Sign in'}
+                  {isLogin ? 'Sign up' : 'Log in'}
                 </button>
               </p>
             </CardFooter>
