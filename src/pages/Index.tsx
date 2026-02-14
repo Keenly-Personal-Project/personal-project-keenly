@@ -48,6 +48,7 @@ const Index = () => {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editColor, setEditColor] = useState('');
   const [editImage, setEditImage] = useState('');
+  const [editName, setEditName] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -75,13 +76,14 @@ const Index = () => {
     setEditIndex(index);
     setEditColor(classes[index].color || '');
     setEditImage(classes[index].image || '');
+    setEditName(classes[index].name);
     setEditDialogOpen(true);
   };
 
   const handleSaveEdit = () => {
     if (editIndex === null) return;
     setClasses(prev => prev.map((cls, i) =>
-      i === editIndex ? { ...cls, color: editColor || undefined, image: editImage || undefined } : cls
+      i === editIndex ? { ...cls, name: editName.trim() || cls.name, color: editColor || undefined, image: editImage || undefined } : cls
     ));
     setEditDialogOpen(false);
     setEditIndex(null);
@@ -153,7 +155,7 @@ const Index = () => {
                     {/* Edit button */}
                     <button
                       onClick={(e) => { e.stopPropagation(); openEditDialog(index); }}
-                      className="absolute -top-1.5 -right-7 h-5 w-5 rounded-full bg-card border border-border text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute -top-1.5 right-5 h-5 w-5 rounded-full bg-card border border-border text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Pencil className="h-2.5 w-2.5" />
                     </button>
@@ -172,7 +174,7 @@ const Index = () => {
               <button
                 onClick={() => setDialogOpen(true)}
                 className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border transition-all duration-200 hover:border-primary hover:bg-primary/5 cursor-pointer"
-                style={{ aspectRatio: '3 / 4.5' }}
+                style={{ aspectRatio: '3 / 4' }}
               >
                 <Plus className="h-10 w-10 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground mt-2">Add Class</span>
@@ -208,6 +210,12 @@ const Index = () => {
             <DialogTitle>Customize {editIndex !== null ? classes[editIndex]?.name : ''}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Name */}
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Class name" />
+            </div>
+
             {/* Image upload */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><Image className="h-4 w-4" /> Card Image</Label>
