@@ -25,13 +25,13 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo - left */}
-        <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-primary">
-          <span className="text-primary-foreground text-lg font-bold tracking-wide" style={{ fontFamily: "'Kablammo', cursive" }}>keenly</span>
+        <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary">
+          <span className="text-primary-foreground text-lg font-bold leading-none">|&lt;</span>
         </div>
 
         {/* Date - center */}
         <div className="absolute left-1/2 -translate-x-1/2">
-          <span className="text-2xl md:text-3xl font-semibold text-foreground" style={{ fontFamily: "'Kablammo', cursive" }}>
+          <span className="text-2xl md:text-3xl text-foreground" style={{ fontFamily: "'Brittany Signature', cursive" }}>
             {formattedDate}
           </span>
         </div>
