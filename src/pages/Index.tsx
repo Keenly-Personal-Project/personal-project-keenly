@@ -153,16 +153,16 @@ const Index = () => {
                     {/* Edit button */}
                     <button
                       onClick={(e) => { e.stopPropagation(); openEditDialog(index); }}
-                      className="absolute top-2 right-8 h-6 w-6 rounded-full bg-card border border-border text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute -top-1.5 -right-7 h-5 w-5 rounded-full bg-card border border-border text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <Pencil className="h-3 w-3" />
+                      <Pencil className="h-2.5 w-2.5" />
                     </button>
                     {/* Remove button */}
                     <button
                       onClick={() => handleRemoveClass(index)}
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-2.5 w-2.5" />
                     </button>
                   </div>
                 );
@@ -172,7 +172,7 @@ const Index = () => {
               <button
                 onClick={() => setDialogOpen(true)}
                 className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border transition-all duration-200 hover:border-primary hover:bg-primary/5 cursor-pointer"
-                style={{ aspectRatio: '3 / 4.75' }}
+                style={{ aspectRatio: '3 / 4.5' }}
               >
                 <Plus className="h-10 w-10 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground mt-2">Add Class</span>
