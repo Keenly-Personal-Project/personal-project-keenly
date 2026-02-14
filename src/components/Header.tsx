@@ -19,18 +19,25 @@ const Header = () => {
   };
 
   const today = new Date();
-  const formattedDate = format(today, "EEEE, MMMM d, yyyy");
+  const formattedDate = format(today, "EEEE, do MMMM, yyyy");
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between">
-        {/* Date - left side, bigger */}
-        <div className="flex items-center">
-          <span className="text-lg md:text-xl font-semibold text-foreground">{formattedDate}</span>
+        {/* Logo - left */}
+        <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-primary">
+          <span className="text-primary-foreground text-lg font-bold tracking-wide" style={{ fontFamily: "'Kablammo', cursive" }}>keenly</span>
         </div>
 
-        {/* Right side: logo + icons */}
-        <div className="flex items-center gap-3">
+        {/* Date - center */}
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <span className="text-2xl md:text-3xl font-semibold text-foreground" style={{ fontFamily: "'Kablammo', cursive" }}>
+            {formattedDate}
+          </span>
+        </div>
+
+        {/* Icons - right */}
+        <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="relative" title="Notifications">
             <Bell className="h-5 w-5" />
             <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
@@ -48,9 +55,6 @@ const Header = () => {
               </Button>
             </>
           )}
-          <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-primary ml-2">
-            <span className="text-primary-foreground text-lg font-bold tracking-wide" style={{ fontFamily: "'Kablammo', cursive" }}>keenly</span>
-          </div>
         </div>
       </div>
     </header>
