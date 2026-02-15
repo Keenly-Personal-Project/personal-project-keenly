@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X } from "lucide-react";
 
 const sidebarTabs = [
   "Announcements",
@@ -40,7 +40,7 @@ const ClassPage = () => {
   const [newBrief, setNewBrief] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newImage, setNewImage] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  
 
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
@@ -100,14 +100,11 @@ const ClassPage = () => {
     setAddDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    setAnnouncements(prev => prev.filter(a => a.id !== id));
-  };
 
   const renderContent = () => {
     if (activeTab === "Announcements") {
       return (
-        <div className="rounded-xl border-2 border-border bg-card p-6 max-w-lg mx-auto min-h-[24rem]">
+        <div className="rounded-xl border-2 border-border bg-card p-6 max-w-xl mx-auto min-h-[30rem]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Announcements</h3>
             <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setAddDialogOpen(true)}>
@@ -119,42 +116,20 @@ const ClassPage = () => {
           ) : (
             <div className="flex flex-col gap-3">
               {announcements.map((ann) => (
-                <div key={ann.id} className="border border-border rounded-lg p-3 relative group">
-                  <button
-                    onClick={() => handleDelete(ann.id)}
-                    className="absolute top-1.5 right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                  <div className="flex gap-3 items-start">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground font-medium">{ann.brief}</p>
-                      {expandedId === ann.id && (
-                        <div className="mt-2 space-y-2">
-                          {ann.description && <p className="text-xs text-muted-foreground">{ann.description}</p>}
-                          {ann.image && (
-                            <img src={ann.image} alt="" className="rounded-md max-h-40 object-cover" />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    {ann.image && !expandedId ? (
+                <button
+                  key={ann.id}
+                  onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
+                  className="w-full text-left border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex gap-3 items-center">
+                    <p className="text-sm text-foreground font-medium flex-1">{ann.brief}</p>
+                    {ann.image && (
                       <div className="w-14 h-10 rounded border border-border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                         <img src={ann.image} alt="" className="w-full h-full object-cover" />
                       </div>
-                    ) : !ann.image ? null : null}
-                    <button
-                      onClick={() => setExpandedId(expandedId === ann.id ? null : ann.id)}
-                      className="shrink-0 mt-0.5"
-                    >
-                      {expandedId === ann.id ? (
-                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
+                    )}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
