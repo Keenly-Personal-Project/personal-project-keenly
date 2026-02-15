@@ -47,8 +47,38 @@ const ClassPage = () => {
 
   if (!user) return null;
 
-  const displayName = decodeURIComponent(className || "").replace(/-/g, " ");
+  // Resolve actual class name from localStorage
+  const slug = decodeURIComponent(className || "");
+  const savedClasses = JSON.parse(localStorage.getItem('keen_classes') || '[]');
+  const matchedClass = savedClasses.find(
+    (cls: { name: string }) => cls.name.toLowerCase().replace(/\s+/g, "-") === slug
+  );
+  const displayName = matchedClass?.name || slug.replace(/-/g, " ");
   const randomQuote = quotes[displayName.length % quotes.length];
+
+  const renderContent = () => {
+    if (activeTab === "Announcements") {
+      return (
+        <div className="rounded-xl border border-border bg-card p-5 max-w-md mx-auto">
+          <div className="flex flex-col gap-3">
+            {placeholderCards.map((card) => (
+              <div key={card.id} className="flex gap-3 items-start border-b border-border last:border-b-0 pb-3 last:pb-0">
+                <p className="text-sm text-foreground flex-1">{card.text}</p>
+                <div className="w-14 h-10 rounded border border-border bg-muted flex items-center justify-center shrink-0">
+                  <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center justify-center py-16">
+        <p className="text-muted-foreground text-sm italic">No content yet for {activeTab}.</p>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -62,7 +92,7 @@ const ClassPage = () => {
         {/* Title */}
         <div className="text-center mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground underline underline-offset-4">
-            keen's/{displayName}
+            {displayName}
           </h1>
           <p className="text-xl md:text-2xl text-foreground mt-1">{activeTab}</p>
         </div>
@@ -73,9 +103,9 @@ const ClassPage = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`whitespace-nowrap px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${
+              className={`whitespace-nowrap px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
                 activeTab === tab
-                  ? "bg-primary text-primary-foreground border-primary"
+                  ? "bg-primary text-primary-foreground border-primary px-5"
                   : "bg-card text-foreground border-border"
               }`}
             >
@@ -92,10 +122,10 @@ const ClassPage = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`text-left px-4 py-4 rounded-lg border text-sm font-medium transition-colors ${
+                className={`text-left py-4 rounded-lg border text-sm font-medium transition-all ${
                   activeTab === tab
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card text-foreground border-border hover:bg-muted"
+                    ? "bg-primary text-primary-foreground border-primary px-6 w-[13rem]"
+                    : "bg-card text-foreground border-border hover:bg-muted px-4 w-48"
                 }`}
               >
                 {tab}
@@ -104,15 +134,8 @@ const ClassPage = () => {
           </div>
 
           {/* Main content */}
-          <div className="flex-1 flex flex-col gap-4">
-            {placeholderCards.map((card) => (
-              <div key={card.id} className="rounded-lg border border-border bg-card p-4 flex gap-4 items-start">
-                <p className="text-sm text-foreground flex-1">{card.text}</p>
-                <div className="w-20 h-14 rounded border border-border bg-muted flex items-center justify-center shrink-0">
-                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </div>
-            ))}
+          <div className="flex-1">
+            {renderContent()}
           </div>
 
           {/* Right quote */}
@@ -122,15 +145,8 @@ const ClassPage = () => {
         </div>
 
         {/* Mobile content */}
-        <div className="md:hidden flex flex-col gap-4">
-          {placeholderCards.map((card) => (
-            <div key={card.id} className="rounded-lg border border-border bg-card p-4 flex gap-4 items-start">
-              <p className="text-sm text-foreground flex-1">{card.text}</p>
-              <div className="w-16 h-12 rounded border border-border bg-muted flex items-center justify-center shrink-0">
-                <ImageIcon className="h-6 w-6 text-muted-foreground" />
-              </div>
-            </div>
-          ))}
+        <div className="md:hidden">
+          {renderContent()}
           <p className="text-sm text-muted-foreground italic text-center mt-4">{randomQuote}</p>
         </div>
       </main>
