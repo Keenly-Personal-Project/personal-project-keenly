@@ -168,8 +168,8 @@ const Auth = () => {
 
       {/* Top left logo */}
       <div className="mb-8 z-10">
-        <div className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-primary">
-          <span className="text-primary-foreground text-2xl font-bold tracking-wide" style={{ fontFamily: "'Kablammo', cursive" }}>keenly</span>
+        <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary">
+          <span className="text-primary-foreground text-lg font-bold leading-none">|&lt;</span>
         </div>
       </div>
 
