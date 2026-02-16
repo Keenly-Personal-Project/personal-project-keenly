@@ -104,7 +104,7 @@ const ClassPage = () => {
   const renderContent = () => {
     if (activeTab === "Announcements") {
       return (
-        <div className="rounded-xl border-2 border-border bg-card p-6 max-w-xl mx-auto min-h-[30rem]">
+        <div className="rounded-xl border-2 border-border bg-card p-6 max-w-2xl mx-auto min-h-[34rem]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Announcements</h3>
             <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setAddDialogOpen(true)}>
@@ -116,19 +116,12 @@ const ClassPage = () => {
           ) : (
             <div className="flex flex-col gap-3">
               {announcements.map((ann) => (
-                <button
+                 <button
                   key={ann.id}
                   onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
                   className="w-full text-left border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer"
                 >
-                  <div className="flex gap-3 items-center">
-                    <p className="text-sm text-foreground font-medium flex-1">{ann.brief}</p>
-                    {ann.image && (
-                      <div className="w-14 h-10 rounded border border-border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                        <img src={ann.image} alt="" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                  </div>
+                  <p className="text-sm text-foreground font-medium">{ann.brief}</p>
                 </button>
               ))}
             </div>
@@ -153,7 +146,7 @@ const ClassPage = () => {
         </Button>
 
         {/* Title - pushed higher */}
-        <div className="text-center mb-2">
+        <div className="text-center -mt-2 mb-2">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground underline underline-offset-4">
             {displayName}
           </h1>
