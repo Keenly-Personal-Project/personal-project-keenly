@@ -27,6 +27,7 @@ const AnnouncementDetailPage = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
@@ -58,9 +59,12 @@ const AnnouncementDetailPage = () => {
   const displayName = matchedClass?.name || slug.replace(/-/g, " ");
 
   const handleDelete = () => {
-    const updated = announcements.filter(a => a.id !== announcementId);
-    localStorage.setItem(storageKey, JSON.stringify(updated));
-    navigate(`/class/${className}`);
+    setIsDeleting(true);
+    setTimeout(() => {
+      const updated = announcements.filter(a => a.id !== announcementId);
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+      navigate(`/class/${className}`);
+    }, 400);
   };
 
   if (!announcement) {
@@ -85,7 +89,7 @@ const AnnouncementDetailPage = () => {
           <ArrowLeft className="h-4 w-4" /> Back to {displayName}
         </Button>
 
-        <div className="rounded-xl border-2 border-border bg-card p-6 space-y-4">
+        <div className={`rounded-xl border-2 border-border bg-card p-6 space-y-4 transition-all duration-400 ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
           <div className="flex items-start justify-between">
             <h1 className="text-xl font-bold text-foreground">{announcement.brief}</h1>
             <Button

@@ -4,6 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import Header from "@/components/Header";
 import { Loader2, BookOpen, FlaskConical, Plus, X, Pencil, Image, Palette } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,6 +54,8 @@ const Index = () => {
   const [editImage, setEditImage] = useState('');
   const [editName, setEditName] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     localStorage.setItem('keen_classes', JSON.stringify(classes));
@@ -69,7 +75,12 @@ const Index = () => {
   };
 
   const handleRemoveClass = (index: number) => {
-    setClasses(prev => prev.filter((_, i) => i !== index));
+    setDeletingIndex(index);
+    setTimeout(() => {
+      setClasses(prev => prev.filter((_, i) => i !== index));
+      setDeletingIndex(null);
+      setDeleteIndex(null);
+    }, 300);
   };
 
   const openEditDialog = (index: number) => {
@@ -131,7 +142,10 @@ const Index = () => {
                 const slug = cls.name.toLowerCase().replace(/\s+/g, "-");
                 const labelColor = cls.color || undefined;
                 return (
-                  <div key={`${cls.name}-${index}`} className="relative group">
+                  <div
+                    key={`${cls.name}-${index}`}
+                    className={`relative group transition-all duration-300 ${deletingIndex === index ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+                  >
                     <button
                       onClick={() => navigate(`/class/${slug}`)}
                       className="w-full flex flex-col rounded-xl border border-border overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer bg-card"
@@ -161,7 +175,7 @@ const Index = () => {
                     </button>
                     {/* Remove button */}
                     <button
-                      onClick={() => handleRemoveClass(index)}
+                      onClick={() => setDeleteIndex(index)}
                       className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="h-2.5 w-2.5" />
@@ -254,6 +268,24 @@ const Index = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete keen confirmation */}
+      <AlertDialog open={deleteIndex !== null} onOpenChange={(open) => { if (!open) setDeleteIndex(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{deleteIndex !== null ? classes[deleteIndex]?.name : ''}" and all its data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteIndex !== null && handleRemoveClass(deleteIndex)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

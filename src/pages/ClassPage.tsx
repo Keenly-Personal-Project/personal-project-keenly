@@ -128,7 +128,12 @@ const ClassPage = () => {
                       <ImageIcon className="h-5 w-5 text-muted-foreground" />
                     )}
                   </div>
-                  <p className="text-sm text-foreground font-medium">{ann.brief}</p>
+                  <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                    <p className="text-sm text-foreground font-medium">{ann.brief}</p>
+                    {ann.description && (
+                      <p className="text-muted-foreground truncate" style={{ fontSize: '7px', lineHeight: '1.3' }}>{ann.description}</p>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
