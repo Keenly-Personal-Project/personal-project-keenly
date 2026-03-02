@@ -3,7 +3,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, X, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Announcement {
   id: string;
@@ -16,6 +26,7 @@ const AnnouncementDetailPage = () => {
   const { className, announcementId } = useParams<{ className: string; announcementId: string }>();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
@@ -77,7 +88,12 @@ const AnnouncementDetailPage = () => {
         <div className="rounded-xl border-2 border-border bg-card p-6 space-y-4">
           <div className="flex items-start justify-between">
             <h1 className="text-xl font-bold text-foreground">{announcement.brief}</h1>
-            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0" onClick={handleDelete}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -91,6 +107,23 @@ const AnnouncementDetailPage = () => {
           )}
         </div>
       </main>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this announcement. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

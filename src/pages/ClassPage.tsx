@@ -104,7 +104,7 @@ const ClassPage = () => {
   const renderContent = () => {
     if (activeTab === "Announcements") {
       return (
-        <div className="rounded-xl border-2 border-border bg-card p-6 max-w-2xl mx-auto min-h-[34rem]">
+        <div className="rounded-xl border-2 border-border bg-card p-6 max-w-4xl mx-auto min-h-[38rem]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Announcements</h3>
             <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setAddDialogOpen(true)}>
@@ -119,8 +119,15 @@ const ClassPage = () => {
                  <button
                   key={ann.id}
                   onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
-                  className="w-full text-left border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="w-full text-left border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer flex items-center gap-4 min-h-[5rem]"
                 >
+                  <div className="w-12 h-12 rounded-md border border-border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                    {ann.image ? (
+                      <img src={ann.image} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
                   <p className="text-sm text-foreground font-medium">{ann.brief}</p>
                 </button>
               ))}
@@ -146,7 +153,7 @@ const ClassPage = () => {
         </Button>
 
         {/* Title - pushed higher */}
-        <div className="text-center -mt-2 mb-2">
+        <div className="text-center -mt-4 mb-2" style={{ marginTop: '-0.75rem' }}>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground underline underline-offset-4">
             {displayName}
           </h1>
