@@ -31,6 +31,12 @@ interface Announcement {
   image?: string;
 }
 
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+}
+
 const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
