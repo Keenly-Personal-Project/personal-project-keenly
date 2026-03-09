@@ -50,6 +50,7 @@ const ClassPage = () => {
 
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
+  const notesKey = `keen_notes_${slug}`;
 
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem(storageKey);
