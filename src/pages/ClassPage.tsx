@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
@@ -41,7 +41,9 @@ const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("Announcements");
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "Announcements";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newBrief, setNewBrief] = useState("");
   const [newDescription, setNewDescription] = useState("");
@@ -174,22 +176,13 @@ const ClassPage = () => {
 
       return (
         <div className="rounded-xl border-2 border-border bg-card p-6 max-w-4xl mx-auto min-h-[38rem] animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Add note card */}
-            <button
-              onClick={handleAddNote}
-              className="h-[280px] rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
-            >
-              <Plus className="h-8 w-8 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground font-medium">Add notes</span>
-            </button>
-
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {/* Note cards */}
             {notes.map((note) => (
               <button
                 key={note.id}
                 onClick={() => navigate(`/class/${className}/note/${note.id}`)}
-                className="h-[280px] rounded-xl border-2 border-border bg-card p-5 text-left overflow-hidden hover:bg-muted/50 transition-colors cursor-pointer flex flex-col"
+                className="aspect-square rounded-xl border-2 border-border bg-card p-5 text-left overflow-hidden hover:bg-muted/50 transition-colors cursor-pointer flex flex-col"
               >
                 <p className="text-sm font-bold text-foreground underline underline-offset-2 mb-2 shrink-0">
                   {note.title || "Untitled"}
@@ -199,6 +192,15 @@ const ClassPage = () => {
                 </p>
               </button>
             ))}
+
+            {/* Add note card - at end */}
+            <button
+              onClick={handleAddNote}
+              className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
+            >
+              <Plus className="h-8 w-8 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground font-medium">Add notes</span>
+            </button>
           </div>
         </div>
       );
