@@ -41,7 +41,9 @@ const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("Announcements");
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "Announcements";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newBrief, setNewBrief] = useState("");
   const [newDescription, setNewDescription] = useState("");
