@@ -31,6 +31,12 @@ interface Announcement {
   image?: string;
 }
 
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+}
+
 const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
@@ -44,11 +50,23 @@ const ClassPage = () => {
 
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
+  const notesKey = `keen_notes_${slug}`;
 
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
   });
+
+  const [notes, setNotes] = useState<Note[]>(() => {
+    const saved = localStorage.getItem(notesKey);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Reload notes when returning to this page
+  useEffect(() => {
+    const saved = localStorage.getItem(notesKey);
+    if (saved) setNotes(JSON.parse(saved));
+  }, [activeTab, notesKey]);
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(announcements));
@@ -141,6 +159,51 @@ const ClassPage = () => {
         </div>
       );
     }
+    if (activeTab === "Notes/Guides") {
+      const handleAddNote = () => {
+        const newNote: Note = {
+          id: Date.now().toString(),
+          title: "Untitled",
+          content: "",
+        };
+        const updated = [newNote, ...notes];
+        setNotes(updated);
+        localStorage.setItem(notesKey, JSON.stringify(updated));
+        navigate(`/class/${className}/note/${newNote.id}`);
+      };
+
+      return (
+        <div className="rounded-xl border-2 border-border bg-card p-6 max-w-4xl mx-auto min-h-[38rem] animate-fade-in">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Add note card */}
+            <button
+              onClick={handleAddNote}
+              className="h-[280px] rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
+            >
+              <Plus className="h-8 w-8 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground font-medium">Add notes</span>
+            </button>
+
+            {/* Note cards */}
+            {notes.map((note) => (
+              <button
+                key={note.id}
+                onClick={() => navigate(`/class/${className}/note/${note.id}`)}
+                className="h-[280px] rounded-xl border-2 border-border bg-card p-5 text-left overflow-hidden hover:bg-muted/50 transition-colors cursor-pointer flex flex-col"
+              >
+                <p className="text-sm font-bold text-foreground underline underline-offset-2 mb-2 shrink-0">
+                  {note.title || "Untitled"}
+                </p>
+                <p className="text-muted-foreground text-xs leading-relaxed line-clamp-[10] flex-1 overflow-hidden">
+                  {note.content || "Empty note..."}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center justify-center py-16">
         <p className="text-muted-foreground text-sm italic">No content yet for {activeTab}.</p>
