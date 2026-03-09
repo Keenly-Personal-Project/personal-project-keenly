@@ -57,6 +57,17 @@ const ClassPage = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [notes, setNotes] = useState<Note[]>(() => {
+    const saved = localStorage.getItem(notesKey);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Reload notes when returning to this page
+  useEffect(() => {
+    const saved = localStorage.getItem(notesKey);
+    if (saved) setNotes(JSON.parse(saved));
+  }, [activeTab, notesKey]);
+
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(announcements));
   }, [announcements, storageKey]);
