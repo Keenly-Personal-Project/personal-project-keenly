@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import ClassPage from "./pages/ClassPage";
 import AnnouncementDetailPage from "./pages/AnnouncementDetailPage";
 import NoteEditorPage from "./pages/NoteEditorPage";
+import NoteSetupPage from "./pages/NoteSetupPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
