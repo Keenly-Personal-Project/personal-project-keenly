@@ -175,9 +175,16 @@ const ClassPage = () => {
               <button
                 key={note.id}
                 onClick={() => navigate(`/class/${className}/note/${note.id}`)}
-                className="aspect-square rounded-xl border-2 border-border bg-card p-5 text-left overflow-hidden hover:bg-muted/50 transition-colors cursor-pointer flex flex-col"
+                className="aspect-square rounded-xl border-2 p-5 text-left overflow-hidden hover:opacity-80 transition-all cursor-pointer flex flex-col"
+                style={{
+                  backgroundColor: note.color ? note.color + "15" : undefined,
+                  borderColor: note.color || "hsl(var(--border))",
+                }}
               >
-                <p className="text-sm font-bold text-foreground underline underline-offset-2 mb-2 shrink-0">
+                <p
+                  className="text-sm font-bold underline underline-offset-2 mb-2 shrink-0"
+                  style={{ color: note.color || "hsl(var(--foreground))" }}
+                >
                   {note.title || "Untitled"}
                 </p>
                 <p className="text-muted-foreground text-xs leading-relaxed line-clamp-[10] flex-1 overflow-hidden">
