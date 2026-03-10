@@ -164,15 +164,7 @@ const ClassPage = () => {
     }
     if (activeTab === "Notes/Guides") {
       const handleAddNote = () => {
-        const newNote: Note = {
-          id: Date.now().toString(),
-          title: "Untitled",
-          content: "",
-        };
-        const updated = [newNote, ...notes];
-        setNotes(updated);
-        localStorage.setItem(notesKey, JSON.stringify(updated));
-        navigate(`/class/${className}/note/${newNote.id}`);
+        navigate(`/class/${className}/note/new`);
       };
 
       return (
