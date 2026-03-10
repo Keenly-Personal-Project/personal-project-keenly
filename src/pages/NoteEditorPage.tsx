@@ -2,10 +2,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Header from "@/components/Header";
+import NoteContentRenderer from "@/components/NoteContentRenderer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Check, Image as ImageIcon, Loader2, Table, BarChart3, Trash2, Link } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Check, Image as ImageIcon, Loader2, Table, BarChart3, Trash2, Link, Eye, Edit3 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +31,7 @@ interface Note {
   id: string;
   title: string;
   content: string;
+  color?: string;
 }
 
 const NoteEditorPage = () => {
@@ -43,6 +46,7 @@ const NoteEditorPage = () => {
   const [tableDialogOpen, setTableDialogOpen] = useState(false);
   const [tableRows, setTableRows] = useState("3");
   const [tableCols, setTableCols] = useState("3");
+  const [activeView, setActiveView] = useState("edit");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -116,6 +120,7 @@ const NoteEditorPage = () => {
     const end = textarea.selectionEnd;
     const newContent = content.substring(0, start) + text + content.substring(end);
     setContent(newContent);
+    setActiveView("edit");
     setTimeout(() => {
       textarea.focus();
       textarea.selectionStart = textarea.selectionEnd = start + text.length;
@@ -164,6 +169,8 @@ Item D, 20
     insertAtCursor(chartTemplate);
   };
 
+  const noteColor = currentNote?.color;
+
   return (
     <div className={`min-h-screen bg-background animate-fade-in ${isDeleting ? "animate-fade-out" : ""}`}>
       <Header />
@@ -177,7 +184,7 @@ Item D, 20
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               {saved ? (
                 <>
-                  <Check className="h-3 w-3 text-green-500" />
+                  <Check className="h-3 w-3" style={{ color: "hsl(var(--success))" }} />
                   Saved
                 </>
               ) : (
@@ -193,6 +200,11 @@ Item D, 20
             </Button>
           </div>
         </div>
+
+        {/* Color accent bar */}
+        {noteColor && (
+          <div className="h-1.5 rounded-full mb-4" style={{ backgroundColor: noteColor }} />
+        )}
 
         <Input
           value={title}
@@ -210,52 +222,56 @@ Item D, 20
             className="hidden"
             onChange={handleImageUpload}
           />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5 h-8 text-xs"
-            onClick={() => fileInputRef.current?.click()}
-          >
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => fileInputRef.current?.click()}>
             <ImageIcon className="h-3.5 w-3.5" />
             Image
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5 h-8 text-xs"
-            onClick={() => setImageDialogOpen(true)}
-          >
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setImageDialogOpen(true)}>
             <Link className="h-3.5 w-3.5" />
             URL
           </Button>
           <div className="w-px h-5 bg-border mx-1" />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5 h-8 text-xs"
-            onClick={() => setTableDialogOpen(true)}
-          >
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setTableDialogOpen(true)}>
             <Table className="h-3.5 w-3.5" />
             Table
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5 h-8 text-xs"
-            onClick={handleInsertChart}
-          >
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={handleInsertChart}>
             <BarChart3 className="h-3.5 w-3.5" />
             Chart
           </Button>
         </div>
 
-        <Textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Start writing..."
-          className="min-h-[60vh] border-none shadow-none focus-visible:ring-0 px-0 resize-none text-base leading-relaxed"
-        />
+        {/* Edit / Preview tabs */}
+        <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
+          <TabsList className="mb-3">
+            <TabsTrigger value="edit" className="gap-1.5">
+              <Edit3 className="h-3.5 w-3.5" />
+              Edit
+            </TabsTrigger>
+            <TabsTrigger value="preview" className="gap-1.5">
+              <Eye className="h-3.5 w-3.5" />
+              Preview
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="edit">
+            <Textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Start writing..."
+              className="min-h-[60vh] border-none shadow-none focus-visible:ring-0 px-0 resize-none text-base leading-relaxed"
+            />
+          </TabsContent>
+          <TabsContent value="preview">
+            <div className="min-h-[60vh] py-2">
+              {content.trim() ? (
+                <NoteContentRenderer content={content} />
+              ) : (
+                <p className="text-muted-foreground text-sm italic">Nothing to preview yet.</p>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Delete dialog */}
