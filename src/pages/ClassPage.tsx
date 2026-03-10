@@ -188,7 +188,16 @@ const ClassPage = () => {
                   {note.title || "Untitled"}
                 </p>
                 <p className="text-muted-foreground text-xs leading-relaxed line-clamp-[10] flex-1 overflow-hidden">
-                  {note.content || "Empty note..."}
+                  {(() => {
+                    try {
+                      const parsed = JSON.parse(note.content);
+                      if (Array.isArray(parsed)) {
+                        const textBlock = parsed.find((b: any) => b.type === "text" && b.data?.content?.trim());
+                        return textBlock ? textBlock.data.content.trim().substring(0, 200) : "Empty note...";
+                      }
+                    } catch {}
+                    return note.content || "Empty note...";
+                  })()}
                 </p>
               </button>
             ))}
