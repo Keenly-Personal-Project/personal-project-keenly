@@ -26,31 +26,13 @@ const EditableTable: React.FC<EditableTableProps> = ({ headers, rows, onChange, 
     onChange(headers, [...rows, Array(headers.length).fill("")]);
   };
 
-  const deleteRow = (ri: number) => {
-    onChange(headers, rows.filter((_, i) => i !== ri));
-  };
-
   const addColumn = () => {
     onChange([...headers, `Col ${headers.length + 1}`], rows.map((r) => [...r, ""]));
   };
 
-  const deleteColumn = (ci: number) => {
-    if (headers.length <= 1) return;
-    onChange(
-      headers.filter((_, i) => i !== ci),
-      rows.map((r) => r.filter((_, i) => i !== ci))
-    );
-  };
-
   return (
     <div className="group relative rounded-lg border border-border overflow-hidden my-2">
-      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex gap-1">
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={addColumn} title="Add column">
-          <Plus className="h-3 w-3" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={addRow} title="Add row">
-          <Plus className="h-3 w-3" />
-        </Button>
+      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
         <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onDelete} title="Delete table">
           <Trash2 className="h-3 w-3" />
         </Button>
@@ -60,28 +42,19 @@ const EditableTable: React.FC<EditableTableProps> = ({ headers, rows, onChange, 
           <thead>
             <tr className="bg-muted/50">
               {headers.map((h, i) => (
-                <th key={i} className="relative border-b border-r border-border last:border-r-0 p-0">
+                <th key={i} className="border-b border-r border-border last:border-r-0 p-0">
                   <input
                     value={h}
                     onChange={(e) => updateHeader(i, e.target.value)}
                     className="w-full px-3 py-2 bg-transparent font-semibold text-foreground outline-none min-w-[80px]"
                   />
-                  {headers.length > 1 && (
-                    <button
-                      onClick={() => deleteColumn(i)}
-                      className="absolute top-0 right-0 p-0.5 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Delete column"
-                    >
-                      <Trash2 className="h-2.5 w-2.5" />
-                    </button>
-                  )}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((row, ri) => (
-              <tr key={ri} className="border-b border-border last:border-0 group/row">
+              <tr key={ri} className="border-b border-border last:border-0">
                 {row.map((cell, ci) => (
                   <td key={ci} className="border-r border-border last:border-r-0 p-0">
                     <input
@@ -92,15 +65,6 @@ const EditableTable: React.FC<EditableTableProps> = ({ headers, rows, onChange, 
                     />
                   </td>
                 ))}
-                <td className="w-6 p-0">
-                  <button
-                    onClick={() => deleteRow(ri)}
-                    className="p-1 text-destructive opacity-0 group-hover/row:opacity-100 transition-opacity"
-                    title="Delete row"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </td>
               </tr>
             ))}
           </tbody>
