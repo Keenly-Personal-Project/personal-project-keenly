@@ -1,7 +1,7 @@
-import React, { useRef } from "react";
+import React, { useRef, useCallback, useImperativeHandle, forwardRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import EditableTable from "@/components/EditableTable";
-import EditableChart, { ChartType, ChartDataItem } from "@/components/EditableChart";
+import EditableChart, { ChartType, ChartDataItem, DataSet } from "@/components/EditableChart";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,17 +11,20 @@ export interface NoteBlock {
   data: any;
 }
 
-// Text: { content: string }
-// Image: { src: string, alt: string }
-// Table: { headers: string[], rows: string[][] }
-// Chart: { chartType: ChartType, data: ChartDataItem[] }
+export interface NoteBlockEditorHandle {
+  insertBlockAtCursor: (block: NoteBlock) => void;
+}
 
 interface NoteBlockEditorProps {
   blocks: NoteBlock[];
   onChange: (blocks: NoteBlock[]) => void;
 }
 
-const NoteBlockEditor: React.FC<NoteBlockEditorProps> = ({ blocks, onChange }) => {
+const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(({ blocks, onChange }, ref) => {
+  const focusedBlockRef = useRef<string | null>(null);
+  const cursorPosRef = useRef<number>(0);
+  const textareaRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+
   const updateBlock = (id: string, data: any) => {
     onChange(blocks.map((b) => (b.id === id ? { ...b, data } : b)));
   };
@@ -30,28 +33,83 @@ const NoteBlockEditor: React.FC<NoteBlockEditorProps> = ({ blocks, onChange }) =
     onChange(blocks.filter((b) => b.id !== id));
   };
 
+  const handleTextFocus = useCallback((blockId: string) => {
+    focusedBlockRef.current = blockId;
+  }, []);
+
+  const handleTextSelect = useCallback((blockId: string, el: HTMLTextAreaElement) => {
+    focusedBlockRef.current = blockId;
+    cursorPosRef.current = el.selectionStart ?? 0;
+  }, []);
+
+  useImperativeHandle(ref, () => ({
+    insertBlockAtCursor: (block: NoteBlock) => {
+      const focusedId = focusedBlockRef.current;
+      const focusedBlock = blocks.find(b => b.id === focusedId && b.type === "text");
+
+      if (focusedBlock) {
+        const content = focusedBlock.data.content || "";
+        const pos = cursorPosRef.current;
+        const before = content.substring(0, pos);
+        const after = content.substring(pos);
+        const idx = blocks.findIndex(b => b.id === focusedId);
+
+        const newBlocks: NoteBlock[] = [];
+        for (let i = 0; i < blocks.length; i++) {
+          if (i === idx) {
+            if (before.trim()) {
+              newBlocks.push({ ...focusedBlock, data: { content: before } });
+            }
+            newBlocks.push(block);
+            if (after.trim()) {
+              newBlocks.push({ id: crypto.randomUUID(), type: "text", data: { content: after } });
+            }
+          } else {
+            newBlocks.push(blocks[i]);
+          }
+        }
+        // If before and after were both empty, just insert the block
+        if (!before.trim() && !after.trim()) {
+          const filtered = newBlocks.filter(b => b.id !== focusedId || b.type !== "text" || b.data.content.trim());
+          onChange(filtered.length > 0 ? filtered : [block]);
+        } else {
+          onChange(newBlocks);
+        }
+      } else {
+        // No focused text block, append
+        onChange([...blocks, block]);
+      }
+    },
+  }), [blocks, onChange]);
+
   return (
-    <div className="space-y-1">
+    <div className="space-y-0">
       {blocks.map((block) => (
         <div key={block.id}>
           {block.type === "text" && (
             <Textarea
+              ref={(el) => { textareaRefs.current[block.id] = el; }}
               value={block.data.content}
               onChange={(e) => updateBlock(block.id, { content: e.target.value })}
+              onFocus={() => handleTextFocus(block.id)}
+              onSelect={(e) => handleTextSelect(block.id, e.target as HTMLTextAreaElement)}
+              onClick={(e) => handleTextSelect(block.id, e.target as HTMLTextAreaElement)}
+              onKeyUp={(e) => handleTextSelect(block.id, e.target as HTMLTextAreaElement)}
               placeholder="Start writing..."
-              className="min-h-[100px] border-none shadow-none focus-visible:ring-0 px-0 resize-none text-base leading-relaxed"
+              className="min-h-[40px] border-none shadow-none focus-visible:ring-0 px-0 resize-none text-base leading-relaxed"
+              style={{ height: 'auto', overflow: 'hidden' }}
+              onInput={(e) => {
+                const el = e.target as HTMLTextAreaElement;
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
+              }}
             />
           )}
 
           {block.type === "image" && (
-            <div className="group relative rounded-lg overflow-hidden border border-border my-2">
+            <div className="group relative rounded-lg overflow-hidden border border-border my-1">
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 bg-background/80 text-destructive"
-                  onClick={() => deleteBlock(block.id)}
-                >
+                <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/80 text-destructive" onClick={() => deleteBlock(block.id)}>
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -59,9 +117,7 @@ const NoteBlockEditor: React.FC<NoteBlockEditorProps> = ({ blocks, onChange }) =
                 src={block.data.src}
                 alt={block.data.alt}
                 className="max-w-full h-auto max-h-96 object-contain mx-auto"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
             </div>
           )}
@@ -79,7 +135,10 @@ const NoteBlockEditor: React.FC<NoteBlockEditorProps> = ({ blocks, onChange }) =
             <EditableChart
               chartType={block.data.chartType}
               data={block.data.data}
-              onChange={(chartType, data) => updateBlock(block.id, { chartType, data })}
+              datasets={block.data.datasets}
+              labels={block.data.labels}
+              curveType={block.data.curveType}
+              onChange={(chartType, data, extra) => updateBlock(block.id, { chartType, data, ...extra })}
               onDelete={() => deleteBlock(block.id)}
             />
           )}
@@ -98,13 +157,16 @@ const NoteBlockEditor: React.FC<NoteBlockEditorProps> = ({ blocks, onChange }) =
               ]);
             }
           }}
+          onFocus={() => { focusedBlockRef.current = null; }}
           placeholder="Start writing..."
-          className="min-h-[60px] border-none shadow-none focus-visible:ring-0 px-0 resize-none text-base leading-relaxed"
+          className="min-h-[40px] border-none shadow-none focus-visible:ring-0 px-0 resize-none text-base leading-relaxed"
         />
       )}
     </div>
   );
-};
+});
+
+NoteBlockEditor.displayName = "NoteBlockEditor";
 
 export default NoteBlockEditor;
 
