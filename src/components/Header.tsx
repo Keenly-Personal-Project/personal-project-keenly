@@ -2,7 +2,7 @@ import { Bell, User, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import {
@@ -34,6 +34,31 @@ const Header = () => {
   const { signOut, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogoClick = () => {
+    if (location.pathname === '/') return;
+    const main = document.querySelector('main');
+    if (main) {
+      main.style.transition = 'opacity 0.3s ease-out';
+      main.style.opacity = '0';
+      setTimeout(() => {
+        navigate('/');
+        requestAnimationFrame(() => {
+          const newMain = document.querySelector('main');
+          if (newMain) {
+            newMain.style.opacity = '0';
+            newMain.style.transition = 'opacity 0.3s ease-in';
+            requestAnimationFrame(() => {
+              newMain.style.opacity = '1';
+            });
+          }
+        });
+      }, 300);
+    } else {
+      navigate('/');
+    }
+  };
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
@@ -96,7 +121,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo - left */}
-        <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary cursor-pointer" onClick={() => navigate('/')}>
+        <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary cursor-pointer" onClick={handleLogoClick}>
           <span className="text-primary-foreground text-lg font-bold leading-none">|&lt;</span>
         </div>
 

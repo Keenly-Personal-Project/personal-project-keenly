@@ -17,12 +17,6 @@ const sidebarTabs = [
   "Notes/Guides",
 ];
 
-const quotes = [
-  "Everything is unpredictable, calculus was made because an apple fell on someone's head.",
-  "The only way to do great work is to love what you do.",
-  "Education is the most powerful weapon which you can use to change the world.",
-  "In the middle of difficulty lies opportunity.",
-];
 
 interface Announcement {
   id: string;
@@ -100,7 +94,7 @@ const ClassPage = () => {
     (cls: { name: string }) => cls.name.toLowerCase().replace(/\s+/g, "-") === slug
   );
   const displayName = matchedClass?.name || slug.replace(/-/g, " ");
-  const randomQuote = quotes[displayName.length % quotes.length];
+  
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -252,14 +246,10 @@ const ClassPage = () => {
               </button>
             ))}
           </div>
-          <div className="flex-1">{renderContent()}</div>
-          <div className="w-56 shrink-0 flex items-start pt-12">
-            <p className="text-sm text-muted-foreground italic text-center leading-relaxed">{randomQuote}</p>
-          </div>
+          <div className="flex-1 pl-4">{renderContent()}</div>
         </div>
         <div className="md:hidden">
           {renderContent()}
-          <p className="text-sm text-muted-foreground italic text-center mt-4">{randomQuote}</p>
         </div>
       </main>
 
