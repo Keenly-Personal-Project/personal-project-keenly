@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 export interface NoteBlock {
   id: string;
-  type: "text" | "image" | "table" | "chart";
+  type: "text" | "image" | "table" | "chart" | "video";
   data: any;
 }
 
