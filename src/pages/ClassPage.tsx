@@ -17,12 +17,6 @@ const sidebarTabs = [
   "Notes/Guides",
 ];
 
-const quotes = [
-  "Everything is unpredictable, calculus was made because an apple fell on someone's head.",
-  "The only way to do great work is to love what you do.",
-  "Education is the most powerful weapon which you can use to change the world.",
-  "In the middle of difficulty lies opportunity.",
-];
 
 interface Announcement {
   id: string;
