@@ -142,6 +142,25 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
               onDelete={() => deleteBlock(block.id)}
             />
           )}
+
+          {block.type === "video" && (
+            <div className="group relative rounded-lg overflow-hidden border border-border my-1">
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/80 text-destructive" onClick={() => deleteBlock(block.id)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <div className="aspect-video w-full">
+                <iframe
+                  src={block.data.embedUrl}
+                  title={block.data.title || "Embedded video"}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          )}
         </div>
       ))}
 

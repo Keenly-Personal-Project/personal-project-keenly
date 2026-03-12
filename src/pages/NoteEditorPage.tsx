@@ -321,6 +321,32 @@ const NoteEditorPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Dialog open={videoDialogOpen} onOpenChange={setVideoDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Insert Video</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label>Video URL (YouTube, Vimeo, etc.)</Label>
+            <Input placeholder="https://www.youtube.com/watch?v=..." value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
+            <p className="text-xs text-muted-foreground">Paste a YouTube, Vimeo, or other video URL. The video will be embedded directly in your note.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVideoDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              if (!videoUrl.trim()) return;
+              let embedUrl = videoUrl.trim();
+              // Convert YouTube watch URLs to embed
+              const ytMatch = embedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+              if (ytMatch) embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}`;
+              // Convert Vimeo URLs to embed
+              const vimeoMatch = embedUrl.match(/vimeo\.com\/(\d+)/);
+              if (vimeoMatch) embedUrl = `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+              insertBlock({ id: crypto.randomUUID(), type: "video", data: { embedUrl, title: "Video" } });
+              setVideoUrl("");
+              setVideoDialogOpen(false);
+            }}>Insert</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
