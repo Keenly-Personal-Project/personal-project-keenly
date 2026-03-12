@@ -27,7 +27,16 @@ const EditableTable: React.FC<EditableTableProps> = ({ headers, rows, onChange, 
   };
 
   const addColumn = () => {
-    onChange([...headers, `Col ${headers.length + 1}`], rows.map((r) => [...r, ""]));
+    onChange([...headers, `Header ${headers.length + 1}`], rows.map((r) => [...r, ""]));
+  };
+
+  const deleteRow = (ri: number) => {
+    onChange(headers, rows.filter((_, i) => i !== ri));
+  };
+
+  const deleteColumn = (ci: number) => {
+    if (headers.length <= 1) return;
+    onChange(headers.filter((_, i) => i !== ci), rows.map((row) => row.filter((_, i) => i !== ci)));
   };
 
   return (
