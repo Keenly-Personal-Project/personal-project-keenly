@@ -34,6 +34,31 @@ const Header = () => {
   const { signOut, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogoClick = () => {
+    if (location.pathname === '/') return;
+    const main = document.querySelector('main');
+    if (main) {
+      main.style.transition = 'opacity 0.3s ease-out';
+      main.style.opacity = '0';
+      setTimeout(() => {
+        navigate('/');
+        requestAnimationFrame(() => {
+          const newMain = document.querySelector('main');
+          if (newMain) {
+            newMain.style.opacity = '0';
+            newMain.style.transition = 'opacity 0.3s ease-in';
+            requestAnimationFrame(() => {
+              newMain.style.opacity = '1';
+            });
+          }
+        });
+      }, 300);
+    } else {
+      navigate('/');
+    }
+  };
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
