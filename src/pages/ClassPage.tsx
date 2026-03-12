@@ -270,7 +270,7 @@ const ClassPage = () => {
               </button>
             ))}
           </div>
-          <div className="flex-1 pl-4">{renderContent()}</div>
+          <div className="flex-1">{renderContent()}</div>
         </div>
         <div className="md:hidden">
           {renderContent()}
