@@ -250,7 +250,6 @@ const ClassPage = () => {
         </div>
         <div className="md:hidden">
           {renderContent()}
-          <p className="text-sm text-muted-foreground italic text-center mt-4">{randomQuote}</p>
         </div>
       </main>
 
