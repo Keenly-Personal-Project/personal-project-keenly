@@ -246,10 +246,7 @@ const ClassPage = () => {
               </button>
             ))}
           </div>
-          <div className="flex-1">{renderContent()}</div>
-          <div className="w-56 shrink-0 flex items-start pt-12">
-            <p className="text-sm text-muted-foreground italic text-center leading-relaxed">{randomQuote}</p>
-          </div>
+          <div className="flex-1 pl-4">{renderContent()}</div>
         </div>
         <div className="md:hidden">
           {renderContent()}
