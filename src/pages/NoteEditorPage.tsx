@@ -12,7 +12,7 @@ import { ChartType } from "@/components/EditableChart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  ArrowLeft, Check, Image as ImageIcon, Loader2, Table, BarChart3, Trash2, Link,
+  ArrowLeft, Check, Image as ImageIcon, Loader2, Table, BarChart3, Trash2, Link, Video,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
