@@ -94,7 +94,7 @@ const ClassPage = () => {
     (cls: { name: string }) => cls.name.toLowerCase().replace(/\s+/g, "-") === slug
   );
   const displayName = matchedClass?.name || slug.replace(/-/g, " ");
-  const randomQuote = quotes[displayName.length % quotes.length];
+  
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
