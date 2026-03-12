@@ -12,7 +12,7 @@ import { ChartType } from "@/components/EditableChart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  ArrowLeft, Check, Image as ImageIcon, Loader2, Table, BarChart3, Trash2, Link,
+  ArrowLeft, Check, Image as ImageIcon, Loader2, Table, BarChart3, Trash2, Link, Video,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -59,6 +59,8 @@ const NoteEditorPage = () => {
   const [tableCols, setTableCols] = useState("3");
   const [chartDialogOpen, setChartDialogOpen] = useState(false);
   const [chartType, setChartType] = useState<ChartType>("bar");
+  const [videoDialogOpen, setVideoDialogOpen] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<NoteBlockEditorHandle>(null);
 
@@ -241,6 +243,10 @@ const NoteEditorPage = () => {
           <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setChartDialogOpen(true)}>
             <BarChart3 className="h-3.5 w-3.5" /> Chart
           </Button>
+          <div className="w-px h-5 bg-border mx-1" />
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setVideoDialogOpen(true)}>
+            <Video className="h-3.5 w-3.5" /> Video
+          </Button>
         </div>
 
         <div className="min-h-[60vh]">
@@ -312,6 +318,32 @@ const NoteEditorPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setChartDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleInsertChart}>Insert</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={videoDialogOpen} onOpenChange={setVideoDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Insert Video</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label>Video URL (YouTube, Vimeo, etc.)</Label>
+            <Input placeholder="https://www.youtube.com/watch?v=..." value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
+            <p className="text-xs text-muted-foreground">Paste a YouTube, Vimeo, or other video URL. The video will be embedded directly in your note.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVideoDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              if (!videoUrl.trim()) return;
+              let embedUrl = videoUrl.trim();
+              // Convert YouTube watch URLs to embed
+              const ytMatch = embedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+              if (ytMatch) embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}`;
+              // Convert Vimeo URLs to embed
+              const vimeoMatch = embedUrl.match(/vimeo\.com\/(\d+)/);
+              if (vimeoMatch) embedUrl = `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+              insertBlock({ id: crypto.randomUUID(), type: "video", data: { embedUrl, title: "Video" } });
+              setVideoUrl("");
+              setVideoDialogOpen(false);
+            }}>Insert</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

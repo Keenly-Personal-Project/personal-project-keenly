@@ -96,7 +96,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo - left */}
-        <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary">
+        <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary cursor-pointer" onClick={() => navigate('/')}>
           <span className="text-primary-foreground text-lg font-bold leading-none">|&lt;</span>
         </div>
 
