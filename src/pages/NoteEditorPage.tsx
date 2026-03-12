@@ -59,6 +59,8 @@ const NoteEditorPage = () => {
   const [tableCols, setTableCols] = useState("3");
   const [chartDialogOpen, setChartDialogOpen] = useState(false);
   const [chartType, setChartType] = useState<ChartType>("bar");
+  const [videoDialogOpen, setVideoDialogOpen] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<NoteBlockEditorHandle>(null);
 
