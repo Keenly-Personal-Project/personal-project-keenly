@@ -243,6 +243,10 @@ const NoteEditorPage = () => {
           <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setChartDialogOpen(true)}>
             <BarChart3 className="h-3.5 w-3.5" /> Chart
           </Button>
+          <div className="w-px h-5 bg-border mx-1" />
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setVideoDialogOpen(true)}>
+            <Video className="h-3.5 w-3.5" /> Video
+          </Button>
         </div>
 
         <div className="min-h-[60vh]">
