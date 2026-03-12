@@ -122,44 +122,51 @@ const ClassPage = () => {
   };
 
   const renderContent = () => {
-    if (activeTab === "Announcements") {
-      return (
-        <div className="rounded-xl border-2 border-border bg-card p-6 max-w-4xl mx-auto min-h-[38rem]">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-foreground">Announcements</h3>
+    const contentWrapper = (children: React.ReactNode, title: string) => (
+      <div className="rounded-xl border-2 border-border bg-card p-6 max-w-5xl min-h-[38rem]">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          {title === "Announcements" && (
             <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setAddDialogOpen(true)}>
               <Plus className="h-3 w-3" /> Add
             </Button>
-          </div>
-          {announcements.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic text-center py-8">No announcements yet. Add one to get started.</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {announcements.map((ann) => (
-                <button
-                  key={ann.id}
-                  onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
-                  className="w-full text-left border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer flex items-center gap-4 min-h-[5rem]"
-                >
-                  <div className="w-12 h-12 rounded-md border border-border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                    {ann.image ? (
-                      <img src={ann.image} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                    <p className="text-sm text-foreground font-medium">{ann.brief}</p>
-                    {ann.description && (
-                      <p className="text-muted-foreground truncate" style={{ fontSize: '7px', lineHeight: '1.3' }}>{ann.description}</p>
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground shrink-0">{formatDate(ann.date)}</span>
-                </button>
-              ))}
-            </div>
           )}
         </div>
+        {children}
+      </div>
+    );
+
+    if (activeTab === "Announcements") {
+      return contentWrapper(
+        announcements.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic text-center py-8">No announcements yet. Add one to get started.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {announcements.map((ann) => (
+              <button
+                key={ann.id}
+                onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
+                className="w-full text-left border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer flex items-center gap-4 min-h-[5rem]"
+              >
+                <div className="w-12 h-12 rounded-md border border-border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                  {ann.image ? (
+                    <img src={ann.image} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                  <p className="text-sm text-foreground font-medium">{ann.brief}</p>
+                  {ann.description && (
+                    <p className="text-muted-foreground truncate" style={{ fontSize: '7px', lineHeight: '1.3' }}>{ann.description}</p>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0">{formatDate(ann.date)}</span>
+              </button>
+            ))}
+          </div>
+        ),
+        "Announcements"
       );
     }
     if (activeTab === "Notes/Guides") {
@@ -167,45 +174,62 @@ const ClassPage = () => {
         navigate(`/class/${className}/note/new`);
       };
 
-      return (
-        <div className="rounded-xl border-2 border-border bg-card p-6 max-w-4xl mx-auto min-h-[38rem] animate-fade-in">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {notes.map((note) => (
-              <button
-                key={note.id}
-                onClick={() => navigate(`/class/${className}/note/${note.id}`)}
-                className="aspect-square rounded-xl border-2 p-5 text-left overflow-hidden hover:opacity-80 transition-all cursor-pointer flex flex-col"
-                style={{
-                  backgroundColor: note.color ? note.color + "15" : undefined,
-                  borderColor: note.color || "hsl(var(--border))",
-                }}
-              >
-                <p className="text-sm font-bold underline underline-offset-2 mb-2 shrink-0" style={{ color: note.color || "hsl(var(--foreground))" }}>
-                  {note.title || "Untitled"}
-                </p>
-                <p className="text-muted-foreground text-xs leading-relaxed line-clamp-[10] flex-1 overflow-hidden">
-                  {(() => {
-                    try {
-                      const parsed = JSON.parse(note.content);
-                      if (Array.isArray(parsed)) {
-                        const textBlock = parsed.find((b: any) => b.type === "text" && b.data?.content?.trim());
-                        return textBlock ? textBlock.data.content.trim().substring(0, 200) : "Empty note...";
-                      }
-                    } catch {}
-                    return note.content || "Empty note...";
-                  })()}
-                </p>
-              </button>
-            ))}
+      return contentWrapper(
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {notes.map((note) => (
             <button
-              onClick={handleAddNote}
-              className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
+              key={note.id}
+              onClick={() => navigate(`/class/${className}/note/${note.id}`)}
+              className="aspect-square rounded-xl border-2 p-5 text-left overflow-hidden hover:opacity-80 transition-all cursor-pointer flex flex-col"
+              style={{
+                backgroundColor: note.color ? note.color + "15" : undefined,
+                borderColor: note.color || "hsl(var(--border))",
+              }}
             >
-              <Plus className="h-8 w-8 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground font-medium">Add notes</span>
+              <p className="text-sm font-bold underline underline-offset-2 mb-2 shrink-0" style={{ color: note.color || "hsl(var(--foreground))" }}>
+                {note.title || "Untitled"}
+              </p>
+              <p className="text-muted-foreground text-xs leading-relaxed line-clamp-[10] flex-1 overflow-hidden">
+                {(() => {
+                  try {
+                    const parsed = JSON.parse(note.content);
+                    if (Array.isArray(parsed)) {
+                      const textBlock = parsed.find((b: any) => b.type === "text" && b.data?.content?.trim());
+                      return textBlock ? textBlock.data.content.trim().substring(0, 200) : "Empty note...";
+                    }
+                  } catch {}
+                  return note.content || "Empty note...";
+                })()}
+              </p>
             </button>
-          </div>
-        </div>
+          ))}
+          <button
+            onClick={handleAddNote}
+            className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
+          >
+            <Plus className="h-8 w-8 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground font-medium">Add notes</span>
+          </button>
+        </div>,
+        "Notes/Guides"
+      );
+    }
+    if (activeTab === "Meeting Recordings") {
+      return contentWrapper(
+        <p className="text-muted-foreground text-sm italic text-center py-8">No meeting recordings yet.</p>,
+        "Meeting Recordings"
+      );
+    }
+    if (activeTab === "Events List") {
+      return contentWrapper(
+        <p className="text-muted-foreground text-sm italic text-center py-8">No events yet.</p>,
+        "Events List"
+      );
+    }
+    if (activeTab === "Absentee List") {
+      return contentWrapper(
+        <p className="text-muted-foreground text-sm italic text-center py-8">Absentee tracking coming soon.</p>,
+        "Absentee List"
       );
     }
 
@@ -246,7 +270,7 @@ const ClassPage = () => {
               </button>
             ))}
           </div>
-          <div className="flex-1 pl-4">{renderContent()}</div>
+          <div className="flex-1">{renderContent()}</div>
         </div>
         <div className="md:hidden">
           {renderContent()}
