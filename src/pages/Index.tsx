@@ -251,16 +251,7 @@ const Index = () => {
             {/* Color picker */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><Palette className="h-4 w-4" /> Label Color</Label>
-              <div className="flex flex-wrap gap-2">
-                {presetColors.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setEditColor(color)}
-                    className={`h-8 w-8 rounded-full border-2 transition-transform hover:scale-110 ${editColor === color ? 'border-foreground scale-110' : 'border-transparent'}`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
+              <NoteColorPicker value={editColor || 'hsl(175, 70%, 40%)'} onChange={setEditColor} />
             </div>
           </div>
           <DialogFooter>
