@@ -16,6 +16,8 @@ import {
   ArrowLeft, Check, Image as ImageIcon, Loader2, Table, BarChart3, Trash2, Link, Video,
   Palette, Upload, FileUp, Music,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
