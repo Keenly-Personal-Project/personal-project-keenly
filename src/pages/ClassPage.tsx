@@ -248,7 +248,7 @@ const ClassPage = () => {
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
         <div className="text-center -mt-4 mb-2" style={{ marginTop: '-0.75rem' }}>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground underline underline-offset-4">{displayName}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground underline underline-offset-4" style={{ fontFamily: "'Amatic SC', cursive" }}>{displayName}</h1>
         </div>
         <div className="text-center mb-6">
           <p className="text-xl md:text-2xl text-foreground mt-3">{activeTab}</p>
