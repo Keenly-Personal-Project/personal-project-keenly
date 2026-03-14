@@ -30,16 +30,6 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   FlaskConical,
 };
 
-const presetColors = [
-  "hsl(175, 70%, 40%)",   // primary teal
-  "hsl(280, 60%, 50%)",   // purple
-  "hsl(340, 70%, 50%)",   // pink
-  "hsl(200, 70%, 50%)",   // blue
-  "hsl(38, 92%, 50%)",    // orange
-  "hsl(145, 65%, 42%)",   // green
-  "hsl(0, 72%, 55%)",     // red
-  "hsl(260, 50%, 60%)",   // lavender
-];
 
 const Index = () => {
   const { user, loading } = useAuth();
