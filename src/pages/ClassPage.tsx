@@ -146,7 +146,7 @@ const ClassPage = () => {
               <button
                 key={ann.id}
                 onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
-                className="w-full text-left border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer flex items-center gap-4 min-h-[5rem]"
+                className="w-full text-left border border-foreground/30 rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer flex items-center gap-4 min-h-[5rem]"
               >
                 <div className="w-12 h-12 rounded-md border border-border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                   {ann.image ? (
