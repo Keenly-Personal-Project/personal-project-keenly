@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import NoteColorPicker from '@/components/NoteColorPicker';
 
 interface ClassItem {
   name: string;
@@ -29,16 +30,6 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   FlaskConical,
 };
 
-const presetColors = [
-  "hsl(175, 70%, 40%)",   // primary teal
-  "hsl(280, 60%, 50%)",   // purple
-  "hsl(340, 70%, 50%)",   // pink
-  "hsl(200, 70%, 50%)",   // blue
-  "hsl(38, 92%, 50%)",    // orange
-  "hsl(145, 65%, 42%)",   // green
-  "hsl(0, 72%, 55%)",     // red
-  "hsl(260, 50%, 60%)",   // lavender
-];
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -250,16 +241,7 @@ const Index = () => {
             {/* Color picker */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><Palette className="h-4 w-4" /> Label Color</Label>
-              <div className="flex flex-wrap gap-2">
-                {presetColors.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setEditColor(color)}
-                    className={`h-8 w-8 rounded-full border-2 transition-transform hover:scale-110 ${editColor === color ? 'border-foreground scale-110' : 'border-transparent'}`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
+              <NoteColorPicker value={editColor || 'hsl(175, 70%, 40%)'} onChange={setEditColor} />
             </div>
           </div>
           <DialogFooter>
