@@ -152,7 +152,7 @@ const Index = () => {
                       </div>
                       <div
                         className="w-full py-3 text-center"
-                        style={{ backgroundColor: labelColor || 'hsl(var(--primary))' }}
+                        style={{ background: labelColor || 'hsl(var(--primary))' }}
                       >
                         <span className="text-sm font-semibold text-primary-foreground">{cls.name}</span>
                       </div>
