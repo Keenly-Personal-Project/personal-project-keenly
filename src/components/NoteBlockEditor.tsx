@@ -150,14 +150,54 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <div className="aspect-video w-full">
-                <iframe
-                  src={block.data.embedUrl}
-                  title={block.data.title || "Embedded video"}
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+              {block.data.isFile ? (
+                <video controls className="w-full max-h-96">
+                  <source src={block.data.fileUrl} />
+                </video>
+              ) : (
+                <div className={block.data.isVertical ? "w-full max-w-[360px] mx-auto" : "w-full"} style={{ aspectRatio: block.data.isVertical ? "9/16" : "16/9" }}>
+                  <iframe
+                    src={block.data.embedUrl}
+                    title={block.data.title || "Embedded video"}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {block.type === "audio" && (
+            <div className="group relative rounded-lg border border-border my-1 p-3">
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/80 text-destructive" onClick={() => deleteBlock(block.id)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">{block.data.name || "Audio"}</p>
+              <audio controls className="w-full">
+                <source src={block.data.src} />
+              </audio>
+            </div>
+          )}
+
+          {block.type === "file" && (
+            <div className="group relative rounded-lg border border-border my-1 p-3">
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/80 text-destructive" onClick={() => deleteBlock(block.id)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded bg-muted flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-muted-foreground">FILE</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{block.data.name || "File"}</p>
+                  <p className="text-xs text-muted-foreground">{block.data.size ? `${(block.data.size / 1024).toFixed(1)} KB` : ""}</p>
+                </div>
+                <a href={block.data.src} download={block.data.name} className="ml-auto text-xs text-primary hover:underline shrink-0">Download</a>
               </div>
             </div>
           )}
