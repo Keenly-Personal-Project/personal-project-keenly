@@ -127,8 +127,8 @@ const Index = () => {
           {/* Banner */}
           <div className="w-full bg-primary py-6 px-8">
             <h1
-              className="text-3xl md:text-4xl text-primary-foreground text-center"
-              style={{ fontFamily: "'Brittany Signature', cursive", letterSpacing: '0.684em' }}
+              className="text-4xl md:text-5xl text-primary-foreground text-center font-bold"
+              style={{ fontFamily: "'Amatic SC', cursive", letterSpacing: '0.4em' }}
             >
               Keen's
             </h1>

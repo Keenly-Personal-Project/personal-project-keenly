@@ -123,7 +123,7 @@ const ClassPage = () => {
 
   const renderContent = () => {
     const contentWrapper = (children: React.ReactNode, title: string) => (
-      <div className="rounded-xl border-2 border-border bg-card p-6 max-w-5xl min-h-[38rem]">
+      <div className="rounded-xl border border-foreground/30 bg-card p-6 max-w-5xl min-h-[38rem]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {title === "Announcements" && (
