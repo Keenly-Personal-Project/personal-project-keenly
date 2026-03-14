@@ -123,7 +123,7 @@ const Index = () => {
       <Header />
 
       <main className="container py-6 px-4">
-        <div className="rounded-2xl border border-border bg-card min-h-[calc(100vh-8rem)] overflow-hidden">
+        <div className="rounded-2xl border border-foreground/30 bg-card min-h-[calc(100vh-8rem)] overflow-hidden">
           {/* Banner */}
           <div className="w-full bg-primary py-6 px-8">
             <h1
