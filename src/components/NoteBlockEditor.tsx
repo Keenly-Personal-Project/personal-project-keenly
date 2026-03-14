@@ -189,15 +189,36 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
+              {/* Inline preview for supported file types */}
+              {block.data.mimeType?.startsWith("application/pdf") && (
+                <iframe
+                  src={block.data.src}
+                  title={block.data.name || "PDF"}
+                  className="w-full h-96 rounded border border-border mb-2"
+                />
+              )}
+              {block.data.mimeType?.startsWith("image/") && (
+                <img
+                  src={block.data.src}
+                  alt={block.data.name}
+                  className="max-w-full max-h-96 object-contain mx-auto rounded mb-2"
+                />
+              )}
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded bg-muted flex items-center justify-center shrink-0">
-                  <span className="text-xs font-bold text-muted-foreground">FILE</span>
+                  <span className="text-xs font-bold text-muted-foreground">
+                    {block.data.mimeType?.startsWith("application/pdf") ? "PDF" :
+                     block.data.mimeType?.startsWith("image/") ? "IMG" :
+                     block.data.name?.split('.').pop()?.toUpperCase()?.slice(0, 4) || "FILE"}
+                  </span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{block.data.name || "File"}</p>
                   <p className="text-xs text-muted-foreground">{block.data.size ? `${(block.data.size / 1024).toFixed(1)} KB` : ""}</p>
                 </div>
-                <a href={block.data.src} download={block.data.name} className="ml-auto text-xs text-primary hover:underline shrink-0">Download</a>
+                <a href={block.data.src} target="_blank" rel="noopener noreferrer" className="ml-auto text-xs text-primary hover:underline shrink-0">
+                  {block.data.mimeType?.startsWith("application/pdf") || block.data.mimeType?.startsWith("image/") ? "Open" : "Download"}
+                </a>
               </div>
             </div>
           )}

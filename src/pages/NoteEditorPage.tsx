@@ -200,46 +200,62 @@ const NoteEditorPage = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleVideoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadToStorage = async (file: File): Promise<string | null> => {
+    const userId = user?.id;
+    if (!userId) return null;
+    const filePath = `${userId}/${crypto.randomUUID()}-${file.name}`;
+    const { error } = await supabase.storage.from('note-attachments').upload(filePath, file);
+    if (error) {
+      toast.error("Upload failed: " + error.message);
+      return null;
+    }
+    const { data: urlData } = supabase.storage.from('note-attachments').getPublicUrl(filePath);
+    return urlData.publicUrl;
+  };
+
+  const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
+    toast.info("Uploading video...");
+    const url = await uploadToStorage(file);
+    if (url) {
       insertBlock({
         id: crypto.randomUUID(),
         type: "video",
-        data: { fileUrl: ev.target?.result as string, title: file.name, isFile: true },
+        data: { fileUrl: url, title: file.name, isFile: true },
       });
-    };
-    reader.readAsDataURL(file);
+      toast.success("Video uploaded!");
+    }
   };
 
-  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAudioFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
+    toast.info("Uploading audio...");
+    const url = await uploadToStorage(file);
+    if (url) {
       insertBlock({
         id: crypto.randomUUID(),
         type: "audio" as any,
-        data: { src: ev.target?.result as string, name: file.name },
+        data: { src: url, name: file.name },
       });
-    };
-    reader.readAsDataURL(file);
+      toast.success("Audio uploaded!");
+    }
   };
 
-  const handleGenericFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGenericFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
+    toast.info("Uploading file...");
+    const url = await uploadToStorage(file);
+    if (url) {
       insertBlock({
         id: crypto.randomUUID(),
         type: "file" as any,
-        data: { src: ev.target?.result as string, name: file.name, size: file.size, mimeType: file.type },
+        data: { src: url, name: file.name, size: file.size, mimeType: file.type },
       });
-    };
-    reader.readAsDataURL(file);
+      toast.success("File uploaded!");
+    }
   };
 
   const handleInsertImageUrl = () => {
