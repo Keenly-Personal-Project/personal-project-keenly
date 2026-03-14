@@ -265,7 +265,7 @@ const ClassPage = () => {
           <div className="flex flex-col gap-2 w-48 shrink-0">
             {sidebarTabs.map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`text-left py-4 rounded-lg border text-sm font-medium transition-all ${activeTab === tab ? "bg-primary text-primary-foreground border-primary px-6 w-[13rem]" : "bg-card text-foreground border-border hover:bg-muted px-4 w-48"}`}>
+                className={`text-left py-4 rounded-lg border border-foreground/30 text-sm font-medium transition-all ${activeTab === tab ? "bg-primary text-primary-foreground border-primary px-6 w-[13rem]" : "bg-card text-foreground hover:bg-muted px-4 w-48"}`}>
                 {tab}
               </button>
             ))}

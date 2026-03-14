@@ -148,7 +148,7 @@ const Index = () => {
                   >
                     <button
                       onClick={() => navigate(`/class/${slug}`)}
-                      className="w-full flex flex-col rounded-xl border border-border overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer bg-card"
+                      className="w-full flex flex-col rounded-xl border border-foreground/30 overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer bg-card"
                     >
                       <div
                         className="flex items-center justify-center aspect-[3/4] bg-muted/50 overflow-hidden"
