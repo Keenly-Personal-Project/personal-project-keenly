@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import NoteColorPicker from "@/components/NoteColorPicker";
 
 interface Note {
   id: string;
@@ -13,31 +14,18 @@ interface Note {
   color?: string;
 }
 
-const NOTE_COLORS = [
-  { name: "Teal", value: "hsl(175, 70%, 40%)" },
-  { name: "Blue", value: "hsl(220, 70%, 50%)" },
-  { name: "Purple", value: "hsl(270, 60%, 55%)" },
-  { name: "Pink", value: "hsl(330, 65%, 55%)" },
-  { name: "Red", value: "hsl(0, 65%, 55%)" },
-  { name: "Orange", value: "hsl(25, 85%, 55%)" },
-  { name: "Yellow", value: "hsl(45, 85%, 50%)" },
-  { name: "Green", value: "hsl(145, 60%, 42%)" },
-];
-
 const NoteSetupPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
-  const [selectedColor, setSelectedColor] = useState(NOTE_COLORS[0].value);
+  const [selectedColor, setSelectedColor] = useState("hsl(175, 70%, 40%)");
 
   const slug = decodeURIComponent(className || "");
   const notesKey = `keen_notes_${slug}`;
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    }
+    if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
   if (loading) {
@@ -47,7 +35,6 @@ const NoteSetupPage = () => {
       </div>
     );
   }
-
   if (!user) return null;
 
   const handleCreate = () => {
@@ -65,17 +52,14 @@ const NoteSetupPage = () => {
     navigate(`/class/${className}/note/${newNote.id}`, { replace: true });
   };
 
+  const isGradient = selectedColor.startsWith("linear-gradient");
+
   return (
     <div className="min-h-screen bg-background animate-fade-in">
       <Header />
       <main className="container py-6 px-4 max-w-md mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(`/class/${className}?tab=Notes%2FGuides`)}
-          className="gap-2 mb-8"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          All Notes
+        <Button variant="ghost" onClick={() => navigate(`/class/${className}?tab=Notes%2FGuides`)} className="gap-2 mb-8">
+          <ArrowLeft className="h-4 w-4" /> All Notes
         </Button>
 
         <div className="space-y-8">
@@ -86,56 +70,30 @@ const NoteSetupPage = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Note Name</label>
-            <Input
-              placeholder="e.g. Chapter 5 Summary"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              autoFocus
-              className="text-base"
-            />
+            <Input placeholder="e.g. Chapter 5 Summary" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus className="text-base" />
           </div>
 
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-foreground">Color</label>
-            <div className="grid grid-cols-4 gap-3">
-              {NOTE_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  onClick={() => setSelectedColor(color.value)}
-                  className={`aspect-square rounded-xl transition-all duration-200 border-2 ${
-                    selectedColor === color.value
-                      ? "scale-110 shadow-lg border-foreground"
-                      : "border-transparent hover:scale-105"
-                  }`}
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-          </div>
+          <NoteColorPicker value={selectedColor} onChange={setSelectedColor} />
 
           {/* Preview */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Preview</label>
             <div
               className="aspect-[4/3] rounded-xl p-5 flex flex-col border border-border/50"
-              style={{ backgroundColor: selectedColor + "22", borderColor: selectedColor + "44" }}
+              style={{
+                background: isGradient ? selectedColor + "22" : (selectedColor + "22"),
+                borderColor: isGradient ? undefined : (selectedColor + "44"),
+                ...(isGradient ? { borderImage: selectedColor + " 1" } : {}),
+              }}
             >
-              <p
-                className="text-sm font-bold underline underline-offset-2 mb-2"
-                style={{ color: selectedColor }}
-              >
+              <p className="text-sm font-bold underline underline-offset-2 mb-2" style={{ color: isGradient ? undefined : selectedColor }}>
                 {title || "Untitled"}
               </p>
               <p className="text-xs text-muted-foreground">Your note content will appear here...</p>
             </div>
           </div>
 
-          <Button
-            onClick={handleCreate}
-            disabled={!title.trim()}
-            className="w-full h-12 text-base font-semibold"
-          >
+          <Button onClick={handleCreate} disabled={!title.trim()} className="w-full h-12 text-base font-semibold">
             Create Note
           </Button>
         </div>

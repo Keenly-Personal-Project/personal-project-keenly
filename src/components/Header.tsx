@@ -127,7 +127,7 @@ const Header = () => {
 
         {/* Date - center */}
         <div className="absolute left-1/2 -translate-x-1/2">
-          <span className="text-2xl md:text-3xl text-foreground" style={{ fontFamily: "'Brittany Signature', cursive" }}>
+          <span className="text-2xl md:text-3xl text-foreground font-bold" style={{ fontFamily: "'Amatic SC', cursive" }}>
             {formattedDate}
           </span>
         </div>

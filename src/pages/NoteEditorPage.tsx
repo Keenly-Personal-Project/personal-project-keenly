@@ -8,11 +8,13 @@ import NoteBlockEditor, {
   contentToBlocks,
   blocksToContent,
 } from "@/components/NoteBlockEditor";
+import NoteColorPicker from "@/components/NoteColorPicker";
 import { ChartType } from "@/components/EditableChart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   ArrowLeft, Check, Image as ImageIcon, Loader2, Table, BarChart3, Trash2, Link, Video,
+  Palette, Upload, FileUp, Music,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -45,6 +47,52 @@ const CHART_TYPE_OPTIONS: { value: ChartType; label: string }[] = [
   { value: "stackedBar", label: "Stacked Bar Chart" },
 ];
 
+function parseVideoUrl(url: string): { embedUrl: string; isVertical: boolean } {
+  const trimmed = url.trim();
+  let embedUrl = trimmed;
+  let isVertical = false;
+
+  // YouTube Shorts
+  const shortsMatch = trimmed.match(/youtube\.com\/shorts\/([^?\s&]+)/);
+  if (shortsMatch) {
+    embedUrl = `https://www.youtube.com/embed/${shortsMatch[1]}`;
+    isVertical = true;
+    return { embedUrl, isVertical };
+  }
+
+  // Regular YouTube
+  const ytMatch = trimmed.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+  if (ytMatch) {
+    embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}`;
+    return { embedUrl, isVertical: false };
+  }
+
+  // Vimeo
+  const vimeoMatch = trimmed.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) {
+    embedUrl = `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    return { embedUrl, isVertical: false };
+  }
+
+  // TikTok
+  const tiktokMatch = trimmed.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/);
+  if (tiktokMatch) {
+    embedUrl = `https://www.tiktok.com/embed/v2/${tiktokMatch[1]}`;
+    isVertical = true;
+    return { embedUrl, isVertical };
+  }
+
+  // Instagram Reels
+  const reelsMatch = trimmed.match(/instagram\.com\/(?:reel|reels)\/([^/?\s]+)/);
+  if (reelsMatch) {
+    embedUrl = `https://www.instagram.com/reel/${reelsMatch[1]}/embed/`;
+    isVertical = true;
+    return { embedUrl, isVertical };
+  }
+
+  return { embedUrl, isVertical: false };
+}
+
 const NoteEditorPage = () => {
   const { className, noteId } = useParams<{ className: string; noteId: string }>();
   const { user, loading } = useAuth();
@@ -61,7 +109,11 @@ const NoteEditorPage = () => {
   const [chartType, setChartType] = useState<ChartType>("bar");
   const [videoDialogOpen, setVideoDialogOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
+  const [colorDialogOpen, setColorDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoFileRef = useRef<HTMLInputElement>(null);
+  const audioFileRef = useRef<HTMLInputElement>(null);
+  const genericFileRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<NoteBlockEditorHandle>(null);
 
   const slug = decodeURIComponent(className || "");
@@ -74,6 +126,7 @@ const NoteEditorPage = () => {
 
   const currentNote = notes.find((n) => n.id === noteId);
   const [title, setTitle] = useState(currentNote?.title || "Untitled");
+  const [noteColor, setNoteColor] = useState(currentNote?.color || "hsl(175, 70%, 40%)");
   const [blocks, setBlocks] = useState<NoteBlock[]>(() =>
     contentToBlocks(currentNote?.content || "")
   );
@@ -91,7 +144,7 @@ const NoteEditorPage = () => {
     const timeout = setTimeout(() => {
       const content = blocksToContent(blocks);
       const updated = notes.map((n) =>
-        n.id === noteId ? { ...n, title, content } : n
+        n.id === noteId ? { ...n, title, content, color: noteColor } : n
       );
       if (notes.some((n) => n.id === noteId)) {
         localStorage.setItem(notesKey, JSON.stringify(updated));
@@ -99,7 +152,7 @@ const NoteEditorPage = () => {
       }
     }, 500);
     return () => clearTimeout(timeout);
-  }, [title, blocks, noteId, notesKey, notes]);
+  }, [title, blocks, noteId, notesKey, notes, noteColor]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -140,6 +193,48 @@ const NoteEditorPage = () => {
         id: crypto.randomUUID(),
         type: "image",
         data: { src: ev.target?.result as string, alt: file.name },
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleVideoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      insertBlock({
+        id: crypto.randomUUID(),
+        type: "video",
+        data: { fileUrl: ev.target?.result as string, title: file.name, isFile: true },
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      insertBlock({
+        id: crypto.randomUUID(),
+        type: "audio" as any,
+        data: { src: ev.target?.result as string, name: file.name },
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGenericFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      insertBlock({
+        id: crypto.randomUUID(),
+        type: "file" as any,
+        data: { src: ev.target?.result as string, name: file.name, size: file.size, mimeType: file.type },
       });
     };
     reader.readAsDataURL(file);
@@ -194,7 +289,14 @@ const NoteEditorPage = () => {
     setChartDialogOpen(false);
   };
 
-  const noteColor = currentNote?.color;
+  const handleSaveColor = (color: string) => {
+    setNoteColor(color);
+    const updated = notes.map((n) =>
+      n.id === noteId ? { ...n, color } : n
+    );
+    localStorage.setItem(notesKey, JSON.stringify(updated));
+    setNotes(updated);
+  };
 
   return (
     <div className={`min-h-screen bg-background animate-fade-in ${isDeleting ? "animate-fade-out" : ""}`}>
@@ -212,13 +314,21 @@ const NoteEditorPage = () => {
                 <><Loader2 className="h-3 w-3 animate-spin" /> Saving...</>
               )}
             </span>
+            <Button variant="outline" size="sm" className="gap-1" onClick={() => setColorDialogOpen(true)}>
+              <Palette className="h-4 w-4" /> Color
+            </Button>
             <Button variant="destructive" size="sm" className="gap-1" onClick={() => setDeleteDialogOpen(true)}>
               <Trash2 className="h-4 w-4" /> Delete
             </Button>
           </div>
         </div>
 
-        {noteColor && <div className="h-1.5 rounded-full mb-4" style={{ backgroundColor: noteColor }} />}
+        {noteColor && (
+          <div
+            className="h-1.5 rounded-full mb-4"
+            style={{ background: noteColor }}
+          />
+        )}
 
         <Input
           value={title}
@@ -228,8 +338,12 @@ const NoteEditorPage = () => {
         />
 
         {/* Insert toolbar */}
-        <div className="flex items-center gap-1 mb-3 border border-border rounded-lg p-1.5 bg-muted/30">
+        <div className="flex items-center gap-1 mb-3 border border-border rounded-lg p-1.5 bg-muted/30 flex-wrap">
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+          <input ref={videoFileRef} type="file" accept="video/*" className="hidden" onChange={handleVideoFileUpload} />
+          <input ref={audioFileRef} type="file" accept="audio/*" className="hidden" onChange={handleAudioFileUpload} />
+          <input ref={genericFileRef} type="file" className="hidden" onChange={handleGenericFileUpload} />
+
           <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => fileInputRef.current?.click()}>
             <ImageIcon className="h-3.5 w-3.5" /> Image
           </Button>
@@ -246,6 +360,16 @@ const NoteEditorPage = () => {
           <div className="w-px h-5 bg-border mx-1" />
           <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setVideoDialogOpen(true)}>
             <Video className="h-3.5 w-3.5" /> Video
+          </Button>
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => videoFileRef.current?.click()}>
+            <Upload className="h-3.5 w-3.5" /> Upload Video
+          </Button>
+          <div className="w-px h-5 bg-border mx-1" />
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => audioFileRef.current?.click()}>
+            <Music className="h-3.5 w-3.5" /> Audio
+          </Button>
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs" onClick={() => genericFileRef.current?.click()}>
+            <FileUp className="h-3.5 w-3.5" /> File
           </Button>
         </div>
 
@@ -266,6 +390,17 @@ const NoteEditorPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Color editor dialog */}
+      <Dialog open={colorDialogOpen} onOpenChange={setColorDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Change Note Color</DialogTitle></DialogHeader>
+          <NoteColorPicker value={noteColor} onChange={handleSaveColor} />
+          <DialogFooter>
+            <Button onClick={() => setColorDialogOpen(false)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
         <DialogContent>
@@ -321,26 +456,21 @@ const NoteEditorPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       <Dialog open={videoDialogOpen} onOpenChange={setVideoDialogOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Insert Video</DialogTitle></DialogHeader>
           <div className="space-y-2">
-            <Label>Video URL (YouTube, Vimeo, etc.)</Label>
+            <Label>Video URL</Label>
             <Input placeholder="https://www.youtube.com/watch?v=..." value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
-            <p className="text-xs text-muted-foreground">Paste a YouTube, Vimeo, or other video URL. The video will be embedded directly in your note.</p>
+            <p className="text-xs text-muted-foreground">Supports YouTube, YouTube Shorts, TikTok, Instagram Reels, and Vimeo.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setVideoDialogOpen(false)}>Cancel</Button>
             <Button onClick={() => {
               if (!videoUrl.trim()) return;
-              let embedUrl = videoUrl.trim();
-              // Convert YouTube watch URLs to embed
-              const ytMatch = embedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-              if (ytMatch) embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}`;
-              // Convert Vimeo URLs to embed
-              const vimeoMatch = embedUrl.match(/vimeo\.com\/(\d+)/);
-              if (vimeoMatch) embedUrl = `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-              insertBlock({ id: crypto.randomUUID(), type: "video", data: { embedUrl, title: "Video" } });
+              const { embedUrl, isVertical } = parseVideoUrl(videoUrl);
+              insertBlock({ id: crypto.randomUUID(), type: "video", data: { embedUrl, title: "Video", isVertical } });
               setVideoUrl("");
               setVideoDialogOpen(false);
             }}>Insert</Button>

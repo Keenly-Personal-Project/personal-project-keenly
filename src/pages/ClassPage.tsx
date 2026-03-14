@@ -123,7 +123,7 @@ const ClassPage = () => {
 
   const renderContent = () => {
     const contentWrapper = (children: React.ReactNode, title: string) => (
-      <div className="rounded-xl border-2 border-border bg-card p-6 max-w-5xl min-h-[38rem]">
+      <div className="rounded-xl border border-foreground/30 bg-card p-6 max-w-5xl min-h-[38rem]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {title === "Announcements" && (
@@ -146,7 +146,7 @@ const ClassPage = () => {
               <button
                 key={ann.id}
                 onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
-                className="w-full text-left border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer flex items-center gap-4 min-h-[5rem]"
+                className="w-full text-left border border-foreground/30 rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer flex items-center gap-4 min-h-[5rem]"
               >
                 <div className="w-12 h-12 rounded-md border border-border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                   {ann.image ? (
@@ -248,7 +248,7 @@ const ClassPage = () => {
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
         <div className="text-center -mt-4 mb-2" style={{ marginTop: '-0.75rem' }}>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground underline underline-offset-4">{displayName}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground underline underline-offset-4" style={{ fontFamily: "'Amatic SC', cursive" }}>{displayName}</h1>
         </div>
         <div className="text-center mb-6">
           <p className="text-xl md:text-2xl text-foreground mt-3">{activeTab}</p>
@@ -265,7 +265,7 @@ const ClassPage = () => {
           <div className="flex flex-col gap-2 w-48 shrink-0">
             {sidebarTabs.map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`text-left py-4 rounded-lg border text-sm font-medium transition-all ${activeTab === tab ? "bg-primary text-primary-foreground border-primary px-6 w-[13rem]" : "bg-card text-foreground border-border hover:bg-muted px-4 w-48"}`}>
+                className={`text-left py-4 rounded-lg border border-foreground/30 text-sm font-medium transition-all ${activeTab === tab ? "bg-primary text-primary-foreground border-primary px-6 w-[13rem]" : "bg-card text-foreground hover:bg-muted px-4 w-48"}`}>
                 {tab}
               </button>
             ))}
