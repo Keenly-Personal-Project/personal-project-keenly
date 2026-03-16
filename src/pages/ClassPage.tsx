@@ -73,7 +73,18 @@ const ClassPage = () => {
   }, [activeTab, notesKey]);
 
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(announcements));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(announcements));
+    } catch (e) {
+      console.warn("LocalStorage quota exceeded for announcements. Clearing images from stored data.");
+      // Store without images to avoid quota issues
+      const withoutImages = announcements.map(a => ({ ...a, image: undefined }));
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(withoutImages));
+      } catch {
+        console.error("Still cannot save announcements to localStorage");
+      }
+    }
   }, [announcements, storageKey]);
 
   useEffect(() => {
