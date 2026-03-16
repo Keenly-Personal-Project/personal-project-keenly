@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface Announcement {
   id: string;
@@ -21,6 +23,7 @@ interface Announcement {
   description: string;
   image?: string;
   date?: string;
+  publisherEmail?: string;
 }
 
 function formatDate(d?: string) {
@@ -41,6 +44,8 @@ const AnnouncementDetailPage = () => {
   const [editDescription, setEditDescription] = useState("");
   const [editImage, setEditImage] = useState("");
   const [editDate, setEditDate] = useState("");
+  const [imageViewOpen, setImageViewOpen] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
@@ -75,7 +80,9 @@ const AnnouncementDetailPage = () => {
     setIsDeleting(true);
     setTimeout(() => {
       const updated = announcements.filter(a => a.id !== announcementId);
-      localStorage.setItem(storageKey, JSON.stringify(updated));
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch { /* ignore */ }
       navigate(`/class/${className}`);
     }, 400);
   };
@@ -95,18 +102,40 @@ const AnnouncementDetailPage = () => {
         ? { ...a, brief: editBrief.trim(), description: editDescription.trim(), image: editImage || undefined, date: editDate ? new Date(editDate).toISOString() : a.date }
         : a
     );
-    localStorage.setItem(storageKey, JSON.stringify(updated));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    } catch {
+      const withoutImages = updated.map(a => ({ ...a, image: undefined }));
+      try { localStorage.setItem(storageKey, JSON.stringify(withoutImages)); } catch { /* ignore */ }
+    }
     setAnnouncements(updated);
     setEditOpen(false);
   };
 
-  const handleEditImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setEditImage(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    setImageUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `announcements/${slug}/${Date.now()}.${fileExt}`;
+      const { error } = await supabase.storage.from('note-attachments').upload(filePath, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('note-attachments').getPublicUrl(filePath);
+      setEditImage(urlData.publicUrl);
+    } catch (err) {
+      console.error("Image upload failed, falling back to base64", err);
+      const reader = new FileReader();
+      reader.onload = (ev) => setEditImage(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } finally {
+      setImageUploading(false);
+    }
   };
+
+  const publisherEmail = announcement?.publisherEmail || user?.email || "";
+  const publisherName = publisherEmail.split("@")[0];
+  const publisherInitials = publisherName.slice(0, 2).toUpperCase();
 
   if (!announcement) {
     return (
@@ -130,9 +159,19 @@ const AnnouncementDetailPage = () => {
           <ArrowLeft className="h-4 w-4" /> Back to {displayName}
         </Button>
 
-        <div className={`rounded-xl border-2 border-border bg-card p-6 space-y-4 transition-all duration-400 ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
-          <div className="flex items-start justify-between">
-            <h1 className="text-xl font-bold text-foreground">{announcement.brief}</h1>
+        <div className={`rounded-xl border border-primary/40 bg-muted/40 p-6 space-y-4 transition-all duration-400 ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+          {/* Publisher info */}
+          <div className="flex items-center gap-2 mb-2">
+            <Avatar className="h-7 w-7">
+              <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-semibold">
+                {publisherInitials}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium text-foreground">{publisherName}</span>
+          </div>
+
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-xl font-bold text-foreground break-words overflow-wrap-anywhere min-w-0 flex-1">{announcement.brief}</h1>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs text-muted-foreground">{formatDate(announcement.date)}</span>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={openEdit}>
@@ -149,14 +188,26 @@ const AnnouncementDetailPage = () => {
           </div>
 
           {announcement.description && (
-            <p className="text-sm text-muted-foreground leading-relaxed">{announcement.description}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed break-words" style={{ overflowWrap: 'anywhere' }}>{announcement.description}</p>
           )}
 
           {announcement.image && (
-            <img src={announcement.image} alt="" className="rounded-lg w-full max-h-96 object-cover border border-border" />
+            <div
+              className="rounded-lg overflow-hidden border border-border cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => setImageViewOpen(true)}
+            >
+              <img src={announcement.image} alt="" className="max-w-full max-h-96 object-contain mx-auto" />
+            </div>
           )}
         </div>
       </main>
+
+      {/* Full image viewer */}
+      <Dialog open={imageViewOpen} onOpenChange={setImageViewOpen}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] p-2">
+          <img src={announcement.image} alt="" className="w-full h-full object-contain" />
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
@@ -193,6 +244,7 @@ const AnnouncementDetailPage = () => {
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Picture</Label>
               <Input type="file" accept="image/*" onChange={handleEditImageUpload} />
+              {imageUploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
               {editImage && (
                 <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border">
                   <img src={editImage} alt="Preview" className="w-full h-full object-cover" />

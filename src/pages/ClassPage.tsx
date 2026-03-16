@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, ChevronRight } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const sidebarTabs = [
   "Announcements",
@@ -18,13 +19,13 @@ const sidebarTabs = [
   "Notes/Guides",
 ];
 
-
 interface Announcement {
   id: string;
   brief: string;
   description: string;
   image?: string;
   date?: string;
+  publisherEmail?: string;
 }
 
 interface Note {
@@ -79,7 +80,6 @@ const ClassPage = () => {
       localStorage.setItem(storageKey, JSON.stringify(announcements));
     } catch (e) {
       console.warn("LocalStorage quota exceeded for announcements. Clearing images from stored data.");
-      // Store without images to avoid quota issues
       const withoutImages = announcements.map(a => ({ ...a, image: undefined }));
       try {
         localStorage.setItem(storageKey, JSON.stringify(withoutImages));
@@ -107,7 +107,6 @@ const ClassPage = () => {
     (cls: { name: string }) => cls.name.toLowerCase().replace(/\s+/g, "-") === slug
   );
   const displayName = matchedClass?.name || slug.replace(/-/g, " ");
-
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -138,6 +137,7 @@ const ClassPage = () => {
       description: newDescription.trim(),
       image: newImage || undefined,
       date: newDate ? new Date(newDate).toISOString() : new Date().toISOString(),
+      publisherEmail: user?.email || "Unknown",
     };
     setAnnouncements(prev => [newAnn, ...prev]);
     setNewBrief("");
@@ -149,7 +149,7 @@ const ClassPage = () => {
 
   const renderContent = () => {
     const contentWrapper = (children: React.ReactNode, title: string) => (
-      <div className="rounded-xl border border-foreground/30 bg-card p-6 max-w-5xl min-h-[38rem]">
+      <div className="rounded-xl border border-primary/30 bg-muted/30 p-6 max-w-5xl min-h-[38rem]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {title === "Announcements" && (
@@ -168,37 +168,53 @@ const ClassPage = () => {
           <p className="text-sm text-muted-foreground italic text-center py-8">No announcements yet. Add one to get started.</p>
         ) : (
           <div className="space-y-4">
-            {announcements.map((ann) => (
-              <article
-                key={ann.id}
-                onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
-                className="group p-4 rounded-lg bg-secondary/30 hover:bg-secondary/60 transition-all cursor-pointer border border-transparent hover:border-border"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                        {ann.brief}
-                      </h3>
-                    </div>
-                    {ann.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                        {ann.description}
-                      </p>
-                    )}
-                    {ann.image && (
-                      <div className="w-full mb-2">
-                        <img src={ann.image} alt="" className="w-full h-auto object-contain" />
-                      </div>
-                    )}
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>{formatDate(ann.date)}</span>
-                    </div>
+            {announcements.map((ann) => {
+              const email = ann.publisherEmail || user?.email || "";
+              const name = email.split("@")[0];
+              const initials = name.slice(0, 2).toUpperCase();
+
+              return (
+                <article
+                  key={ann.id}
+                  onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
+                  className="group p-4 rounded-lg bg-muted/50 hover:bg-muted transition-all cursor-pointer border border-primary/20 hover:border-primary/40 max-h-[28rem] overflow-hidden"
+                >
+                  {/* Publisher */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-[9px] font-semibold">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs font-medium text-muted-foreground">{name}</span>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0 mt-1" />
-                </div>
-              </article>
-            ))}
+
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium text-foreground break-words group-hover:text-primary transition-colors" style={{ overflowWrap: 'anywhere' }}>
+                          {ann.brief}
+                        </h3>
+                      </div>
+                      {ann.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2 break-words" style={{ overflowWrap: 'anywhere' }}>
+                          {ann.description}
+                        </p>
+                      )}
+                      {ann.image && (
+                        <div className="w-full mb-2 max-h-48 overflow-hidden rounded-md">
+                          <img src={ann.image} alt="" className="max-w-full max-h-48 object-contain" />
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{formatDate(ann.date)}</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0 mt-1" />
+                  </div>
+                </article>
+              );
+            })}
           </div>
         ),
         "Announcements"
@@ -333,6 +349,7 @@ const ClassPage = () => {
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Picture (optional)</Label>
               <Input type="file" accept="image/*" onChange={handleImageUpload} />
+              {imageUploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
               {newImage && (
                 <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border">
                   <img src={newImage} alt="Preview" className="w-full h-full object-cover" />
