@@ -111,7 +111,7 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
-      <div className="flex h-16 items-center justify-between px-[3cm] max-[1200px]:px-8 max-[768px]:px-4">
+      <div className="flex h-16 items-center justify-between px-[1cm] max-[768px]:px-4" style={{ zoom: 1, transform: 'none' }}>
         {/* Logo - left */}
         <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary cursor-pointer shrink-0" onClick={handleLogoClick}>
           <span className="text-primary-foreground text-lg font-bold leading-none">|&lt;</span>

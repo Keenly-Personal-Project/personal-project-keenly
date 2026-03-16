@@ -24,6 +24,7 @@ interface Announcement {
   brief: string;
   description: string;
   image?: string;
+  images?: string[];
   date?: string;
   publisherEmail?: string;
 }
@@ -42,6 +43,12 @@ function formatDate(d?: string) {
   return `${String(dt.getMonth() + 1).padStart(2, "0")}/${String(dt.getDate()).padStart(2, "0")}/${dt.getFullYear()}`;
 }
 
+function getImages(ann: Announcement): string[] {
+  if (ann.images && ann.images.length > 0) return ann.images;
+  if (ann.image) return [ann.image];
+  return [];
+}
+
 const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
@@ -52,7 +59,7 @@ const ClassPage = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newBrief, setNewBrief] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const [newImage, setNewImage] = useState("");
+  const [newImages, setNewImages] = useState<string[]>([]);
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
   const [imageUploading, setImageUploading] = useState(false);
 
@@ -80,7 +87,7 @@ const ClassPage = () => {
       localStorage.setItem(storageKey, JSON.stringify(announcements));
     } catch (e) {
       console.warn("LocalStorage quota exceeded for announcements. Clearing images from stored data.");
-      const withoutImages = announcements.map(a => ({ ...a, image: undefined }));
+      const withoutImages = announcements.map(a => ({ ...a, image: undefined, images: undefined }));
       try {
         localStorage.setItem(storageKey, JSON.stringify(withoutImages));
       } catch {
@@ -109,21 +116,25 @@ const ClassPage = () => {
   const displayName = matchedClass?.name || slug.replace(/-/g, " ");
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     setImageUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `announcements/${slug}/${Date.now()}.${fileExt}`;
-      const { error } = await supabase.storage.from('note-attachments').upload(filePath, file);
-      if (error) throw error;
-      const { data: urlData } = supabase.storage.from('note-attachments').getPublicUrl(filePath);
-      setNewImage(urlData.publicUrl);
+      for (const file of Array.from(files)) {
+        const fileExt = file.name.split('.').pop();
+        const filePath = `announcements/${slug}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const { error } = await supabase.storage.from('note-attachments').upload(filePath, file);
+        if (error) throw error;
+        const { data: urlData } = supabase.storage.from('note-attachments').getPublicUrl(filePath);
+        setNewImages(prev => [...prev, urlData.publicUrl]);
+      }
     } catch (err) {
       console.error("Image upload failed, falling back to base64", err);
-      const reader = new FileReader();
-      reader.onload = (ev) => setNewImage(ev.target?.result as string);
-      reader.readAsDataURL(file);
+      for (const file of Array.from(files)) {
+        const reader = new FileReader();
+        reader.onload = (ev) => setNewImages(prev => [...prev, ev.target?.result as string]);
+        reader.readAsDataURL(file);
+      }
     } finally {
       setImageUploading(false);
     }
@@ -135,21 +146,21 @@ const ClassPage = () => {
       id: Date.now().toString(),
       brief: newBrief.trim(),
       description: newDescription.trim(),
-      image: newImage || undefined,
+      images: newImages.length > 0 ? newImages : undefined,
       date: newDate ? new Date(newDate).toISOString() : new Date().toISOString(),
       publisherEmail: user?.email || "Unknown",
     };
     setAnnouncements(prev => [newAnn, ...prev]);
     setNewBrief("");
     setNewDescription("");
-    setNewImage("");
+    setNewImages([]);
     setNewDate(new Date().toISOString().split("T")[0]);
     setAddDialogOpen(false);
   };
 
   const renderContent = () => {
     const contentWrapper = (children: React.ReactNode, title: string) => (
-      <div className="rounded-xl border border-primary/30 bg-muted/30 p-6 max-w-5xl min-h-[38rem]">
+      <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 max-w-5xl min-h-[38rem]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {title === "Announcements" && (
@@ -172,6 +183,7 @@ const ClassPage = () => {
               const email = ann.publisherEmail || user?.email || "";
               const name = email.split("@")[0];
               const initials = name.slice(0, 2).toUpperCase();
+              const imgs = getImages(ann);
 
               return (
                 <article
@@ -179,7 +191,6 @@ const ClassPage = () => {
                   onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
                   className="group p-4 rounded-lg bg-muted/50 hover:bg-muted transition-all cursor-pointer border border-primary/20 hover:border-primary/40 max-h-[28rem] overflow-hidden"
                 >
-                  {/* Publisher */}
                   <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
                       <AvatarFallback className="bg-primary text-primary-foreground text-[9px] font-semibold">
@@ -201,9 +212,18 @@ const ClassPage = () => {
                           {ann.description}
                         </p>
                       )}
-                      {ann.image && (
-                        <div className="w-full mb-2 max-h-48 overflow-hidden rounded-md">
-                          <img src={ann.image} alt="" className="max-w-full max-h-48 object-contain" />
+                      {imgs.length > 0 && (
+                        <div className="flex gap-2 mb-2 overflow-hidden">
+                          {imgs.slice(0, 3).map((img, i) => (
+                            <div key={i} className="w-20 h-20 rounded-md overflow-hidden border border-border shrink-0">
+                              <img src={img} alt="" className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                          {imgs.length > 3 && (
+                            <div className="w-20 h-20 rounded-md border border-border shrink-0 flex items-center justify-center bg-muted">
+                              <span className="text-xs text-muted-foreground font-medium">+{imgs.length - 3}</span>
+                            </div>
+                          )}
                         </div>
                       )}
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -347,15 +367,19 @@ const ClassPage = () => {
               <Textarea placeholder="Detailed description..." value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4} />
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Picture (optional)</Label>
-              <Input type="file" accept="image/*" onChange={handleImageUpload} />
+              <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Pictures (optional)</Label>
+              <Input type="file" accept="image/*" multiple onChange={handleImageUpload} />
               {imageUploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
-              {newImage && (
-                <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border">
-                  <img src={newImage} alt="Preview" className="w-full h-full object-cover" />
-                  <button onClick={() => setNewImage('')} className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
-                    <X className="h-3 w-3" />
-                  </button>
+              {newImages.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {newImages.map((img, i) => (
+                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
+                      <img src={img} alt="Preview" className="w-full h-full object-cover" />
+                      <button onClick={() => setNewImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
