@@ -22,6 +22,7 @@ interface Announcement {
   brief: string;
   description: string;
   image?: string;
+  images?: string[];
   date?: string;
   publisherEmail?: string;
 }
@@ -33,6 +34,12 @@ function formatDate(d?: string) {
   return `${String(dt.getMonth() + 1).padStart(2, "0")}/${String(dt.getDate()).padStart(2, "0")}/${dt.getFullYear()}`;
 }
 
+function getImages(ann: Announcement): string[] {
+  if (ann.images && ann.images.length > 0) return ann.images;
+  if (ann.image) return [ann.image];
+  return [];
+}
+
 const AnnouncementDetailPage = () => {
   const { className, announcementId } = useParams<{ className: string; announcementId: string }>();
   const { user, loading } = useAuth();
@@ -42,9 +49,10 @@ const AnnouncementDetailPage = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editBrief, setEditBrief] = useState("");
   const [editDescription, setEditDescription] = useState("");
-  const [editImage, setEditImage] = useState("");
+  const [editImages, setEditImages] = useState<string[]>([]);
   const [editDate, setEditDate] = useState("");
   const [imageViewOpen, setImageViewOpen] = useState(false);
+  const [viewingImage, setViewingImage] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
 
   const slug = decodeURIComponent(className || "");
@@ -91,7 +99,7 @@ const AnnouncementDetailPage = () => {
     if (!announcement) return;
     setEditBrief(announcement.brief);
     setEditDescription(announcement.description);
-    setEditImage(announcement.image || "");
+    setEditImages(getImages(announcement));
     setEditDate(announcement.date ? new Date(announcement.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
     setEditOpen(true);
   };
@@ -99,13 +107,13 @@ const AnnouncementDetailPage = () => {
   const handleEditSave = () => {
     const updated = announcements.map(a =>
       a.id === announcementId
-        ? { ...a, brief: editBrief.trim(), description: editDescription.trim(), image: editImage || undefined, date: editDate ? new Date(editDate).toISOString() : a.date }
+        ? { ...a, brief: editBrief.trim(), description: editDescription.trim(), image: undefined, images: editImages.length > 0 ? editImages : undefined, date: editDate ? new Date(editDate).toISOString() : a.date }
         : a
     );
     try {
       localStorage.setItem(storageKey, JSON.stringify(updated));
     } catch {
-      const withoutImages = updated.map(a => ({ ...a, image: undefined }));
+      const withoutImages = updated.map(a => ({ ...a, image: undefined, images: undefined }));
       try { localStorage.setItem(storageKey, JSON.stringify(withoutImages)); } catch { /* ignore */ }
     }
     setAnnouncements(updated);
@@ -113,21 +121,25 @@ const AnnouncementDetailPage = () => {
   };
 
   const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     setImageUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `announcements/${slug}/${Date.now()}.${fileExt}`;
-      const { error } = await supabase.storage.from('note-attachments').upload(filePath, file);
-      if (error) throw error;
-      const { data: urlData } = supabase.storage.from('note-attachments').getPublicUrl(filePath);
-      setEditImage(urlData.publicUrl);
+      for (const file of Array.from(files)) {
+        const fileExt = file.name.split('.').pop();
+        const filePath = `announcements/${slug}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const { error } = await supabase.storage.from('note-attachments').upload(filePath, file);
+        if (error) throw error;
+        const { data: urlData } = supabase.storage.from('note-attachments').getPublicUrl(filePath);
+        setEditImages(prev => [...prev, urlData.publicUrl]);
+      }
     } catch (err) {
       console.error("Image upload failed, falling back to base64", err);
-      const reader = new FileReader();
-      reader.onload = (ev) => setEditImage(ev.target?.result as string);
-      reader.readAsDataURL(file);
+      for (const file of Array.from(files)) {
+        const reader = new FileReader();
+        reader.onload = (ev) => setEditImages(prev => [...prev, ev.target?.result as string]);
+        reader.readAsDataURL(file);
+      }
     } finally {
       setImageUploading(false);
     }
@@ -151,6 +163,8 @@ const AnnouncementDetailPage = () => {
     );
   }
 
+  const imgs = getImages(announcement);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -171,7 +185,7 @@ const AnnouncementDetailPage = () => {
           </div>
 
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-xl font-bold text-foreground break-words overflow-wrap-anywhere min-w-0 flex-1">{announcement.brief}</h1>
+            <h1 className="text-xl font-bold text-foreground break-words min-w-0 flex-1" style={{ overflowWrap: 'anywhere' }}>{announcement.brief}</h1>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs text-muted-foreground">{formatDate(announcement.date)}</span>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={openEdit}>
@@ -191,12 +205,17 @@ const AnnouncementDetailPage = () => {
             <p className="text-sm text-muted-foreground leading-relaxed break-words" style={{ overflowWrap: 'anywhere' }}>{announcement.description}</p>
           )}
 
-          {announcement.image && (
-            <div
-              className="rounded-lg overflow-hidden border border-border cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => setImageViewOpen(true)}
-            >
-              <img src={announcement.image} alt="" className="max-w-full max-h-96 object-contain mx-auto" />
+          {imgs.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              {imgs.map((img, i) => (
+                <div
+                  key={i}
+                  className="rounded-lg overflow-hidden border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => { setViewingImage(img); setImageViewOpen(true); }}
+                >
+                  <img src={img} alt="" className="w-full max-h-48 object-contain" />
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -205,7 +224,7 @@ const AnnouncementDetailPage = () => {
       {/* Full image viewer */}
       <Dialog open={imageViewOpen} onOpenChange={setImageViewOpen}>
         <DialogContent className="max-w-[90vw] max-h-[90vh] p-2">
-          <img src={announcement.image} alt="" className="w-full h-full object-contain" />
+          <img src={viewingImage} alt="" className="w-full h-full object-contain" />
         </DialogContent>
       </Dialog>
 
@@ -242,15 +261,19 @@ const AnnouncementDetailPage = () => {
               <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={4} />
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Picture</Label>
-              <Input type="file" accept="image/*" onChange={handleEditImageUpload} />
+              <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Pictures</Label>
+              <Input type="file" accept="image/*" multiple onChange={handleEditImageUpload} />
               {imageUploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
-              {editImage && (
-                <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border">
-                  <img src={editImage} alt="Preview" className="w-full h-full object-cover" />
-                  <button onClick={() => setEditImage('')} className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
-                    <X className="h-3 w-3" />
-                  </button>
+              {editImages.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {editImages.map((img, i) => (
+                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
+                      <img src={img} alt="Preview" className="w-full h-full object-cover" />
+                      <button onClick={() => setEditImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
