@@ -161,8 +161,8 @@ const ClassPage = () => {
                       </p>
                     )}
                     {ann.image && (
-                      <div className="w-full max-h-48 rounded-lg overflow-hidden mb-2">
-                        <img src={ann.image} alt="" className="w-full h-full object-cover" />
+                      <div className="w-full mb-2">
+                        <img src={ann.image} alt="" className="w-full h-auto object-contain" />
                       </div>
                     )}
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
