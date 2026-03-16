@@ -1,117 +1,105 @@
-import { Megaphone, AlertTriangle, Info, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Megaphone, Pin, ChevronRight } from "lucide-react";
 
 interface Announcement {
   id: number;
   title: string;
-  content: string;
-  type: "urgent" | "info" | "general";
-  date: string;
+  excerpt: string;
   author: string;
+  time: string;
+  isPinned?: boolean;
+  category: "general" | "urgent" | "event" | "reminder";
 }
 
 const announcements: Announcement[] = [
   {
     id: 1,
-    title: "School Closed Tomorrow",
-    content: "Due to weather conditions, the school will be closed tomorrow. All classes will be conducted online.",
-    type: "urgent",
-    date: "Today",
-    author: "Principal Office",
+    title: "School Assembly Tomorrow",
+    excerpt: "All students are required to attend the morning assembly at 8:30 AM in the main auditorium.",
+    author: "Principal Adams",
+    time: "2 hours ago",
+    isPinned: true,
+    category: "urgent",
   },
   {
     id: 2,
     title: "Science Fair Registration Open",
-    content: "Registration for the annual science fair is now open. Submit your project proposals by February 15th.",
-    type: "info",
-    date: "Yesterday",
+    excerpt: "Registration for the annual science fair is now open. Submit your projects by February 15th.",
     author: "Science Department",
+    time: "5 hours ago",
+    category: "event",
   },
   {
     id: 3,
-    title: "Parent-Teacher Conference",
-    content: "The upcoming parent-teacher conference is scheduled for next Friday. Please book your slots online.",
-    type: "general",
-    date: "2 days ago",
-    author: "Administration",
+    title: "Library Hours Extended",
+    excerpt: "The library will be open until 6 PM during exam week to accommodate student study needs.",
+    author: "Library Staff",
+    time: "Yesterday",
+    category: "general",
   },
   {
     id: 4,
-    title: "New Library Hours",
-    content: "Starting next week, the library will be open from 7 AM to 8 PM on weekdays.",
-    type: "info",
-    date: "3 days ago",
-    author: "Library",
+    title: "Sports Day Preparations",
+    excerpt: "Students participating in sports day should collect their team uniforms from the gym.",
+    author: "PE Department",
+    time: "2 days ago",
+    category: "reminder",
   },
 ];
 
-const typeStyles = {
-  urgent: {
-    container: "announcement-item announcement-urgent bg-destructive/5",
-    icon: <AlertTriangle className="h-4 w-4 text-destructive" />,
-    badge: "bg-destructive/10 text-destructive",
-  },
-  info: {
-    container: "announcement-item announcement-info",
-    icon: <Info className="h-4 w-4 text-primary" />,
-    badge: "bg-primary/10 text-primary",
-  },
-  general: {
-    container: "announcement-item bg-secondary/30",
-    icon: <Megaphone className="h-4 w-4 text-muted-foreground" />,
-    badge: "bg-muted text-muted-foreground",
-  },
+const categoryStyles = {
+  general: "bg-secondary text-secondary-foreground",
+  urgent: "bg-destructive/10 text-destructive",
+  event: "bg-primary/10 text-primary",
+  reminder: "bg-accent/10 text-accent-foreground",
 };
 
 const AnnouncementsList = () => {
   return (
-    <section id="announcements" className="card-elevated p-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+    <div className="card-elevated p-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <Megaphone className="h-5 w-5 text-primary" />
+          <Megaphone className="w-5 h-5 text-primary" />
           <h2 className="section-title">Announcements</h2>
         </div>
-        <Button variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/10">
-          View All
-          <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
+        <button className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+          See all
+        </button>
       </div>
 
-      <div className="space-y-3">
-        {announcements.map((announcement) => {
-          const styles = typeStyles[announcement.type];
-          return (
-            <article
-              key={announcement.id}
-              className={`${styles.container} cursor-pointer group`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5">{styles.icon}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {announcement.title}
-                    </h3>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide ${styles.badge}`}>
-                      {announcement.type}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                    {announcement.content}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{announcement.author}</span>
-                    <span>•</span>
-                    <span>{announcement.date}</span>
-                  </div>
+      <div className="space-y-4">
+        {announcements.map((announcement) => (
+          <article
+            key={announcement.id}
+            className="group p-4 rounded-lg bg-secondary/30 hover:bg-secondary/60 transition-all cursor-pointer border border-transparent hover:border-border"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  {announcement.isPinned && (
+                    <Pin className="w-3.5 h-3.5 text-accent-foreground shrink-0" />
+                  )}
+                  <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                    {announcement.title}
+                  </h3>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1" />
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                  {announcement.excerpt}
+                </p>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>{announcement.author}</span>
+                  <span>•</span>
+                  <span>{announcement.time}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide ml-auto ${categoryStyles[announcement.category]}`}>
+                    {announcement.category}
+                  </span>
+                </div>
               </div>
-            </article>
-          );
-        })}
+              <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0 mt-1" />
+            </div>
+          </article>
+        ))}
       </div>
-    </section>
+    </div>
   );
 };
 
