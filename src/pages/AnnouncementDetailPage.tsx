@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, X, Pencil, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, X, Pencil, Image as ImageIcon, Trash2 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -93,6 +93,21 @@ const AnnouncementDetailPage = () => {
       } catch { /* ignore */ }
       navigate(`/class/${className}`);
     }, 400);
+  };
+
+  const handleDeleteImage = (imgIndex: number) => {
+    if (!announcement) return;
+    const currentImgs = getImages(announcement);
+    const newImgs = currentImgs.filter((_, i) => i !== imgIndex);
+    const updated = announcements.map(a =>
+      a.id === announcementId
+        ? { ...a, image: undefined, images: newImgs.length > 0 ? newImgs : undefined }
+        : a
+    );
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    } catch { /* ignore */ }
+    setAnnouncements(updated);
   };
 
   const openEdit = () => {
@@ -210,10 +225,20 @@ const AnnouncementDetailPage = () => {
               {imgs.map((img, i) => (
                 <div
                   key={i}
-                  className="rounded-lg overflow-hidden border border-border cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => { setViewingImage(img); setImageViewOpen(true); }}
+                  className="relative group/img rounded-lg overflow-hidden border border-border"
                 >
-                  <img src={img} alt="" className="w-full max-h-48 object-contain" />
+                  <img
+                    src={img} alt=""
+                    className="w-full max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => { setViewingImage(img); setImageViewOpen(true); }}
+                  />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteImage(i); }}
+                    className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity"
+                    title="Delete image"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
                 </div>
               ))}
             </div>

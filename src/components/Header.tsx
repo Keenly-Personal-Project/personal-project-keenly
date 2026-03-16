@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Popover,
   PopoverContent,
@@ -34,6 +34,46 @@ const Header = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const headerRef = useRef<HTMLDivElement>(null);
+  const initialDprRef = useRef<number>(window.devicePixelRatio);
+
+  // Counter-scale header to resist browser zoom
+  const updateHeaderScale = useCallback(() => {
+    if (!headerRef.current) return;
+    const currentDpr = window.devicePixelRatio;
+    const zoomFactor = currentDpr / initialDprRef.current;
+    if (Math.abs(zoomFactor - 1) > 0.01) {
+      const scale = 1 / zoomFactor;
+      headerRef.current.style.transform = `scale(${scale})`;
+      headerRef.current.style.transformOrigin = 'top left';
+      headerRef.current.style.width = `${100 * zoomFactor}%`;
+      headerRef.current.style.height = `${64 * scale}px`;
+    } else {
+      headerRef.current.style.transform = '';
+      headerRef.current.style.transformOrigin = '';
+      headerRef.current.style.width = '';
+      headerRef.current.style.height = '';
+    }
+  }, []);
+
+  useEffect(() => {
+    // Listen for zoom changes via resize + matchMedia
+    const mediaQuery = window.matchMedia(`(resolution: ${initialDprRef.current}dppx)`);
+    const handleChange = () => {
+      updateHeaderScale();
+    };
+    
+    window.addEventListener('resize', handleChange);
+    mediaQuery.addEventListener?.('change', handleChange);
+    
+    // Initial check
+    updateHeaderScale();
+
+    return () => {
+      window.removeEventListener('resize', handleChange);
+      mediaQuery.removeEventListener?.('change', handleChange);
+    };
+  }, [updateHeaderScale]);
 
   const handleLogoClick = () => {
     if (location.pathname === '/') return;
@@ -111,7 +151,7 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
-      <div className="flex h-16 items-center justify-between px-[1cm] max-[768px]:px-4" style={{ zoom: 1, transform: 'none' }}>
+      <div ref={headerRef} className="flex h-16 items-center justify-between px-[1cm] max-[768px]:px-4">
         {/* Logo - left */}
         <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary cursor-pointer shrink-0" onClick={handleLogoClick}>
           <span className="text-primary-foreground text-lg font-bold leading-none">|&lt;</span>
