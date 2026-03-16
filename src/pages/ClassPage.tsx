@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X } from "lucide-react";
+import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, ChevronRight } from "lucide-react";
 
 const sidebarTabs = [
   "Announcements",
@@ -141,28 +141,37 @@ const ClassPage = () => {
         announcements.length === 0 ? (
           <p className="text-sm text-muted-foreground italic text-center py-8">No announcements yet. Add one to get started.</p>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="space-y-4">
             {announcements.map((ann) => (
-              <button
+              <article
                 key={ann.id}
                 onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
-                className="w-full text-left border border-foreground/30 rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer flex items-center gap-4 min-h-[5rem]"
+                className="group p-4 rounded-lg bg-secondary/30 hover:bg-secondary/60 transition-all cursor-pointer border border-transparent hover:border-border"
               >
-                <div className="w-12 h-12 rounded-md border border-border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                  {ann.image ? (
-                    <img src={ann.image} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                  )}
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      {ann.image && (
+                        <div className="w-8 h-8 rounded-md overflow-hidden shrink-0">
+                          <img src={ann.image} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                        {ann.brief}
+                      </h3>
+                    </div>
+                    {ann.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                        {ann.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{formatDate(ann.date)}</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0 mt-1" />
                 </div>
-                <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                  <p className="text-sm text-foreground font-medium">{ann.brief}</p>
-                  {ann.description && (
-                    <p className="text-muted-foreground truncate" style={{ fontSize: '7px', lineHeight: '1.3' }}>{ann.description}</p>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground shrink-0">{formatDate(ann.date)}</span>
-              </button>
+              </article>
             ))}
           </div>
         ),
