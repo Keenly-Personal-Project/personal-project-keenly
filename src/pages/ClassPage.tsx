@@ -53,6 +53,7 @@ const ClassPage = () => {
   const [newDescription, setNewDescription] = useState("");
   const [newImage, setNewImage] = useState("");
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
