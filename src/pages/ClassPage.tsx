@@ -107,9 +107,7 @@ const ClassPage = () => {
     (cls: { name: string }) => cls.name.toLowerCase().replace(/\s+/g, "-") === slug
   );
   const displayName = matchedClass?.name || slug.replace(/-/g, " ");
-  
 
-  const [imageUploading, setImageUploading] = useState(false);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
