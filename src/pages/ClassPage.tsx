@@ -1,6 +1,7 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ const ClassPage = () => {
   const [newDescription, setNewDescription] = useState("");
   const [newImage, setNewImage] = useState("");
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
@@ -73,7 +75,18 @@ const ClassPage = () => {
   }, [activeTab, notesKey]);
 
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(announcements));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(announcements));
+    } catch (e) {
+      console.warn("LocalStorage quota exceeded for announcements. Clearing images from stored data.");
+      // Store without images to avoid quota issues
+      const withoutImages = announcements.map(a => ({ ...a, image: undefined }));
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(withoutImages));
+      } catch {
+        console.error("Still cannot save announcements to localStorage");
+      }
+    }
   }, [announcements, storageKey]);
 
   useEffect(() => {
@@ -94,14 +107,27 @@ const ClassPage = () => {
     (cls: { name: string }) => cls.name.toLowerCase().replace(/\s+/g, "-") === slug
   );
   const displayName = matchedClass?.name || slug.replace(/-/g, " ");
-  
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setNewImage(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    setImageUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `announcements/${slug}/${Date.now()}.${fileExt}`;
+      const { error } = await supabase.storage.from('note-attachments').upload(filePath, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('note-attachments').getPublicUrl(filePath);
+      setNewImage(urlData.publicUrl);
+    } catch (err) {
+      console.error("Image upload failed, falling back to base64", err);
+      const reader = new FileReader();
+      reader.onload = (ev) => setNewImage(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } finally {
+      setImageUploading(false);
+    }
   };
 
   const handleAddAnnouncement = () => {
