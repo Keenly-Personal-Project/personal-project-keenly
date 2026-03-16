@@ -151,11 +151,6 @@ const ClassPage = () => {
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      {ann.image && (
-                        <div className="w-8 h-8 rounded-md overflow-hidden shrink-0">
-                          <img src={ann.image} alt="" className="w-full h-full object-cover" />
-                        </div>
-                      )}
                       <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
                         {ann.brief}
                       </h3>
@@ -164,6 +159,11 @@ const ClassPage = () => {
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                         {ann.description}
                       </p>
+                    )}
+                    {ann.image && (
+                      <div className="w-full max-h-48 rounded-lg overflow-hidden mb-2">
+                        <img src={ann.image} alt="" className="w-full h-full object-cover" />
+                      </div>
                     )}
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span>{formatDate(ann.date)}</span>
