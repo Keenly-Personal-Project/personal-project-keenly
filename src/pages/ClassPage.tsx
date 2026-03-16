@@ -108,12 +108,27 @@ const ClassPage = () => {
   const displayName = matchedClass?.name || slug.replace(/-/g, " ");
   
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [imageUploading, setImageUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setNewImage(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    setImageUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `announcements/${slug}/${Date.now()}.${fileExt}`;
+      const { error } = await supabase.storage.from('note-attachments').upload(filePath, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('note-attachments').getPublicUrl(filePath);
+      setNewImage(urlData.publicUrl);
+    } catch (err) {
+      console.error("Image upload failed, falling back to base64", err);
+      const reader = new FileReader();
+      reader.onload = (ev) => setNewImage(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } finally {
+      setImageUploading(false);
+    }
   };
 
   const handleAddAnnouncement = () => {
