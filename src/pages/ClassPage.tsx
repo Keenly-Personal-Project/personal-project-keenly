@@ -34,6 +34,7 @@ interface Note {
   title: string;
   content: string;
   color?: string;
+  publisherEmail?: string;
 }
 
 function formatDate(d?: string) {
@@ -47,6 +48,21 @@ function getImages(ann: Announcement): string[] {
   if (ann.images && ann.images.length > 0) return ann.images;
   if (ann.image) return [ann.image];
   return [];
+}
+
+function PublisherBadge({ email }: { email: string }) {
+  const name = email.split("@")[0];
+  const initials = name.slice(0, 2).toUpperCase();
+  return (
+    <div className="flex items-center gap-2 mb-2">
+      <Avatar className="h-6 w-6">
+        <AvatarFallback className="bg-primary text-primary-foreground text-[9px] font-semibold">
+          {initials}
+        </AvatarFallback>
+      </Avatar>
+      <span className="text-xs font-medium text-muted-foreground">{name}</span>
+    </div>
+  );
 }
 
 const ClassPage = () => {
@@ -181,24 +197,15 @@ const ClassPage = () => {
           <div className="space-y-4">
             {announcements.map((ann) => {
               const email = ann.publisherEmail || user?.email || "";
-              const name = email.split("@")[0];
-              const initials = name.slice(0, 2).toUpperCase();
               const imgs = getImages(ann);
 
               return (
                 <article
                   key={ann.id}
                   onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
-                  className="group p-4 rounded-lg bg-muted/50 hover:bg-muted transition-all cursor-pointer border border-primary/20 hover:border-primary/40 max-h-[28rem] overflow-hidden"
+                  className="group p-4 rounded-lg bg-muted/50 hover:bg-muted transition-all cursor-pointer border border-primary/30 hover:border-primary/50 max-h-[28rem] overflow-hidden"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="bg-primary text-primary-foreground text-[9px] font-semibold">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs font-medium text-muted-foreground">{name}</span>
-                  </div>
+                  <PublisherBadge email={email} />
 
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
@@ -247,33 +254,37 @@ const ClassPage = () => {
 
       return contentWrapper(
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {notes.map((note) => (
-            <button
-              key={note.id}
-              onClick={() => navigate(`/class/${className}/note/${note.id}`)}
-              className="aspect-square rounded-xl border-2 p-5 text-left overflow-hidden hover:opacity-80 transition-all cursor-pointer flex flex-col"
-              style={{
-                backgroundColor: note.color ? note.color + "15" : undefined,
-                borderColor: note.color || "hsl(var(--border))",
-              }}
-            >
-              <p className="text-sm font-bold underline underline-offset-2 mb-2 shrink-0" style={{ color: note.color || "hsl(var(--foreground))" }}>
-                {note.title || "Untitled"}
-              </p>
-              <p className="text-muted-foreground text-xs leading-relaxed line-clamp-[10] flex-1 overflow-hidden">
-                {(() => {
-                  try {
-                    const parsed = JSON.parse(note.content);
-                    if (Array.isArray(parsed)) {
-                      const textBlock = parsed.find((b: any) => b.type === "text" && b.data?.content?.trim());
-                      return textBlock ? textBlock.data.content.trim().substring(0, 200) : "Empty note...";
-                    }
-                  } catch {}
-                  return note.content || "Empty note...";
-                })()}
-              </p>
-            </button>
-          ))}
+          {notes.map((note) => {
+            const noteEmail = note.publisherEmail || user?.email || "";
+            return (
+              <button
+                key={note.id}
+                onClick={() => navigate(`/class/${className}/note/${note.id}`)}
+                className="rounded-xl border-2 p-5 text-left overflow-hidden hover:opacity-80 transition-all cursor-pointer flex flex-col"
+                style={{
+                  backgroundColor: note.color ? note.color + "15" : undefined,
+                  borderColor: note.color || "hsl(var(--border))",
+                }}
+              >
+                <PublisherBadge email={noteEmail} />
+                <p className="text-sm font-bold underline underline-offset-2 mb-2 shrink-0" style={{ color: note.color || "hsl(var(--foreground))" }}>
+                  {note.title || "Untitled"}
+                </p>
+                <p className="text-muted-foreground text-xs leading-relaxed line-clamp-[8] flex-1 overflow-hidden">
+                  {(() => {
+                    try {
+                      const parsed = JSON.parse(note.content);
+                      if (Array.isArray(parsed)) {
+                        const textBlock = parsed.find((b: any) => b.type === "text" && b.data?.content?.trim());
+                        return textBlock ? textBlock.data.content.trim().substring(0, 200) : "Empty note...";
+                      }
+                    } catch {}
+                    return note.content || "Empty note...";
+                  })()}
+                </p>
+              </button>
+            );
+          })}
           <button
             onClick={handleAddNote}
             className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -287,13 +298,19 @@ const ClassPage = () => {
     }
     if (activeTab === "Meeting Recordings") {
       return contentWrapper(
-        <p className="text-muted-foreground text-sm italic text-center py-8">No meeting recordings yet.</p>,
+        <div>
+          <PublisherBadge email={user?.email || "Unknown"} />
+          <p className="text-muted-foreground text-sm italic text-center py-8">No meeting recordings yet.</p>
+        </div>,
         "Meeting Recordings"
       );
     }
     if (activeTab === "Events List") {
       return contentWrapper(
-        <p className="text-muted-foreground text-sm italic text-center py-8">No events yet.</p>,
+        <div>
+          <PublisherBadge email={user?.email || "Unknown"} />
+          <p className="text-muted-foreground text-sm italic text-center py-8">No events yet.</p>
+        </div>,
         "Events List"
       );
     }
