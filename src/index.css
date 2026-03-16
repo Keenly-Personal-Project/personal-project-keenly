@@ -103,11 +103,6 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  /* Header stays fixed size regardless of browser zoom */
-  header.sticky {
-    zoom: 1 !important;
-    -moz-transform: none !important;
-  }
 }
 
 @layer components {
