@@ -254,12 +254,14 @@ const ClassPage = () => {
               <button
                 key={note.id}
                 onClick={() => navigate(`/class/${className}/note/${note.id}`)}
-                className="rounded-xl border-[3px] p-5 text-left overflow-hidden hover:opacity-80 transition-all cursor-pointer flex flex-col"
+                className="rounded-xl p-5 text-left overflow-hidden hover:opacity-80 transition-all cursor-pointer flex flex-col"
                 style={{
-                  backgroundColor: note.color ? (note.color.includes("gradient") ? undefined : note.color + "15") : undefined,
-                  ...(note.color?.includes("gradient")
-                    ? { borderImage: `${note.color} 1`, borderImageSlice: 1 }
-                    : { borderColor: note.color || "hsl(var(--border))" }),
+                  background: note.color?.includes("gradient")
+                    ? `padding-box linear-gradient(hsl(var(--background)), hsl(var(--background))), border-box ${note.color}`
+                    : undefined,
+                  border: note.color?.includes("gradient")
+                    ? "3px solid transparent"
+                    : `3px solid ${note.color || "hsl(var(--border))"}`,
                 }}
               >
                 <PublisherBadge email={noteEmail} />
