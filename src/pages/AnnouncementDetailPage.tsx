@@ -183,7 +183,7 @@ const AnnouncementDetailPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container py-6 px-4 max-w-2xl">
+      <main className="container py-6 px-4 max-w-4xl">
         <Button variant="ghost" onClick={() => navigate(`/class/${className}`)} className="mb-4 gap-2">
           <ArrowLeft className="h-4 w-4" /> Back to {displayName}
         </Button>
