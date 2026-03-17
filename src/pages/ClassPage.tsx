@@ -203,41 +203,35 @@ const ClassPage = () => {
                 <article
                   key={ann.id}
                   onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
-                  className="group p-4 rounded-lg bg-muted/50 hover:bg-muted transition-all cursor-pointer border-2 border-primary hover:border-primary/80 max-h-[28rem] overflow-hidden"
+                  className="group p-5 rounded-lg bg-muted/40 hover:bg-muted/60 transition-all cursor-pointer border-2 border-primary hover:border-primary/80 overflow-hidden"
                 >
                   <PublisherBadge email={email} />
 
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium text-foreground break-words group-hover:text-primary transition-colors" style={{ overflowWrap: 'anywhere' }}>
-                          {ann.brief}
-                        </h3>
-                      </div>
-                      {ann.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2 break-words" style={{ overflowWrap: 'anywhere' }}>
-                          {ann.description}
-                        </p>
-                      )}
-                      {imgs.length > 0 && (
-                        <div className="flex gap-2 mb-2 overflow-hidden">
-                          {imgs.slice(0, 3).map((img, i) => (
-                            <div key={i} className="w-20 h-20 rounded-md overflow-hidden border border-border shrink-0">
-                              <img src={img} alt="" className="w-full h-full object-cover" />
-                            </div>
-                          ))}
-                          {imgs.length > 3 && (
-                            <div className="w-20 h-20 rounded-md border border-border shrink-0 flex items-center justify-center bg-muted">
-                              <span className="text-xs text-muted-foreground font-medium">+{imgs.length - 3}</span>
-                            </div>
-                          )}
+                  <h3 className="font-bold text-foreground underline underline-offset-2 break-words mb-1" style={{ overflowWrap: 'anywhere' }}>
+                    {ann.brief}
+                  </h3>
+
+                  {ann.description && (
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3 break-words" style={{ overflowWrap: 'anywhere' }}>
+                      {ann.description}
+                    </p>
+                  )}
+
+                  {imgs.length > 0 && (
+                    <div className={`grid gap-2 mb-2 ${imgs.length === 1 ? 'grid-cols-1 max-w-md' : imgs.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                      {imgs.slice(0, 3).map((img, i) => (
+                        <div key={i} className="rounded-md overflow-hidden border border-border bg-muted/30">
+                          <img src={img} alt="" className="w-full object-contain max-h-64" />
                         </div>
-                      )}
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span>{formatDate(ann.date)}</span>
-                      </div>
+                      ))}
                     </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0 mt-1" />
+                  )}
+                  {imgs.length > 3 && (
+                    <p className="text-xs text-muted-foreground mb-2">+{imgs.length - 3} more image{imgs.length - 3 > 1 ? 's' : ''}</p>
+                  )}
+
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>{formatDate(ann.date)}</span>
                   </div>
                 </article>
               );
