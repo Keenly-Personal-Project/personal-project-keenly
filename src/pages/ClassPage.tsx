@@ -212,7 +212,7 @@ const ClassPage = () => {
                   </h3>
 
                   {ann.description && (
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-3 break-words" style={{ overflowWrap: 'anywhere' }}>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3 break-words line-clamp-3" style={{ overflowWrap: 'anywhere' }}>
                       {ann.description}
                     </p>
                   )}
