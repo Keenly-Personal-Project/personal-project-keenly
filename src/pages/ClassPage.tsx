@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, ChevronRight } from "lucide-react";
+import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const sidebarTabs = [
