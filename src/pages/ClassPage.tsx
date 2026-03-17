@@ -203,7 +203,7 @@ const ClassPage = () => {
                 <article
                   key={ann.id}
                   onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
-                  className="group p-4 rounded-lg bg-muted/50 hover:bg-muted transition-all cursor-pointer border border-primary/30 hover:border-primary/50 max-h-[28rem] overflow-hidden"
+                  className="group p-4 rounded-lg bg-muted/50 hover:bg-muted transition-all cursor-pointer border-2 border-primary hover:border-primary/80 max-h-[28rem] overflow-hidden"
                 >
                   <PublisherBadge email={email} />
 
