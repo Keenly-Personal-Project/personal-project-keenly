@@ -254,14 +254,17 @@ const ClassPage = () => {
               <button
                 key={note.id}
                 onClick={() => navigate(`/class/${className}/note/${note.id}`)}
-                className="rounded-xl p-5 text-left overflow-hidden hover:opacity-80 transition-all cursor-pointer flex flex-col"
+                className="p-5 text-left hover:opacity-80 transition-all cursor-pointer flex flex-col"
                 style={{
+                  borderRadius: "0.75rem",
+                  WebkitBorderRadius: "0.75rem",
                   background: note.color?.includes("gradient")
-                    ? `padding-box linear-gradient(hsl(var(--background)), hsl(var(--background))), border-box ${note.color}`
+                    ? `linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, ${note.color} border-box`
                     : undefined,
                   border: note.color?.includes("gradient")
                     ? "3px solid transparent"
                     : `3px solid ${note.color || "hsl(var(--border))"}`,
+                  overflow: "hidden",
                 }}
               >
                 <PublisherBadge email={noteEmail} />
