@@ -260,7 +260,7 @@ const ClassPage = () => {
               <button
                 key={note.id}
                 onClick={() => navigate(`/class/${className}/note/${note.id}`)}
-                className="rounded-xl border-2 p-5 text-left overflow-hidden hover:opacity-80 transition-all cursor-pointer flex flex-col"
+                className="rounded-xl border-[3px] p-5 text-left overflow-hidden hover:opacity-80 transition-all cursor-pointer flex flex-col"
                 style={{
                   backgroundColor: note.color ? (note.color.includes("gradient") ? undefined : note.color + "15") : undefined,
                   ...(note.color?.includes("gradient")
