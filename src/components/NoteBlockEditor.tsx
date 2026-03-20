@@ -5,6 +5,7 @@ import EditableChart, { ChartType, ChartDataItem, DataSet } from "@/components/E
 import ImageViewer from "@/components/ImageViewer";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TextFormat, defaultTextFormat } from "@/components/TextFormattingToolbar";
 
 export interface NoteBlock {
   id: string;
@@ -19,12 +20,26 @@ export interface NoteBlockEditorHandle {
 interface NoteBlockEditorProps {
   blocks: NoteBlock[];
   onChange: (blocks: NoteBlock[]) => void;
+  textFormat?: TextFormat;
 }
 
-const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(({ blocks, onChange }, ref) => {
+const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(({ blocks, onChange, textFormat }, ref) => {
   const focusedBlockRef = useRef<string | null>(null);
   const cursorPosRef = useRef<number>(0);
   const textareaRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+
+  const fmt = textFormat || defaultTextFormat;
+
+  const textStyle: React.CSSProperties = {
+    fontSize: `${fmt.fontSize}px`,
+    lineHeight: fmt.lineHeight,
+    fontWeight: fmt.bold ? "bold" : "normal",
+    fontStyle: fmt.italic ? "italic" : "normal",
+    textDecoration: fmt.underline ? "underline" : "none",
+    textAlign: fmt.align,
+    color: fmt.color || undefined,
+    backgroundColor: fmt.backgroundColor || undefined,
+  };
 
   const updateBlock = (id: string, data: any) => {
     onChange(blocks.map((b) => (b.id === id ? { ...b, data } : b)));
@@ -69,7 +84,6 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
             newBlocks.push(blocks[i]);
           }
         }
-        // If before and after were both empty, just insert the block
         if (!before.trim() && !after.trim()) {
           const filtered = newBlocks.filter(b => b.id !== focusedId || b.type !== "text" || b.data.content.trim());
           onChange(filtered.length > 0 ? filtered : [block]);
@@ -77,14 +91,13 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
           onChange(newBlocks);
         }
       } else {
-        // No focused text block, append
         onChange([...blocks, block]);
       }
     },
   }), [blocks, onChange]);
 
   return (
-    <div className="space-y-0">
+    <div className="card-elevated p-4 sm:p-6 space-y-0">
       {blocks.map((block) => (
         <div key={block.id}>
           {block.type === "text" && (
@@ -97,8 +110,8 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
               onClick={(e) => handleTextSelect(block.id, e.target as HTMLTextAreaElement)}
               onKeyUp={(e) => handleTextSelect(block.id, e.target as HTMLTextAreaElement)}
               placeholder="Start writing..."
-              className="min-h-[40px] border-none shadow-none focus-visible:ring-0 px-0 resize-none text-base leading-relaxed"
-              style={{ height: 'auto', overflow: 'hidden' }}
+              className="min-h-[40px] border-none shadow-none focus-visible:ring-0 px-0 resize-none"
+              style={{ ...textStyle, height: 'auto', overflow: 'hidden' }}
               onInput={(e) => {
                 const el = e.target as HTMLTextAreaElement;
                 el.style.height = 'auto';
@@ -108,7 +121,7 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
           )}
 
           {block.type === "image" && (
-            <div className="group relative rounded-lg overflow-hidden border border-border my-1">
+            <div className="group relative rounded-lg overflow-hidden border border-border my-2">
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/80 text-destructive" onClick={() => deleteBlock(block.id)}>
                   <Trash2 className="h-3.5 w-3.5" />
@@ -123,28 +136,32 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
           )}
 
           {block.type === "table" && (
-            <EditableTable
-              headers={block.data.headers}
-              rows={block.data.rows}
-              onChange={(headers, rows) => updateBlock(block.id, { headers, rows })}
-              onDelete={() => deleteBlock(block.id)}
-            />
+            <div className="my-2">
+              <EditableTable
+                headers={block.data.headers}
+                rows={block.data.rows}
+                onChange={(headers, rows) => updateBlock(block.id, { headers, rows })}
+                onDelete={() => deleteBlock(block.id)}
+              />
+            </div>
           )}
 
           {block.type === "chart" && (
-            <EditableChart
-              chartType={block.data.chartType}
-              data={block.data.data}
-              datasets={block.data.datasets}
-              labels={block.data.labels}
-              curveType={block.data.curveType}
-              onChange={(chartType, data, extra) => updateBlock(block.id, { chartType, data, ...extra })}
-              onDelete={() => deleteBlock(block.id)}
-            />
+            <div className="my-2">
+              <EditableChart
+                chartType={block.data.chartType}
+                data={block.data.data}
+                datasets={block.data.datasets}
+                labels={block.data.labels}
+                curveType={block.data.curveType}
+                onChange={(chartType, data, extra) => updateBlock(block.id, { chartType, data, ...extra })}
+                onDelete={() => deleteBlock(block.id)}
+              />
+            </div>
           )}
 
           {block.type === "video" && (
-            <div className="group relative rounded-lg overflow-hidden border border-border my-1">
+            <div className="group relative rounded-lg overflow-hidden border border-border my-2">
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/80 text-destructive" onClick={() => deleteBlock(block.id)}>
                   <Trash2 className="h-3.5 w-3.5" />
@@ -169,7 +186,7 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
           )}
 
           {block.type === "audio" && (
-            <div className="group relative rounded-lg border border-border my-1 p-3">
+            <div className="group relative rounded-lg border border-border my-2 p-3">
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/80 text-destructive" onClick={() => deleteBlock(block.id)}>
                   <Trash2 className="h-3.5 w-3.5" />
@@ -183,13 +200,12 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
           )}
 
           {block.type === "file" && (
-            <div className="group relative rounded-lg border border-border my-1 p-3">
+            <div className="group relative rounded-lg border border-border my-2 p-3">
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/80 text-destructive" onClick={() => deleteBlock(block.id)}>
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              {/* Inline preview for supported file types */}
               {block.data.mimeType?.startsWith("application/pdf") && (
                 <iframe
                   src={block.data.src}
@@ -239,7 +255,8 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
           }}
           onFocus={() => { focusedBlockRef.current = null; }}
           placeholder="Start writing..."
-          className="min-h-[40px] border-none shadow-none focus-visible:ring-0 px-0 resize-none text-base leading-relaxed"
+          className="min-h-[40px] border-none shadow-none focus-visible:ring-0 px-0 resize-none"
+          style={{ ...textStyle, height: 'auto' }}
         />
       )}
     </div>
