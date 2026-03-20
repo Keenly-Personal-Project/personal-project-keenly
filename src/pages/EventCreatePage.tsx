@@ -18,6 +18,7 @@ interface EventItem {
   description: string;
   images?: string[];
   color?: string;
+  textColor?: string;
   date?: string;
   publisherEmail?: string;
   publisherAvatar?: string | null;
