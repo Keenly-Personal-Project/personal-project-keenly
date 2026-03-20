@@ -253,11 +253,14 @@ const SettingsPage = () => {
               {bgUrl ? (
                 <div className="space-y-4">
                   <div className="relative rounded-lg overflow-hidden border border-border h-40">
-                    <img
-                      src={bgUrl}
-                      alt="Background preview"
-                      className="w-full h-full object-cover"
-                      style={{ filter: `blur(${bgBlur * 0.2}px)` }}
+                    <div
+                      className="w-full h-full"
+                      style={{
+                        backgroundImage: `url(${bgUrl})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: `${bgPosX}% ${bgPosY}%`,
+                        filter: `blur(${bgBlur * 0.2}px)`,
+                      }}
                     />
                     <button
                       onClick={handleRemoveBg}
@@ -271,13 +274,21 @@ const SettingsPage = () => {
                       <Label className="text-sm">Blur</Label>
                       <span className="text-xs text-muted-foreground">{bgBlur}%</span>
                     </div>
-                    <Slider
-                      value={[bgBlur]}
-                      onValueChange={handleBlurChange}
-                      min={0}
-                      max={100}
-                      step={1}
-                    />
+                    <Slider value={[bgBlur]} onValueChange={handleBlurChange} min={0} max={100} step={1} />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Horizontal Position</Label>
+                      <span className="text-xs text-muted-foreground">{bgPosX}%</span>
+                    </div>
+                    <Slider value={[bgPosX]} onValueChange={handlePosXChange} min={0} max={100} step={1} />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Vertical Position</Label>
+                      <span className="text-xs text-muted-foreground">{bgPosY}%</span>
+                    </div>
+                    <Slider value={[bgPosY]} onValueChange={handlePosYChange} min={0} max={100} step={1} />
                   </div>
                   <Button variant="outline" size="sm" onClick={() => bgInputRef.current?.click()} className="gap-2">
                     <Upload className="h-3.5 w-3.5" /> Change Image
