@@ -169,6 +169,7 @@ const ClassPage = () => {
       images: newImages.length > 0 ? newImages : undefined,
       date: newDate ? new Date(newDate).toISOString() : new Date().toISOString(),
       publisherEmail: user?.email || "Unknown",
+      publisherAvatar: profile?.avatar_url || null,
     };
     setAnnouncements(prev => [newAnn, ...prev]);
     setNewBrief("");
