@@ -2,6 +2,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ interface EventItem {
   title: string;
   description: string;
   images?: string[];
+  color?: string;
   date?: string;
   publisherEmail?: string;
   publisherAvatar?: string | null;
@@ -123,8 +125,12 @@ const ClassPage = () => {
     e.stopPropagation();
     setFavoritedEvents(prev => {
       const next = new Set(prev);
-      if (next.has(eventId)) next.delete(eventId);
-      else next.add(eventId);
+      const wasFav = next.has(eventId);
+      if (wasFav) next.delete(eventId);
+      else {
+        next.add(eventId);
+        toast("Saved for you");
+      }
       localStorage.setItem(favKey, JSON.stringify([...next]));
       return next;
     });
@@ -361,10 +367,23 @@ const ClassPage = () => {
             {events.map((ev) => {
               const email = ev.publisherEmail || user?.email || "";
               const isFav = favoritedEvents.has(ev.id);
+              const evColor = ev.color || "hsl(var(--border))";
+              const isGradient = evColor.includes("gradient");
               return (
                 <div
                   key={ev.id}
-                  className="rounded-lg border border-border bg-card overflow-hidden flex flex-col"
+                  onClick={() => navigate(`/class/${className}/event/${ev.id}`)}
+                  className="overflow-hidden flex flex-col cursor-pointer hover:opacity-90 transition-all"
+                  style={{
+                    borderRadius: "0.75rem",
+                    background: isGradient
+                      ? `linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, ${evColor} border-box`
+                      : undefined,
+                    border: isGradient
+                      ? "3px solid transparent"
+                      : `3px solid ${evColor}`,
+                    backgroundColor: isGradient ? undefined : "hsl(var(--card))",
+                  }}
                 >
                   {/* Publisher badge */}
                   <div className="flex items-center gap-2 px-4 pt-4">

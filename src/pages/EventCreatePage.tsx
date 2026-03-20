@@ -9,16 +9,31 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, Image as ImageIcon, X } from "lucide-react";
+import NoteColorPicker from "@/components/NoteColorPicker";
+import { toast } from "sonner";
+
+interface EventItem {
+  id: string;
+  title: string;
+  description: string;
+  images?: string[];
+  color?: string;
+  date?: string;
+  publisherEmail?: string;
+  publisherAvatar?: string | null;
+}
 
 const EventCreatePage = () => {
-  const { className } = useParams<{ className: string }>();
+  const { className, eventId } = useParams<{ className: string; eventId?: string }>();
   const { user, loading } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
+  const isEdit = !!eventId;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [color, setColor] = useState("hsl(175, 70%, 40%)");
   const [uploading, setUploading] = useState(false);
 
   const slug = decodeURIComponent(className || "");
@@ -27,6 +42,23 @@ const EventCreatePage = () => {
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
+
+  // Load existing event for editing
+  useEffect(() => {
+    if (isEdit) {
+      const saved = localStorage.getItem(eventsKey);
+      if (saved) {
+        const events: EventItem[] = JSON.parse(saved);
+        const found = events.find((e) => e.id === eventId);
+        if (found) {
+          setTitle(found.title);
+          setDescription(found.description);
+          setImages(found.images || []);
+          setColor(found.color || "hsl(175, 70%, 40%)");
+        }
+      }
+    }
+  }, [isEdit, eventId, eventsKey]);
 
   if (loading) {
     return (
@@ -65,18 +97,32 @@ const EventCreatePage = () => {
   const handlePublish = () => {
     if (!title.trim()) return;
     const saved = localStorage.getItem(eventsKey);
-    const events = saved ? JSON.parse(saved) : [];
-    const newEvent = {
-      id: Date.now().toString(),
-      title: title.trim(),
-      description: description.trim(),
-      images: images.length > 0 ? images : undefined,
-      date: new Date().toISOString(),
-      publisherEmail: user?.email || "Unknown",
-      publisherAvatar: profile?.avatar_url || null,
-    };
-    localStorage.setItem(eventsKey, JSON.stringify([newEvent, ...events]));
-    navigate(`/class/${className}?tab=Events%20List`);
+    const events: EventItem[] = saved ? JSON.parse(saved) : [];
+
+    if (isEdit) {
+      const updated = events.map((ev) =>
+        ev.id === eventId
+          ? { ...ev, title: title.trim(), description: description.trim(), images: images.length > 0 ? images : undefined, color }
+          : ev
+      );
+      localStorage.setItem(eventsKey, JSON.stringify(updated));
+      toast("Published");
+      navigate(`/class/${className}/event/${eventId}`);
+    } else {
+      const newEvent: EventItem = {
+        id: Date.now().toString(),
+        title: title.trim(),
+        description: description.trim(),
+        images: images.length > 0 ? images : undefined,
+        color,
+        date: new Date().toISOString(),
+        publisherEmail: user?.email || "Unknown",
+        publisherAvatar: profile?.avatar_url || null,
+      };
+      localStorage.setItem(eventsKey, JSON.stringify([newEvent, ...events]));
+      toast("Published");
+      navigate(`/class/${className}?tab=Events%20List`);
+    }
   };
 
   return (
@@ -89,8 +135,12 @@ const EventCreatePage = () => {
 
         <div className="space-y-6">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-1">Create New Event</h1>
-            <p className="text-sm text-muted-foreground">Fill in the details and publish your event</p>
+            <h1 className="text-2xl font-bold text-foreground mb-1">
+              {isEdit ? "Edit Event" : "Congrats for the Success!"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isEdit ? "Update your event details" : "Fill in the details and publish your event"}
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -126,8 +176,13 @@ const EventCreatePage = () => {
             <Textarea placeholder="Describe your event..." value={description} onChange={(e) => setDescription(e.target.value)} rows={5} />
           </div>
 
+          <div className="space-y-2">
+            <Label>Card Color</Label>
+            <NoteColorPicker value={color} onChange={setColor} />
+          </div>
+
           <Button onClick={handlePublish} disabled={!title.trim()} className="w-full h-12 text-base font-semibold">
-            Publish Event
+            {isEdit ? "Save Changes" : "Publish Event"}
           </Button>
         </div>
       </main>
