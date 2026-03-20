@@ -452,7 +452,7 @@ const ClassPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Header />
       <main className="container py-6 px-4">
         <Button variant="ghost" onClick={() => navigate('/')} className="mb-2 gap-2">

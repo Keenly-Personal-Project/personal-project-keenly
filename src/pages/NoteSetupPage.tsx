@@ -61,7 +61,7 @@ const NoteSetupPage = () => {
   const isGradient = selectedColor.startsWith("linear-gradient");
 
   return (
-    <div className="min-h-screen bg-background animate-fade-in">
+    <div className="min-h-screen animate-fade-in">
       <Header />
       <main className="container py-6 px-4 max-w-md mx-auto">
         <Button variant="ghost" onClick={() => navigate(`/class/${className}?tab=Notes%2FGuides`)} className="gap-2 mb-8">

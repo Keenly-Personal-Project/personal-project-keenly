@@ -130,7 +130,7 @@ const EventCreatePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background animate-fade-in">
+    <div className="min-h-screen animate-fade-in">
       <Header />
       <main className="container py-6 px-4 max-w-lg mx-auto">
         <Button variant="ghost" onClick={() => navigate(`/class/${className}?tab=Events%20List`)} className="gap-2 mb-6">

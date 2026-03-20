@@ -168,7 +168,7 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background animate-fade-in">
+    <div className="min-h-screen animate-fade-in">
       <Header />
       <main className="container py-6 px-4 max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
