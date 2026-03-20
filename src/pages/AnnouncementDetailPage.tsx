@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, X, Pencil, Image as ImageIcon, Trash2 } from "lucide-react";
+import ImageViewer from "@/components/ImageViewer";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -51,8 +52,6 @@ const AnnouncementDetailPage = () => {
   const [editDescription, setEditDescription] = useState("");
   const [editImages, setEditImages] = useState<string[]>([]);
   const [editDate, setEditDate] = useState("");
-  const [imageViewOpen, setImageViewOpen] = useState(false);
-  const [viewingImage, setViewingImage] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
 
   const slug = decodeURIComponent(className || "");
@@ -227,10 +226,10 @@ const AnnouncementDetailPage = () => {
                   key={i}
                   className="relative group/img rounded-lg overflow-hidden border border-border"
                 >
-                  <img
-                    src={img} alt=""
-                    className="w-full max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => { setViewingImage(img); setImageViewOpen(true); }}
+                  <ImageViewer
+                    src={img}
+                    alt=""
+                    imgClassName="w-full max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
                   />
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteImage(i); }}
@@ -246,12 +245,6 @@ const AnnouncementDetailPage = () => {
         </div>
       </main>
 
-      {/* Full image viewer */}
-      <Dialog open={imageViewOpen} onOpenChange={setImageViewOpen}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] p-2">
-          <img src={viewingImage} alt="" className="w-full h-full object-contain" />
-        </DialogContent>
-      </Dialog>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>

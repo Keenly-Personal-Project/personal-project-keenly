@@ -1,4 +1,4 @@
-import { Bell, Settings } from "lucide-react";
+import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -201,12 +201,7 @@ const Header = () => {
             </PopoverContent>
           </Popover>
           {user && (
-            <>
-              <Button variant="ghost" size="icon" title="Settings" onClick={() => navigate('/settings')}>
-                <Settings className="h-5 w-5" />
-              </Button>
-              <ProfileDropdown />
-            </>
+            <ProfileDropdown />
           )}
         </div>
       </div>
