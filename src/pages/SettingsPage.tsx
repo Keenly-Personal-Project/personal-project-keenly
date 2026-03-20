@@ -143,11 +143,27 @@ const SettingsPage = () => {
     localStorage.setItem(BG_BLUR_KEY, v.toString());
   };
 
+  const handlePosXChange = (val: number[]) => {
+    const v = val[0];
+    setBgPosX(v);
+    localStorage.setItem(BG_POSX_KEY, v.toString());
+  };
+
+  const handlePosYChange = (val: number[]) => {
+    const v = val[0];
+    setBgPosY(v);
+    localStorage.setItem(BG_POSY_KEY, v.toString());
+  };
+
   const handleRemoveBg = () => {
     localStorage.removeItem(BG_STORAGE_KEY);
     localStorage.removeItem(BG_BLUR_KEY);
+    localStorage.removeItem(BG_POSX_KEY);
+    localStorage.removeItem(BG_POSY_KEY);
     setBgUrl(null);
     setBgBlur(0);
+    setBgPosX(50);
+    setBgPosY(50);
     toast.success("Background removed.");
   };
 
