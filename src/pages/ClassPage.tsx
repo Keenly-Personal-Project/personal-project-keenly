@@ -136,6 +136,11 @@ const ClassPage = () => {
   }, [activeTab, notesKey]);
 
   useEffect(() => {
+    const saved = localStorage.getItem(eventsKey);
+    if (saved) setEvents(JSON.parse(saved));
+  }, [activeTab, eventsKey]);
+
+  useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(announcements));
     } catch (e) {
