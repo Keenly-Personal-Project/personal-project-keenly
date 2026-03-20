@@ -40,6 +40,16 @@ interface Note {
   publisherAvatar?: string | null;
 }
 
+interface EventItem {
+  id: string;
+  title: string;
+  description: string;
+  images?: string[];
+  date?: string;
+  publisherEmail?: string;
+  publisherAvatar?: string | null;
+}
+
 function formatDate(d?: string) {
   if (!d) return "";
   const dt = new Date(d);
