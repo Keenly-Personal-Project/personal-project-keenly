@@ -109,6 +109,27 @@ const ClassPage = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [events, setEvents] = useState<EventItem[]>(() => {
+    const saved = localStorage.getItem(eventsKey);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [favoritedEvents, setFavoritedEvents] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem(favKey);
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
+  const toggleFavorite = (eventId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFavoritedEvents(prev => {
+      const next = new Set(prev);
+      if (next.has(eventId)) next.delete(eventId);
+      else next.add(eventId);
+      localStorage.setItem(favKey, JSON.stringify([...next]));
+      return next;
+    });
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem(notesKey);
     if (saved) setNotes(JSON.parse(saved));
