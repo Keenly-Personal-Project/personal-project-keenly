@@ -16,7 +16,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Announcement {
   id: string;
@@ -26,6 +26,7 @@ interface Announcement {
   images?: string[];
   date?: string;
   publisherEmail?: string;
+  publisherAvatar?: string | null;
 }
 
 function formatDate(d?: string) {
@@ -191,6 +192,7 @@ const AnnouncementDetailPage = () => {
           {/* Publisher info */}
           <div className="flex items-center gap-2 mb-2">
             <Avatar className="h-7 w-7">
+              {announcement.publisherAvatar && <AvatarImage src={announcement.publisherAvatar} alt={publisherName} />}
               <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-semibold">
                 {publisherInitials}
               </AvatarFallback>

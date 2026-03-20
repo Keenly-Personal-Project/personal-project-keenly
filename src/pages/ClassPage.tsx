@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useProfile } from "@/hooks/useProfile";
 
 const sidebarTabs = [
   "Announcements",
@@ -27,6 +28,7 @@ interface Announcement {
   images?: string[];
   date?: string;
   publisherEmail?: string;
+  publisherAvatar?: string | null;
 }
 
 interface Note {
@@ -35,6 +37,7 @@ interface Note {
   content: string;
   color?: string;
   publisherEmail?: string;
+  publisherAvatar?: string | null;
 }
 
 function formatDate(d?: string) {
@@ -50,12 +53,13 @@ function getImages(ann: Announcement): string[] {
   return [];
 }
 
-function PublisherBadge({ email }: { email: string }) {
+function PublisherBadge({ email, avatarUrl }: { email: string; avatarUrl?: string | null }) {
   const name = email.split("@")[0];
   const initials = name.slice(0, 2).toUpperCase();
   return (
     <div className="flex items-center gap-2 mb-2">
       <Avatar className="h-6 w-6">
+        {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
         <AvatarFallback className="bg-primary text-primary-foreground text-[9px] font-semibold">
           {initials}
         </AvatarFallback>
@@ -68,6 +72,7 @@ function PublisherBadge({ email }: { email: string }) {
 const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
+  const { profile } = useProfile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "Announcements";
@@ -165,6 +170,7 @@ const ClassPage = () => {
       images: newImages.length > 0 ? newImages : undefined,
       date: newDate ? new Date(newDate).toISOString() : new Date().toISOString(),
       publisherEmail: user?.email || "Unknown",
+      publisherAvatar: profile?.avatar_url || null,
     };
     setAnnouncements(prev => [newAnn, ...prev]);
     setNewBrief("");
@@ -205,7 +211,7 @@ const ClassPage = () => {
                   onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
                   className="group p-5 rounded-lg bg-muted/40 hover:bg-muted/60 transition-all cursor-pointer border-2 border-primary hover:border-primary/80 overflow-hidden"
                 >
-                  <PublisherBadge email={email} />
+                  <PublisherBadge email={email} avatarUrl={ann.publisherAvatar} />
 
                   <h3 className="font-bold text-foreground underline underline-offset-2 break-words mb-1" style={{ overflowWrap: 'anywhere' }}>
                     {ann.brief}
@@ -267,7 +273,7 @@ const ClassPage = () => {
                   overflow: "hidden",
                 }}
               >
-                <PublisherBadge email={noteEmail} />
+                <PublisherBadge email={noteEmail} avatarUrl={note.publisherAvatar} />
                 <p className="text-sm font-bold underline underline-offset-2 mb-2 shrink-0" style={{ color: note.color || "hsl(var(--foreground))" }}>
                   {note.title || "Untitled"}
                 </p>
@@ -300,7 +306,7 @@ const ClassPage = () => {
     if (activeTab === "Meeting Recordings") {
       return contentWrapper(
         <div>
-          <PublisherBadge email={user?.email || "Unknown"} />
+          <PublisherBadge email={user?.email || "Unknown"} avatarUrl={profile?.avatar_url} />
           <p className="text-muted-foreground text-sm italic text-center py-8">No meeting recordings yet.</p>
         </div>,
         "Meeting Recordings"
@@ -309,7 +315,7 @@ const ClassPage = () => {
     if (activeTab === "Events List") {
       return contentWrapper(
         <div>
-          <PublisherBadge email={user?.email || "Unknown"} />
+          <PublisherBadge email={user?.email || "Unknown"} avatarUrl={profile?.avatar_url} />
           <p className="text-muted-foreground text-sm italic text-center py-8">No events yet.</p>
         </div>,
         "Events List"

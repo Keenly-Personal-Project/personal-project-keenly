@@ -36,8 +36,8 @@ const AVAILABILITY_CONFIG: Record<AvailabilityMode, { label: string; color: stri
   },
   offline: {
     label: "Offline",
-    color: "text-red-500",
-    dotClass: "bg-red-500",
+    color: "text-gray-400",
+    dotClass: "bg-gray-400",
     icon: <WifiOff className="h-4 w-4" />,
     desc: "Always appear offline to others",
   },
@@ -117,6 +117,7 @@ const ProfileDropdown = () => {
 
   const handleSaveTextStatus = async () => {
     await updateProfile({ text_status: textStatus });
+    setProfileEditOpen(false);
     toast({ title: "Status updated" });
   };
 
