@@ -20,6 +20,7 @@ interface Note {
 const NoteSetupPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
+  const { profile } = useProfile();
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [selectedColor, setSelectedColor] = useState("hsl(175, 70%, 40%)");
