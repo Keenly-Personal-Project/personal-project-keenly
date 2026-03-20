@@ -23,17 +23,19 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/class/:className" element={<ClassPage />} />
-            <Route path="/class/:className/announcement/:announcementId" element={<AnnouncementDetailPage />} />
-            <Route path="/class/:className/note/new" element={<NoteSetupPage />} />
-            <Route path="/class/:className/note/:noteId" element={<NoteEditorPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <BackgroundWrapper>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/class/:className" element={<ClassPage />} />
+              <Route path="/class/:className/announcement/:announcementId" element={<AnnouncementDetailPage />} />
+              <Route path="/class/:className/note/new" element={<NoteSetupPage />} />
+              <Route path="/class/:className/note/:noteId" element={<NoteEditorPage />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BackgroundWrapper>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
