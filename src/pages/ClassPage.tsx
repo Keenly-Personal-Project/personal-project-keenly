@@ -70,6 +70,7 @@ function PublisherBadge({ email, avatarUrl }: { email: string; avatarUrl?: strin
 const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
+  const { profile } = useProfile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "Announcements";
