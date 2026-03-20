@@ -358,7 +358,7 @@ const NoteEditorPage = () => {
         />
 
         {/* Insert toolbar */}
-        <div className="flex items-center gap-1 mb-3 border border-border rounded-lg p-1.5 bg-muted/30 flex-wrap">
+        <div className="flex items-center gap-1 mb-2 border border-border rounded-lg p-1.5 bg-muted/30 flex-wrap">
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
           <input ref={videoFileRef} type="file" accept="video/*" className="hidden" onChange={handleVideoFileUpload} />
           <input ref={audioFileRef} type="file" accept="audio/*" className="hidden" onChange={handleAudioFileUpload} />
@@ -393,8 +393,13 @@ const NoteEditorPage = () => {
           </Button>
         </div>
 
+        {/* Text formatting toolbar */}
+        <div className="border border-border rounded-lg p-1.5 bg-muted/30 mb-3">
+          <TextFormattingToolbar format={textFormat} onChange={setTextFormat} />
+        </div>
+
         <div className="min-h-[60vh]">
-          <NoteBlockEditor ref={editorRef} blocks={blocks} onChange={setBlocks} />
+          <NoteBlockEditor ref={editorRef} blocks={blocks} onChange={setBlocks} textFormat={textFormat} />
         </div>
       </main>
 
