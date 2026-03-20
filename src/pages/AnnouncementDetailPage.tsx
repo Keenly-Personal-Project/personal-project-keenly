@@ -245,29 +245,6 @@ const AnnouncementDetailPage = () => {
         </div>
       </main>
 
-      {/* Full image viewer with zoom */}
-      <Dialog open={imageViewOpen} onOpenChange={setImageViewOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] p-2 overflow-auto">
-          <div className="w-full h-full flex items-center justify-center overflow-auto">
-            <img
-              src={viewingImage}
-              alt=""
-              className="max-w-none cursor-zoom-in transition-transform"
-              style={{ objectFit: "contain", maxHeight: "90vh", maxWidth: "90vw" }}
-              onClick={(e) => {
-                const img = e.currentTarget;
-                if (img.style.transform === "scale(2)") {
-                  img.style.transform = "scale(1)";
-                  img.style.cursor = "zoom-in";
-                } else {
-                  img.style.transform = "scale(2)";
-                  img.style.cursor = "zoom-out";
-                }
-              }}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
