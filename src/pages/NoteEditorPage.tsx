@@ -118,6 +118,7 @@ const NoteEditorPage = () => {
   const audioFileRef = useRef<HTMLInputElement>(null);
   const genericFileRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<NoteBlockEditorHandle>(null);
+  const [textFormat, setTextFormat] = useState<TextFormat>(defaultTextFormat);
 
   const slug = decodeURIComponent(className || "");
   const notesKey = `keen_notes_${slug}`;
