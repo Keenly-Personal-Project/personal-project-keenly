@@ -1,21 +1,31 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  ArrowLeft, User, Palette, Bell, Shield, Info, Loader2, Check, Moon, Sun,
+  ArrowLeft, User, Palette, Bell, Shield, Info, Loader2, Check, Moon, Sun, Upload, X,
 } from "lucide-react";
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+const BG_STORAGE_KEY = "keen_custom_bg";
+const BG_BLUR_KEY = "keen_custom_bg_blur";
+
+export function getCustomBackground(): { url: string | null; blur: number } {
+  const url = localStorage.getItem(BG_STORAGE_KEY);
+  const blur = parseInt(localStorage.getItem(BG_BLUR_KEY) || "0", 10);
+  return { url, blur };
+}
 
 const SettingsPage = () => {
   const { user, loading, signOut } = useAuth();
@@ -32,6 +42,12 @@ const SettingsPage = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // Background
+  const [bgUrl, setBgUrl] = useState<string | null>(() => localStorage.getItem(BG_STORAGE_KEY));
+  const [bgBlur, setBgBlur] = useState<number>(() => parseInt(localStorage.getItem(BG_BLUR_KEY) || "0", 10));
+  const [bgUploading, setBgUploading] = useState(false);
+  const bgInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -83,8 +99,50 @@ const SettingsPage = () => {
   };
 
   const handleDeleteAccount = async () => {
-    // For safety, just sign out and notify
     toast.info("Please contact support to delete your account.");
+  };
+
+  const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBgUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `backgrounds/${user.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("note-attachments").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("note-attachments").getPublicUrl(path);
+      const url = urlData.publicUrl;
+      localStorage.setItem(BG_STORAGE_KEY, url);
+      setBgUrl(url);
+      toast.success("Background updated!");
+    } catch (err) {
+      // Fallback to base64
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const url = ev.target?.result as string;
+        localStorage.setItem(BG_STORAGE_KEY, url);
+        setBgUrl(url);
+        toast.success("Background updated!");
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setBgUploading(false);
+    }
+  };
+
+  const handleBlurChange = (val: number[]) => {
+    const v = val[0];
+    setBgBlur(v);
+    localStorage.setItem(BG_BLUR_KEY, v.toString());
+  };
+
+  const handleRemoveBg = () => {
+    localStorage.removeItem(BG_STORAGE_KEY);
+    localStorage.removeItem(BG_BLUR_KEY);
+    setBgUrl(null);
+    setBgBlur(0);
+    toast.success("Background removed.");
   };
 
   return (
@@ -163,6 +221,53 @@ const SettingsPage = () => {
                 </div>
                 <Switch checked={darkMode} onCheckedChange={toggleDarkMode} />
               </div>
+            </div>
+
+            {/* Background */}
+            <div className="card-elevated p-6 space-y-4">
+              <h2 className="text-lg font-semibold text-foreground mb-2">Custom Background</h2>
+              <p className="text-xs text-muted-foreground">Upload an image to use as your app background.</p>
+
+              {bgUrl ? (
+                <div className="space-y-4">
+                  <div className="relative rounded-lg overflow-hidden border border-border h-40">
+                    <img
+                      src={bgUrl}
+                      alt="Background preview"
+                      className="w-full h-full object-cover"
+                      style={{ filter: `blur(${bgBlur * 0.2}px)` }}
+                    />
+                    <button
+                      onClick={handleRemoveBg}
+                      className="absolute top-2 right-2 h-7 w-7 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:opacity-80 transition-opacity"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Blur</Label>
+                      <span className="text-xs text-muted-foreground">{bgBlur}%</span>
+                    </div>
+                    <Slider
+                      value={[bgBlur]}
+                      onValueChange={handleBlurChange}
+                      min={0}
+                      max={100}
+                      step={1}
+                    />
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => bgInputRef.current?.click()} className="gap-2">
+                    <Upload className="h-3.5 w-3.5" /> Change Image
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="outline" onClick={() => bgInputRef.current?.click()} disabled={bgUploading} className="gap-2">
+                  {bgUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  Upload Background Image
+                </Button>
+              )}
+              <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
             </div>
           </TabsContent>
 

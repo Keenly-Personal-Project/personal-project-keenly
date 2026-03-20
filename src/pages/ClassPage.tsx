@@ -51,12 +51,13 @@ function getImages(ann: Announcement): string[] {
   return [];
 }
 
-function PublisherBadge({ email }: { email: string }) {
+function PublisherBadge({ email, avatarUrl }: { email: string; avatarUrl?: string | null }) {
   const name = email.split("@")[0];
   const initials = name.slice(0, 2).toUpperCase();
   return (
     <div className="flex items-center gap-2 mb-2">
       <Avatar className="h-6 w-6">
+        {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
         <AvatarFallback className="bg-primary text-primary-foreground text-[9px] font-semibold">
           {initials}
         </AvatarFallback>

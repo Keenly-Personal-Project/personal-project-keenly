@@ -117,6 +117,7 @@ const ProfileDropdown = () => {
 
   const handleSaveTextStatus = async () => {
     await updateProfile({ text_status: textStatus });
+    setProfileEditOpen(false);
     toast({ title: "Status updated" });
   };
 
