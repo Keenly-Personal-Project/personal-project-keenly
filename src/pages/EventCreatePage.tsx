@@ -57,6 +57,7 @@ const EventCreatePage = () => {
           setDescription(found.description);
           setImages(found.images || []);
           setColor(found.color || "hsl(175, 70%, 40%)");
+          setTextColor(found.textColor || "#ffffff");
         }
       }
     }
