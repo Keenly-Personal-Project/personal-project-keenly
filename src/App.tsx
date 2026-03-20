@@ -12,6 +12,7 @@ import AnnouncementDetailPage from "./pages/AnnouncementDetailPage";
 import NoteEditorPage from "./pages/NoteEditorPage";
 import NoteSetupPage from "./pages/NoteSetupPage";
 import SettingsPage from "./pages/SettingsPage";
+import EventCreatePage from "./pages/EventCreatePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/class/:className/announcement/:announcementId" element={<AnnouncementDetailPage />} />
               <Route path="/class/:className/note/new" element={<NoteSetupPage />} />
               <Route path="/class/:className/note/:noteId" element={<NoteEditorPage />} />
+              <Route path="/class/:className/event/new" element={<EventCreatePage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

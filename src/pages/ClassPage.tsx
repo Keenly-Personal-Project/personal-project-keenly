@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X } from "lucide-react";
+import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, Heart } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -36,6 +36,16 @@ interface Note {
   title: string;
   content: string;
   color?: string;
+  publisherEmail?: string;
+  publisherAvatar?: string | null;
+}
+
+interface EventItem {
+  id: string;
+  title: string;
+  description: string;
+  images?: string[];
+  date?: string;
   publisherEmail?: string;
   publisherAvatar?: string | null;
 }
@@ -87,7 +97,8 @@ const ClassPage = () => {
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
   const notesKey = `keen_notes_${slug}`;
-
+  const eventsKey = `keen_events_${slug}`;
+  const favKey = `keen_event_favs_${slug}`;
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
@@ -98,10 +109,36 @@ const ClassPage = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [events, setEvents] = useState<EventItem[]>(() => {
+    const saved = localStorage.getItem(eventsKey);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [favoritedEvents, setFavoritedEvents] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem(favKey);
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
+  const toggleFavorite = (eventId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFavoritedEvents(prev => {
+      const next = new Set(prev);
+      if (next.has(eventId)) next.delete(eventId);
+      else next.add(eventId);
+      localStorage.setItem(favKey, JSON.stringify([...next]));
+      return next;
+    });
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem(notesKey);
     if (saved) setNotes(JSON.parse(saved));
   }, [activeTab, notesKey]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(eventsKey);
+    if (saved) setEvents(JSON.parse(saved));
+  }, [activeTab, eventsKey]);
 
   useEffect(() => {
     try {
@@ -185,8 +222,11 @@ const ClassPage = () => {
       <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 max-w-5xl min-h-[38rem]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          {title === "Announcements" && (
-            <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setAddDialogOpen(true)}>
+          {(title === "Announcements" || title === "Events List") && (
+            <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => {
+              if (title === "Events List") navigate(`/class/${className}/event/new`);
+              else setAddDialogOpen(true);
+            }}>
               <Plus className="h-3 w-3" /> Add
             </Button>
           )}
@@ -314,10 +354,69 @@ const ClassPage = () => {
     }
     if (activeTab === "Events List") {
       return contentWrapper(
-        <div>
-          <PublisherBadge email={user?.email || "Unknown"} avatarUrl={profile?.avatar_url} />
-          <p className="text-muted-foreground text-sm italic text-center py-8">No events yet.</p>
-        </div>,
+        events.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic text-center py-8">No events yet. Add one to get started.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {events.map((ev) => {
+              const email = ev.publisherEmail || user?.email || "";
+              const isFav = favoritedEvents.has(ev.id);
+              return (
+                <div
+                  key={ev.id}
+                  className="rounded-lg border border-border bg-card overflow-hidden flex flex-col"
+                >
+                  {/* Publisher badge */}
+                  <div className="flex items-center gap-2 px-4 pt-4">
+                    <Avatar className="h-8 w-8">
+                      {ev.publisherAvatar && <AvatarImage src={ev.publisherAvatar} alt={email} />}
+                      <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-semibold">
+                        {email.split("@")[0].slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-foreground leading-tight">{email.split("@")[0]}</span>
+                      <span className="text-[10px] text-muted-foreground leading-tight">{formatDate(ev.date)}</span>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-center font-bold text-foreground underline underline-offset-2 px-4 pt-3 pb-2 break-words" style={{ overflowWrap: "anywhere" }}>
+                    {ev.title}
+                  </h3>
+
+                  {/* Images */}
+                  {ev.images && ev.images.length > 0 && (
+                    <div className="px-4">
+                      <div className="rounded-md overflow-hidden border border-border">
+                        <img src={ev.images[0]} alt="" className="w-full object-cover max-h-48" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {ev.description && (
+                    <p className="text-sm text-muted-foreground leading-relaxed px-4 pt-3 break-words line-clamp-3" style={{ overflowWrap: "anywhere" }}>
+                      {ev.description}
+                    </p>
+                  )}
+
+                  {/* Favorite */}
+                  <div className="mt-auto px-4 pb-4 pt-3">
+                    <button
+                      onClick={(e) => toggleFavorite(ev.id, e)}
+                      className="transition-transform active:scale-90"
+                    >
+                      <Heart
+                        className={`h-5 w-5 transition-colors ${isFav ? "fill-destructive text-destructive" : "text-muted-foreground hover:text-foreground"}`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ),
         "Events List"
       );
     }
