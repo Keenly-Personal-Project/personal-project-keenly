@@ -52,8 +52,7 @@ const AnnouncementDetailPage = () => {
   const [editDescription, setEditDescription] = useState("");
   const [editImages, setEditImages] = useState<string[]>([]);
   const [editDate, setEditDate] = useState("");
-  const [imageViewOpen, setImageViewOpen] = useState(false);
-  const [viewingImage, setViewingImage] = useState("");
+  const [imageUploading, setImageUploading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
 
   const slug = decodeURIComponent(className || "");
