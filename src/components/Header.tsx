@@ -201,12 +201,7 @@ const Header = () => {
             </PopoverContent>
           </Popover>
           {user && (
-            <>
-              <Button variant="ghost" size="icon" title="Settings" onClick={() => navigate('/settings')}>
-                <Settings className="h-5 w-5" />
-              </Button>
-              <ProfileDropdown />
-            </>
+            <ProfileDropdown />
           )}
         </div>
       </div>
