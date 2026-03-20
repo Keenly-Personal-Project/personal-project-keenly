@@ -210,7 +210,7 @@ const ClassPage = () => {
                   onClick={() => navigate(`/class/${className}/announcement/${ann.id}`)}
                   className="group p-5 rounded-lg bg-muted/40 hover:bg-muted/60 transition-all cursor-pointer border-2 border-primary hover:border-primary/80 overflow-hidden"
                 >
-                  <PublisherBadge email={email} />
+                  <PublisherBadge email={email} avatarUrl={ann.publisherAvatar} />
 
                   <h3 className="font-bold text-foreground underline underline-offset-2 break-words mb-1" style={{ overflowWrap: 'anywhere' }}>
                     {ann.brief}
