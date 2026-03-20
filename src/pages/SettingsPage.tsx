@@ -20,11 +20,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 const BG_STORAGE_KEY = "keen_custom_bg";
 const BG_BLUR_KEY = "keen_custom_bg_blur";
+const BG_POSX_KEY = "keen_custom_bg_posx";
+const BG_POSY_KEY = "keen_custom_bg_posy";
 
-export function getCustomBackground(): { url: string | null; blur: number } {
+export function getCustomBackground(): { url: string | null; blur: number; posX: number; posY: number } {
   const url = localStorage.getItem(BG_STORAGE_KEY);
   const blur = parseInt(localStorage.getItem(BG_BLUR_KEY) || "0", 10);
-  return { url, blur };
+  const posX = parseInt(localStorage.getItem(BG_POSX_KEY) || "50", 10);
+  const posY = parseInt(localStorage.getItem(BG_POSY_KEY) || "50", 10);
+  return { url, blur, posX, posY };
 }
 
 const SettingsPage = () => {
