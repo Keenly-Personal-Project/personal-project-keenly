@@ -50,6 +50,8 @@ const NoteSetupPage = () => {
       title: title.trim(),
       content: "",
       color: selectedColor,
+      publisherEmail: user?.email || "Unknown",
+      publisherAvatar: profile?.avatar_url || null,
     };
     const updated = [newNote, ...notes];
     localStorage.setItem(notesKey, JSON.stringify(updated));
