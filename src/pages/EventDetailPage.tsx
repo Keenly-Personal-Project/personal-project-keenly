@@ -50,7 +50,7 @@ const EventDetailPage = () => {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         <Header />
         <main className="container py-6 px-4 max-w-2xl mx-auto text-center">
           <p className="text-muted-foreground py-16">Event not found.</p>
