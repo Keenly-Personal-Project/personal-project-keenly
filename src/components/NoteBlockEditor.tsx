@@ -114,11 +114,10 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <img
+              <ImageViewer
                 src={block.data.src}
                 alt={block.data.alt}
-                className="max-w-full h-auto max-h-96 object-contain mx-auto"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                imgClassName="max-w-full h-auto max-h-96 object-contain mx-auto cursor-pointer hover:opacity-90 transition-opacity"
               />
             </div>
           )}

@@ -227,10 +227,10 @@ const AnnouncementDetailPage = () => {
                   key={i}
                   className="relative group/img rounded-lg overflow-hidden border border-border"
                 >
-                  <img
-                    src={img} alt=""
-                    className="w-full max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => { setViewingImage(img); setImageViewOpen(true); }}
+                  <ImageViewer
+                    src={img}
+                    alt=""
+                    imgClassName="w-full max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
                   />
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteImage(i); }}
