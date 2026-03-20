@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import NoteColorPicker from "@/components/NoteColorPicker";
+import { useProfile } from "@/hooks/useProfile";
 
 interface Note {
   id: string;
   title: string;
   content: string;
   color?: string;
+  publisherEmail?: string;
+  publisherAvatar?: string | null;
 }
 
 const NoteSetupPage = () => {
