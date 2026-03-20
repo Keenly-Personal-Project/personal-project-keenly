@@ -166,7 +166,7 @@ const AnnouncementDetailPage = () => {
 
   if (!announcement) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         <Header />
         <main className="container py-6 px-4">
           <Button variant="ghost" onClick={() => navigate(`/class/${className}`)} className="mb-4 gap-2">
