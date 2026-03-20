@@ -37,6 +37,7 @@ interface Note {
   content: string;
   color?: string;
   publisherEmail?: string;
+  publisherAvatar?: string | null;
 }
 
 function formatDate(d?: string) {
