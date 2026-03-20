@@ -272,7 +272,7 @@ const ClassPage = () => {
                   overflow: "hidden",
                 }}
               >
-                <PublisherBadge email={noteEmail} />
+                <PublisherBadge email={noteEmail} avatarUrl={note.publisherAvatar} />
                 <p className="text-sm font-bold underline underline-offset-2 mb-2 shrink-0" style={{ color: note.color || "hsl(var(--foreground))" }}>
                   {note.title || "Untitled"}
                 </p>
