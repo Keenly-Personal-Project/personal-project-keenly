@@ -25,8 +25,6 @@ const EventDetailPage = () => {
   const eventsKey = `keen_events_${slug}`;
 
   const [event, setEvent] = useState<EventItem | null>(null);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [viewerIndex, setViewerIndex] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -90,12 +88,8 @@ const EventDetailPage = () => {
         {event.images && event.images.length > 0 && (
           <div className="space-y-3 mb-8">
             {event.images.map((img, i) => (
-              <div
-                key={i}
-                className="rounded-lg overflow-hidden border border-border cursor-pointer mx-auto max-w-xl"
-                onClick={() => { setViewerIndex(i); setViewerOpen(true); }}
-              >
-                <img src={img} alt="" className="w-full object-contain" />
+              <div key={i} className="mx-auto max-w-xl">
+                <ImageViewer src={img} alt={`Event image ${i + 1}`} imgClassName="w-full object-contain rounded-lg border border-border cursor-pointer hover:opacity-90 transition-opacity" />
               </div>
             ))}
           </div>
@@ -108,15 +102,6 @@ const EventDetailPage = () => {
           </div>
         )}
       </main>
-
-      {event.images && event.images.length > 0 && (
-        <ImageViewer
-          images={event.images}
-          initialIndex={viewerIndex}
-          open={viewerOpen}
-          onClose={() => setViewerOpen(false)}
-        />
-      )}
     </div>
   );
 };
