@@ -314,7 +314,7 @@ const ClassPage = () => {
     if (activeTab === "Events List") {
       return contentWrapper(
         <div>
-          <PublisherBadge email={user?.email || "Unknown"} />
+          <PublisherBadge email={user?.email || "Unknown"} avatarUrl={profile?.avatar_url} />
           <p className="text-muted-foreground text-sm italic text-center py-8">No events yet.</p>
         </div>,
         "Events List"
