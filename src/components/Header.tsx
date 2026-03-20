@@ -150,8 +150,8 @@ const Header = () => {
   const formattedDate = format(today, "EEEE, do MMMM, yyyy");
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
-      <div ref={headerRef} className="flex h-16 items-center justify-between px-[1cm] max-[768px]:px-4">
+    <header ref={headerRef} className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
+      <div className="flex h-16 items-center justify-between px-[1cm] max-[768px]:px-4">
         {/* Logo - left */}
         <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary cursor-pointer shrink-0" onClick={handleLogoClick}>
           <span className="text-primary-foreground text-lg font-bold leading-none">|&lt;</span>
