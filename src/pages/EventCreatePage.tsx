@@ -185,6 +185,19 @@ const EventCreatePage = () => {
             <NoteColorPicker value={color} onChange={setColor} />
           </div>
 
+          <div className="space-y-2">
+            <Label>Text Color</Label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={textColor}
+                onChange={(e) => setTextColor(e.target.value)}
+                className="h-9 w-12 rounded border border-border cursor-pointer"
+              />
+              <span className="text-sm text-muted-foreground">{textColor}</span>
+            </div>
+          </div>
+
           <Button onClick={handlePublish} disabled={!title.trim()} className="w-full h-12 text-base font-semibold">
             {isEdit ? "Save Changes" : "Publish Event"}
           </Button>
