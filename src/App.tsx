@@ -12,6 +12,7 @@ import AnnouncementDetailPage from "./pages/AnnouncementDetailPage";
 import NoteEditorPage from "./pages/NoteEditorPage";
 import NoteSetupPage from "./pages/NoteSetupPage";
 import SettingsPage from "./pages/SettingsPage";
+import EventCreatePage from "./pages/EventCreatePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
