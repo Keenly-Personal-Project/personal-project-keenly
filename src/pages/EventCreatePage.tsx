@@ -118,6 +118,7 @@ const EventCreatePage = () => {
         description: description.trim(),
         images: images.length > 0 ? images : undefined,
         color,
+        textColor,
         date: new Date().toISOString(),
         publisherEmail: user?.email || "Unknown",
         publisherAvatar: profile?.avatar_url || null,
