@@ -192,6 +192,7 @@ const AnnouncementDetailPage = () => {
           {/* Publisher info */}
           <div className="flex items-center gap-2 mb-2">
             <Avatar className="h-7 w-7">
+              {announcement.publisherAvatar && <AvatarImage src={announcement.publisherAvatar} alt={publisherName} />}
               <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-semibold">
                 {publisherInitials}
               </AvatarFallback>
