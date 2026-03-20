@@ -9,6 +9,7 @@ import NoteBlockEditor, {
   blocksToContent,
 } from "@/components/NoteBlockEditor";
 import NoteColorPicker from "@/components/NoteColorPicker";
+import TextFormattingToolbar, { TextFormat, defaultTextFormat } from "@/components/TextFormattingToolbar";
 import { ChartType } from "@/components/EditableChart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
