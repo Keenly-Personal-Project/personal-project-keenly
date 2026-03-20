@@ -354,10 +354,69 @@ const ClassPage = () => {
     }
     if (activeTab === "Events List") {
       return contentWrapper(
-        <div>
-          <PublisherBadge email={user?.email || "Unknown"} avatarUrl={profile?.avatar_url} />
-          <p className="text-muted-foreground text-sm italic text-center py-8">No events yet.</p>
-        </div>,
+        events.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic text-center py-8">No events yet. Add one to get started.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {events.map((ev) => {
+              const email = ev.publisherEmail || user?.email || "";
+              const isFav = favoritedEvents.has(ev.id);
+              return (
+                <div
+                  key={ev.id}
+                  className="rounded-lg border border-border bg-card overflow-hidden flex flex-col"
+                >
+                  {/* Publisher badge */}
+                  <div className="flex items-center gap-2 px-4 pt-4">
+                    <Avatar className="h-8 w-8">
+                      {ev.publisherAvatar && <AvatarImage src={ev.publisherAvatar} alt={email} />}
+                      <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-semibold">
+                        {email.split("@")[0].slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-foreground leading-tight">{email.split("@")[0]}</span>
+                      <span className="text-[10px] text-muted-foreground leading-tight">{formatDate(ev.date)}</span>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-center font-bold text-foreground underline underline-offset-2 px-4 pt-3 pb-2 break-words" style={{ overflowWrap: "anywhere" }}>
+                    {ev.title}
+                  </h3>
+
+                  {/* Images */}
+                  {ev.images && ev.images.length > 0 && (
+                    <div className="px-4">
+                      <div className="rounded-md overflow-hidden border border-border">
+                        <img src={ev.images[0]} alt="" className="w-full object-cover max-h-48" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {ev.description && (
+                    <p className="text-sm text-muted-foreground leading-relaxed px-4 pt-3 break-words line-clamp-3" style={{ overflowWrap: "anywhere" }}>
+                      {ev.description}
+                    </p>
+                  )}
+
+                  {/* Favorite */}
+                  <div className="mt-auto px-4 pb-4 pt-3">
+                    <button
+                      onClick={(e) => toggleFavorite(ev.id, e)}
+                      className="transition-transform active:scale-90"
+                    >
+                      <Heart
+                        className={`h-5 w-5 transition-colors ${isFav ? "fill-destructive text-destructive" : "text-muted-foreground hover:text-foreground"}`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ),
         "Events List"
       );
     }
