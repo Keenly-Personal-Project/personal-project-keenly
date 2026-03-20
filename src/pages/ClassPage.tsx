@@ -367,10 +367,23 @@ const ClassPage = () => {
             {events.map((ev) => {
               const email = ev.publisherEmail || user?.email || "";
               const isFav = favoritedEvents.has(ev.id);
+              const evColor = ev.color || "hsl(var(--border))";
+              const isGradient = evColor.includes("gradient");
               return (
                 <div
                   key={ev.id}
-                  className="rounded-lg border border-border bg-card overflow-hidden flex flex-col"
+                  onClick={() => navigate(`/class/${className}/event/${ev.id}`)}
+                  className="overflow-hidden flex flex-col cursor-pointer hover:opacity-90 transition-all"
+                  style={{
+                    borderRadius: "0.75rem",
+                    background: isGradient
+                      ? `linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, ${evColor} border-box`
+                      : undefined,
+                    border: isGradient
+                      ? "3px solid transparent"
+                      : `3px solid ${evColor}`,
+                    backgroundColor: isGradient ? undefined : "hsl(var(--card))",
+                  }}
                 >
                   {/* Publisher badge */}
                   <div className="flex items-center gap-2 px-4 pt-4">
