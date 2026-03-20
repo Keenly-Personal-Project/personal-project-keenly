@@ -36,6 +36,7 @@ const EventCreatePage = () => {
   const [images, setImages] = useState<string[]>([]);
   const [color, setColor] = useState("hsl(175, 70%, 40%)");
   const [textColor, setTextColor] = useState("#ffffff");
+  const [uploading, setUploading] = useState(false);
 
   const slug = decodeURIComponent(className || "");
   const eventsKey = `keen_events_${slug}`;
