@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   Popover,
   PopoverContent,
@@ -34,46 +34,6 @@ const Header = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const headerRef = useRef<HTMLDivElement>(null);
-  const initialDprRef = useRef<number>(window.devicePixelRatio);
-
-  // Counter-scale header to resist browser zoom
-  const updateHeaderScale = useCallback(() => {
-    if (!headerRef.current) return;
-    const currentDpr = window.devicePixelRatio;
-    const zoomFactor = currentDpr / initialDprRef.current;
-    if (Math.abs(zoomFactor - 1) > 0.01) {
-      const scale = 1 / zoomFactor;
-      headerRef.current.style.transform = `scale(${scale})`;
-      headerRef.current.style.transformOrigin = 'top left';
-      headerRef.current.style.width = `${100 * zoomFactor}%`;
-      headerRef.current.style.height = `${64 * scale}px`;
-    } else {
-      headerRef.current.style.transform = '';
-      headerRef.current.style.transformOrigin = '';
-      headerRef.current.style.width = '';
-      headerRef.current.style.height = '';
-    }
-  }, []);
-
-  useEffect(() => {
-    // Listen for zoom changes via resize + matchMedia
-    const mediaQuery = window.matchMedia(`(resolution: ${initialDprRef.current}dppx)`);
-    const handleChange = () => {
-      updateHeaderScale();
-    };
-    
-    window.addEventListener('resize', handleChange);
-    mediaQuery.addEventListener?.('change', handleChange);
-    
-    // Initial check
-    updateHeaderScale();
-
-    return () => {
-      window.removeEventListener('resize', handleChange);
-      mediaQuery.removeEventListener?.('change', handleChange);
-    };
-  }, [updateHeaderScale]);
 
   const handleLogoClick = () => {
     if (location.pathname === '/') return;
@@ -150,26 +110,26 @@ const Header = () => {
   const formattedDate = format(today, "EEEE, do MMMM, yyyy");
 
   return (
-    <header ref={headerRef} className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
-      <div className="flex h-16 items-center justify-between px-[1cm] max-[768px]:px-4">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
+      <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 md:px-8 lg:px-[1cm]">
         {/* Logo - left */}
-        <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary cursor-pointer shrink-0" onClick={handleLogoClick}>
-          <span className="text-primary-foreground text-lg font-bold leading-none">|&lt;</span>
+        <div className="inline-flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary cursor-pointer shrink-0" onClick={handleLogoClick}>
+          <span className="text-primary-foreground text-sm sm:text-lg font-bold leading-none">|&lt;</span>
         </div>
 
         {/* Date - center */}
-        <div className="absolute left-1/2 -translate-x-1/2">
-          <span className="text-2xl md:text-3xl text-foreground font-bold" style={{ fontFamily: "'Amatic SC', cursive" }}>
+        <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
+          <span className="text-lg sm:text-2xl md:text-3xl text-foreground font-bold whitespace-nowrap" style={{ fontFamily: "'Amatic SC', cursive" }}>
             {formattedDate}
           </span>
         </div>
 
-        {/* Icons - right: Notifications, Settings, Profile */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Icons - right */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative" title="Notifications">
-                <Bell className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-10 sm:w-10" title="Notifications">
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
                 {notifications.length > 0 && (
                   <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
                 )}
