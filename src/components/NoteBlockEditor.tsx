@@ -2,6 +2,7 @@ import React, { useRef, useCallback, useImperativeHandle, forwardRef } from "rea
 import { Textarea } from "@/components/ui/textarea";
 import EditableTable from "@/components/EditableTable";
 import EditableChart, { ChartType, ChartDataItem, DataSet } from "@/components/EditableChart";
+import ImageViewer from "@/components/ImageViewer";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
