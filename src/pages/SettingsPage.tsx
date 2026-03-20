@@ -20,11 +20,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 const BG_STORAGE_KEY = "keen_custom_bg";
 const BG_BLUR_KEY = "keen_custom_bg_blur";
+const BG_POSX_KEY = "keen_custom_bg_posx";
+const BG_POSY_KEY = "keen_custom_bg_posy";
 
-export function getCustomBackground(): { url: string | null; blur: number } {
+export function getCustomBackground(): { url: string | null; blur: number; posX: number; posY: number } {
   const url = localStorage.getItem(BG_STORAGE_KEY);
   const blur = parseInt(localStorage.getItem(BG_BLUR_KEY) || "0", 10);
-  return { url, blur };
+  const posX = parseInt(localStorage.getItem(BG_POSX_KEY) || "50", 10);
+  const posY = parseInt(localStorage.getItem(BG_POSY_KEY) || "50", 10);
+  return { url, blur, posX, posY };
 }
 
 const SettingsPage = () => {
@@ -46,6 +50,8 @@ const SettingsPage = () => {
   // Background
   const [bgUrl, setBgUrl] = useState<string | null>(() => localStorage.getItem(BG_STORAGE_KEY));
   const [bgBlur, setBgBlur] = useState<number>(() => parseInt(localStorage.getItem(BG_BLUR_KEY) || "0", 10));
+  const [bgPosX, setBgPosX] = useState<number>(() => parseInt(localStorage.getItem(BG_POSX_KEY) || "50", 10));
+  const [bgPosY, setBgPosY] = useState<number>(() => parseInt(localStorage.getItem(BG_POSY_KEY) || "50", 10));
   const [bgUploading, setBgUploading] = useState(false);
   const bgInputRef = useRef<HTMLInputElement>(null);
 
@@ -137,16 +143,32 @@ const SettingsPage = () => {
     localStorage.setItem(BG_BLUR_KEY, v.toString());
   };
 
+  const handlePosXChange = (val: number[]) => {
+    const v = val[0];
+    setBgPosX(v);
+    localStorage.setItem(BG_POSX_KEY, v.toString());
+  };
+
+  const handlePosYChange = (val: number[]) => {
+    const v = val[0];
+    setBgPosY(v);
+    localStorage.setItem(BG_POSY_KEY, v.toString());
+  };
+
   const handleRemoveBg = () => {
     localStorage.removeItem(BG_STORAGE_KEY);
     localStorage.removeItem(BG_BLUR_KEY);
+    localStorage.removeItem(BG_POSX_KEY);
+    localStorage.removeItem(BG_POSY_KEY);
     setBgUrl(null);
     setBgBlur(0);
+    setBgPosX(50);
+    setBgPosY(50);
     toast.success("Background removed.");
   };
 
   return (
-    <div className="min-h-screen bg-background animate-fade-in">
+    <div className="min-h-screen animate-fade-in">
       <Header />
       <main className="container py-6 px-4 max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
@@ -231,11 +253,14 @@ const SettingsPage = () => {
               {bgUrl ? (
                 <div className="space-y-4">
                   <div className="relative rounded-lg overflow-hidden border border-border h-40">
-                    <img
-                      src={bgUrl}
-                      alt="Background preview"
-                      className="w-full h-full object-cover"
-                      style={{ filter: `blur(${bgBlur * 0.2}px)` }}
+                    <div
+                      className="w-full h-full"
+                      style={{
+                        backgroundImage: `url(${bgUrl})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: `${bgPosX}% ${bgPosY}%`,
+                        filter: `blur(${bgBlur * 0.2}px)`,
+                      }}
                     />
                     <button
                       onClick={handleRemoveBg}
@@ -249,13 +274,21 @@ const SettingsPage = () => {
                       <Label className="text-sm">Blur</Label>
                       <span className="text-xs text-muted-foreground">{bgBlur}%</span>
                     </div>
-                    <Slider
-                      value={[bgBlur]}
-                      onValueChange={handleBlurChange}
-                      min={0}
-                      max={100}
-                      step={1}
-                    />
+                    <Slider value={[bgBlur]} onValueChange={handleBlurChange} min={0} max={100} step={1} />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Horizontal Position</Label>
+                      <span className="text-xs text-muted-foreground">{bgPosX}%</span>
+                    </div>
+                    <Slider value={[bgPosX]} onValueChange={handlePosXChange} min={0} max={100} step={1} />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Vertical Position</Label>
+                      <span className="text-xs text-muted-foreground">{bgPosY}%</span>
+                    </div>
+                    <Slider value={[bgPosY]} onValueChange={handlePosYChange} min={0} max={100} step={1} />
                   </div>
                   <Button variant="outline" size="sm" onClick={() => bgInputRef.current?.click()} className="gap-2">
                     <Upload className="h-3.5 w-3.5" /> Change Image

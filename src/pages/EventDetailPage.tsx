@@ -50,7 +50,7 @@ const EventDetailPage = () => {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         <Header />
         <main className="container py-6 px-4 max-w-2xl mx-auto text-center">
           <p className="text-muted-foreground py-16">Event not found.</p>
@@ -65,7 +65,7 @@ const EventDetailPage = () => {
   const isOwner = event.publisherEmail === user?.email;
 
   return (
-    <div className="min-h-screen bg-background animate-fade-in">
+    <div className="min-h-screen animate-fade-in">
       <Header />
       <main className="container py-6 px-4 max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">

@@ -18,6 +18,7 @@ interface EventItem {
   description: string;
   images?: string[];
   color?: string;
+  textColor?: string;
   date?: string;
   publisherEmail?: string;
   publisherAvatar?: string | null;
@@ -34,6 +35,7 @@ const EventCreatePage = () => {
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [color, setColor] = useState("hsl(175, 70%, 40%)");
+  const [textColor, setTextColor] = useState("#ffffff");
   const [uploading, setUploading] = useState(false);
 
   const slug = decodeURIComponent(className || "");
@@ -55,6 +57,7 @@ const EventCreatePage = () => {
           setDescription(found.description);
           setImages(found.images || []);
           setColor(found.color || "hsl(175, 70%, 40%)");
+          setTextColor(found.textColor || "#ffffff");
         }
       }
     }
@@ -102,7 +105,7 @@ const EventCreatePage = () => {
     if (isEdit) {
       const updated = events.map((ev) =>
         ev.id === eventId
-          ? { ...ev, title: title.trim(), description: description.trim(), images: images.length > 0 ? images : undefined, color }
+          ? { ...ev, title: title.trim(), description: description.trim(), images: images.length > 0 ? images : undefined, color, textColor }
           : ev
       );
       localStorage.setItem(eventsKey, JSON.stringify(updated));
@@ -115,6 +118,7 @@ const EventCreatePage = () => {
         description: description.trim(),
         images: images.length > 0 ? images : undefined,
         color,
+        textColor,
         date: new Date().toISOString(),
         publisherEmail: user?.email || "Unknown",
         publisherAvatar: profile?.avatar_url || null,
@@ -126,7 +130,7 @@ const EventCreatePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background animate-fade-in">
+    <div className="min-h-screen animate-fade-in">
       <Header />
       <main className="container py-6 px-4 max-w-lg mx-auto">
         <Button variant="ghost" onClick={() => navigate(`/class/${className}?tab=Events%20List`)} className="gap-2 mb-6">
@@ -179,6 +183,19 @@ const EventCreatePage = () => {
           <div className="space-y-2">
             <Label>Card Color</Label>
             <NoteColorPicker value={color} onChange={setColor} />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Text Color</Label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={textColor}
+                onChange={(e) => setTextColor(e.target.value)}
+                className="h-9 w-12 rounded border border-border cursor-pointer"
+              />
+              <span className="text-sm text-muted-foreground">{textColor}</span>
+            </div>
           </div>
 
           <Button onClick={handlePublish} disabled={!title.trim()} className="w-full h-12 text-base font-semibold">

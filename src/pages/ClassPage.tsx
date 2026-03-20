@@ -47,6 +47,7 @@ interface EventItem {
   description: string;
   images?: string[];
   color?: string;
+  textColor?: string;
   date?: string;
   publisherEmail?: string;
   publisherAvatar?: string | null;
@@ -367,8 +368,9 @@ const ClassPage = () => {
             {events.map((ev) => {
               const email = ev.publisherEmail || user?.email || "";
               const isFav = favoritedEvents.has(ev.id);
-              const evColor = ev.color || "hsl(var(--border))";
+              const evColor = ev.color || "hsl(var(--primary))";
               const isGradient = evColor.includes("gradient");
+              const textCol = ev.textColor || undefined;
               return (
                 <div
                   key={ev.id}
@@ -376,38 +378,33 @@ const ClassPage = () => {
                   className="overflow-hidden flex flex-col cursor-pointer hover:opacity-90 transition-all"
                   style={{
                     borderRadius: "0.75rem",
-                    background: isGradient
-                      ? `linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, ${evColor} border-box`
-                      : undefined,
-                    border: isGradient
-                      ? "3px solid transparent"
-                      : `3px solid ${evColor}`,
-                    backgroundColor: isGradient ? undefined : "hsl(var(--card))",
+                    background: isGradient ? evColor : evColor,
+                    color: textCol,
                   }}
                 >
                   {/* Publisher badge */}
                   <div className="flex items-center gap-2 px-4 pt-4">
                     <Avatar className="h-8 w-8">
                       {ev.publisherAvatar && <AvatarImage src={ev.publisherAvatar} alt={email} />}
-                      <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-semibold">
+                      <AvatarFallback className="bg-background/30 text-inherit text-[10px] font-semibold">
                         {email.split("@")[0].slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <span className="text-xs font-medium text-foreground leading-tight">{email.split("@")[0]}</span>
-                      <span className="text-[10px] text-muted-foreground leading-tight">{formatDate(ev.date)}</span>
+                      <span className="text-xs font-medium leading-tight" style={{ color: textCol || "inherit" }}>{email.split("@")[0]}</span>
+                      <span className="text-[10px] leading-tight opacity-70" style={{ color: textCol || "inherit" }}>{formatDate(ev.date)}</span>
                     </div>
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-center font-bold text-foreground underline underline-offset-2 px-4 pt-3 pb-2 break-words" style={{ overflowWrap: "anywhere" }}>
+                  <h3 className="text-center font-bold underline underline-offset-2 px-4 pt-3 pb-2 break-words" style={{ overflowWrap: "anywhere", color: textCol || "inherit" }}>
                     {ev.title}
                   </h3>
 
                   {/* Images */}
                   {ev.images && ev.images.length > 0 && (
                     <div className="px-4">
-                      <div className="rounded-md overflow-hidden border border-border">
+                      <div className="rounded-md overflow-hidden">
                         <img src={ev.images[0]} alt="" className="w-full object-cover max-h-48" />
                       </div>
                     </div>
@@ -415,7 +412,7 @@ const ClassPage = () => {
 
                   {/* Description */}
                   {ev.description && (
-                    <p className="text-sm text-muted-foreground leading-relaxed px-4 pt-3 break-words line-clamp-3" style={{ overflowWrap: "anywhere" }}>
+                    <p className="text-sm leading-relaxed px-4 pt-3 break-words line-clamp-3 opacity-80" style={{ overflowWrap: "anywhere", color: textCol || "inherit" }}>
                       {ev.description}
                     </p>
                   )}
@@ -427,7 +424,8 @@ const ClassPage = () => {
                       className="transition-transform active:scale-90"
                     >
                       <Heart
-                        className={`h-5 w-5 transition-colors ${isFav ? "fill-destructive text-destructive" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`h-5 w-5 transition-colors ${isFav ? "fill-destructive text-destructive" : "opacity-60 hover:opacity-100"}`}
+                        style={{ color: isFav ? undefined : (textCol || "currentColor") }}
                       />
                     </button>
                   </div>
@@ -454,7 +452,7 @@ const ClassPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Header />
       <main className="container py-6 px-4">
         <Button variant="ghost" onClick={() => navigate('/')} className="mb-2 gap-2">

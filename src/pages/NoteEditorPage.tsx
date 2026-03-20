@@ -319,7 +319,7 @@ const NoteEditorPage = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-background animate-fade-in ${isDeleting ? "animate-fade-out" : ""}`}>
+    <div className={`min-h-screen animate-fade-in ${isDeleting ? "animate-fade-out" : ""}`}>
       <Header />
       <main className="container py-6 px-4 max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-6">
