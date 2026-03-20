@@ -125,8 +125,12 @@ const ClassPage = () => {
     e.stopPropagation();
     setFavoritedEvents(prev => {
       const next = new Set(prev);
-      if (next.has(eventId)) next.delete(eventId);
-      else next.add(eventId);
+      const wasFav = next.has(eventId);
+      if (wasFav) next.delete(eventId);
+      else {
+        next.add(eventId);
+        toast("Saved for you");
+      }
       localStorage.setItem(favKey, JSON.stringify([...next]));
       return next;
     });
