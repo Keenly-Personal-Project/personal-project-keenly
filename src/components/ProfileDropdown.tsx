@@ -21,7 +21,7 @@ interface StoredAccount {
 
 const AVAILABILITY_CONFIG: Record<AvailabilityMode, { label: string; color: string; dotClass: string; icon: React.ReactNode; desc: string }> = {
   live: {
-    label: "Available",
+    label: "Live",
     color: "text-green-500",
     dotClass: "bg-green-500",
     icon: <Wifi className="h-4 w-4" />,
