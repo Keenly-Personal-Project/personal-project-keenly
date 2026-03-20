@@ -35,6 +35,8 @@ const App = () => (
               <Route path="/class/:className/note/new" element={<NoteSetupPage />} />
               <Route path="/class/:className/note/:noteId" element={<NoteEditorPage />} />
               <Route path="/class/:className/event/new" element={<EventCreatePage />} />
+              <Route path="/class/:className/event/:eventId" element={<EventDetailPage />} />
+              <Route path="/class/:className/event/:eventId/edit" element={<EventCreatePage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

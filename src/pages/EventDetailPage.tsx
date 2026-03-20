@@ -1,0 +1,124 @@
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
+import Header from "@/components/Header";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Loader2, Pencil } from "lucide-react";
+import ImageViewer from "@/components/ImageViewer";
+
+interface EventItem {
+  id: string;
+  title: string;
+  description: string;
+  images?: string[];
+  color?: string;
+  date?: string;
+  publisherEmail?: string;
+  publisherAvatar?: string | null;
+}
+
+const EventDetailPage = () => {
+  const { className, eventId } = useParams<{ className: string; eventId: string }>();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const slug = decodeURIComponent(className || "");
+  const eventsKey = `keen_events_${slug}`;
+
+  const [event, setEvent] = useState<EventItem | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
+
+  useEffect(() => {
+    if (!loading && !user) navigate("/auth");
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(eventsKey);
+    if (saved) {
+      const events: EventItem[] = JSON.parse(saved);
+      const found = events.find((e) => e.id === eventId);
+      if (found) setEvent(found);
+    }
+  }, [eventsKey, eventId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (!user) return null;
+
+  if (!event) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container py-6 px-4 max-w-2xl mx-auto text-center">
+          <p className="text-muted-foreground py-16">Event not found.</p>
+          <Button variant="ghost" onClick={() => navigate(`/class/${className}?tab=Events%20List`)}>
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back to Events
+          </Button>
+        </main>
+      </div>
+    );
+  }
+
+  const isOwner = event.publisherEmail === user?.email;
+
+  return (
+    <div className="min-h-screen bg-background animate-fade-in">
+      <Header />
+      <main className="container py-6 px-4 max-w-2xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <Button variant="ghost" onClick={() => navigate(`/class/${className}?tab=Events%20List`)} className="gap-2">
+            <ArrowLeft className="h-4 w-4" /> Back to Events
+          </Button>
+          {isOwner && (
+            <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/class/${className}/event/${eventId}/edit`)}>
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </Button>
+          )}
+        </div>
+
+        {/* Title */}
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-6 break-words" style={{ overflowWrap: "anywhere" }}>
+          {event.title}
+        </h1>
+
+        {/* Images */}
+        {event.images && event.images.length > 0 && (
+          <div className="space-y-3 mb-8">
+            {event.images.map((img, i) => (
+              <div
+                key={i}
+                className="rounded-lg overflow-hidden border border-border cursor-pointer mx-auto max-w-xl"
+                onClick={() => { setViewerIndex(i); setViewerOpen(true); }}
+              >
+                <img src={img} alt="" className="w-full object-contain" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Description */}
+        {event.description && (
+          <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap break-words" style={{ overflowWrap: "anywhere" }}>
+            {event.description}
+          </div>
+        )}
+      </main>
+
+      {event.images && event.images.length > 0 && (
+        <ImageViewer
+          images={event.images}
+          initialIndex={viewerIndex}
+          open={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default EventDetailPage;
