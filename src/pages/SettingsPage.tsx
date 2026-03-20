@@ -50,6 +50,8 @@ const SettingsPage = () => {
   // Background
   const [bgUrl, setBgUrl] = useState<string | null>(() => localStorage.getItem(BG_STORAGE_KEY));
   const [bgBlur, setBgBlur] = useState<number>(() => parseInt(localStorage.getItem(BG_BLUR_KEY) || "0", 10));
+  const [bgPosX, setBgPosX] = useState<number>(() => parseInt(localStorage.getItem(BG_POSX_KEY) || "50", 10));
+  const [bgPosY, setBgPosY] = useState<number>(() => parseInt(localStorage.getItem(BG_POSY_KEY) || "50", 10));
   const [bgUploading, setBgUploading] = useState(false);
   const bgInputRef = useRef<HTMLInputElement>(null);
 
