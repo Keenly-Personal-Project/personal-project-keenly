@@ -26,6 +26,7 @@ interface Announcement {
   images?: string[];
   date?: string;
   publisherEmail?: string;
+  publisherAvatar?: string | null;
 }
 
 function formatDate(d?: string) {
