@@ -46,6 +46,7 @@ interface EventItem {
   title: string;
   description: string;
   images?: string[];
+  color?: string;
   date?: string;
   publisherEmail?: string;
   publisherAvatar?: string | null;
