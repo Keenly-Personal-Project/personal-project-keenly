@@ -97,7 +97,8 @@ const ClassPage = () => {
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
   const notesKey = `keen_notes_${slug}`;
-
+  const eventsKey = `keen_events_${slug}`;
+  const favKey = `keen_event_favs_${slug}`;
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
