@@ -105,7 +105,7 @@ const EventCreatePage = () => {
     if (isEdit) {
       const updated = events.map((ev) =>
         ev.id === eventId
-          ? { ...ev, title: title.trim(), description: description.trim(), images: images.length > 0 ? images : undefined, color }
+          ? { ...ev, title: title.trim(), description: description.trim(), images: images.length > 0 ? images : undefined, color, textColor }
           : ev
       );
       localStorage.setItem(eventsKey, JSON.stringify(updated));
