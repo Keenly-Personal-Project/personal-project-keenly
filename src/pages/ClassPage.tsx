@@ -222,8 +222,11 @@ const ClassPage = () => {
       <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 max-w-5xl min-h-[38rem]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          {title === "Announcements" && (
-            <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setAddDialogOpen(true)}>
+          {(title === "Announcements" || title === "Events List") && (
+            <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => {
+              if (title === "Events List") navigate(`/class/${className}/event/new`);
+              else setAddDialogOpen(true);
+            }}>
               <Plus className="h-3 w-3" /> Add
             </Button>
           )}
