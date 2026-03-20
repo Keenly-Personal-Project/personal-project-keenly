@@ -10,6 +10,7 @@ import ClassPage from "./pages/ClassPage";
 import AnnouncementDetailPage from "./pages/AnnouncementDetailPage";
 import NoteEditorPage from "./pages/NoteEditorPage";
 import NoteSetupPage from "./pages/NoteSetupPage";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/class/:className" element={<ClassPage />} />
             <Route path="/class/:className/announcement/:announcementId" element={<AnnouncementDetailPage />} />
             <Route path="/class/:className/note/new" element={<NoteSetupPage />} />
