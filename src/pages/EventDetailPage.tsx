@@ -24,7 +24,7 @@ const EventImageCarousel = ({ images }: { images: string[] }) => {
   const total = images.length;
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const resetTimer = useCallback(() => {
+  const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (total > 1) {
       timerRef.current = setInterval(() => {
@@ -38,10 +38,13 @@ const EventImageCarousel = ({ images }: { images: string[] }) => {
     }
   }, [total]);
 
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }, []);
+
   useEffect(() => {
-    resetTimer();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [resetTimer]);
+    return () => stopTimer();
+  }, [stopTimer]);
 
   const goTo = (next: number, dir: "left" | "right") => {
     if (isAnimating || next === current) return;
