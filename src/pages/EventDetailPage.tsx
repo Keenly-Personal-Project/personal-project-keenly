@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
@@ -22,11 +22,32 @@ const EventImageCarousel = ({ images }: { images: string[] }) => {
   const [direction, setDirection] = useState<"left" | "right">("right");
   const [isAnimating, setIsAnimating] = useState(false);
   const total = images.length;
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (total > 1) {
+      timerRef.current = setInterval(() => {
+        setDirection("right");
+        setIsAnimating(true);
+        setTimeout(() => {
+          setCurrent((prev) => (prev + 1) % total);
+          setTimeout(() => setIsAnimating(false), 20);
+        }, 250);
+      }, 4000);
+    }
+  }, [total]);
+
+  useEffect(() => {
+    resetTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [resetTimer]);
 
   const goTo = (next: number, dir: "left" | "right") => {
     if (isAnimating || next === current) return;
     setDirection(dir);
     setIsAnimating(true);
+    resetTimer();
     setTimeout(() => {
       setCurrent(next);
       setTimeout(() => setIsAnimating(false), 20);
