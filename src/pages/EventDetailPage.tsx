@@ -19,27 +19,50 @@ interface EventItem {
 
 const EventImageCarousel = ({ images }: { images: string[] }) => {
   const [current, setCurrent] = useState(0);
+  const [direction, setDirection] = useState<"left" | "right">("right");
+  const [isAnimating, setIsAnimating] = useState(false);
   const total = images.length;
+
+  const goTo = (next: number, dir: "left" | "right") => {
+    if (isAnimating || next === current) return;
+    setDirection(dir);
+    setIsAnimating(true);
+    setTimeout(() => {
+      setCurrent(next);
+      setTimeout(() => setIsAnimating(false), 20);
+    }, 250);
+  };
+
   return (
     <div className="mb-8 mx-auto max-w-xl">
       <div className="relative">
-        <div className="aspect-video rounded-lg overflow-hidden border border-border">
-          <ImageViewer
-            src={images[current]}
-            alt={`Event image ${current + 1}`}
-            imgClassName="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-          />
+        <div className="aspect-video rounded-lg overflow-hidden border border-border flex items-center justify-center bg-muted/30">
+          <div
+            className="w-full h-full flex items-center justify-center transition-all duration-300 ease-in-out"
+            style={{
+              opacity: isAnimating ? 0 : 1,
+              transform: isAnimating
+                ? `translateX(${direction === "right" ? "-40px" : "40px"})`
+                : "translateX(0)",
+            }}
+          >
+            <ImageViewer
+              src={images[current]}
+              alt={`Event image ${current + 1}`}
+              imgClassName="max-w-full max-h-full object-contain cursor-pointer hover:opacity-90 transition-opacity"
+            />
+          </div>
         </div>
         {total > 1 && (
           <>
             <button
-              onClick={() => setCurrent((c) => (c - 1 + total) % total)}
+              onClick={() => goTo((current - 1 + total) % total, "left")}
               className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 border border-border flex items-center justify-center hover:bg-background transition-colors"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
-              onClick={() => setCurrent((c) => (c + 1) % total)}
+              onClick={() => goTo((current + 1) % total, "right")}
               className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 border border-border flex items-center justify-center hover:bg-background transition-colors"
             >
               <ChevronRight className="h-4 w-4" />
@@ -52,7 +75,7 @@ const EventImageCarousel = ({ images }: { images: string[] }) => {
           {images.map((_, i) => (
             <button
               key={i}
-              onClick={() => setCurrent(i)}
+              onClick={() => goTo(i, i > current ? "right" : "left")}
               className={`h-2 w-2 rounded-full transition-colors ${i === current ? "bg-primary" : "bg-muted-foreground/30"}`}
             />
           ))}
