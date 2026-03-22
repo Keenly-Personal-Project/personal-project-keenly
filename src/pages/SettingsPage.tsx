@@ -178,7 +178,7 @@ const SettingsPage = () => {
           <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs defaultValue="profile" className="space-y-6" value={activeSettingsTab} onValueChange={setActiveSettingsTab}>
           <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="profile" className="gap-1.5 text-xs sm:text-sm">
               <User className="h-3.5 w-3.5" /> Profile
