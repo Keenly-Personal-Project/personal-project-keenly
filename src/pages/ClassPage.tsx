@@ -404,8 +404,8 @@ const ClassPage = () => {
                   {/* Images */}
                   {ev.images && ev.images.length > 0 && (
                     <div className="px-4">
-                      <div className="rounded-md overflow-hidden">
-                        <img src={ev.images[0]} alt="" className="w-full object-cover max-h-48" />
+                      <div className="rounded-md overflow-hidden aspect-video">
+                        <img src={ev.images[0]} alt="" className="w-full h-full object-cover" />
                       </div>
                     </div>
                   )}
