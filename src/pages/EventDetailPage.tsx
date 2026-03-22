@@ -50,7 +50,7 @@ const EventImageCarousel = ({ images }: { images: string[] }) => {
     if (isAnimating || next === current) return;
     setDirection(dir);
     setIsAnimating(true);
-    resetTimer();
+    startTimer();
     setTimeout(() => {
       setCurrent(next);
       setTimeout(() => setIsAnimating(false), 20);
