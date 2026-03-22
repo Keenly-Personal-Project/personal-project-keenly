@@ -58,7 +58,7 @@ const EventImageCarousel = ({ images }: { images: string[] }) => {
   };
 
   return (
-    <div className="mb-8 mx-auto max-w-xl">
+    <div className="mb-8 mx-auto max-w-xl" onMouseEnter={startTimer} onMouseLeave={stopTimer}>
       <div className="relative">
         <div className="aspect-video rounded-lg overflow-hidden border border-border flex items-center justify-center bg-muted/30">
           <div
