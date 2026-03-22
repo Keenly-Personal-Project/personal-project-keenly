@@ -17,6 +17,51 @@ interface EventItem {
   publisherAvatar?: string | null;
 }
 
+const EventImageCarousel = ({ images }: { images: string[] }) => {
+  const [current, setCurrent] = useState(0);
+  const total = images.length;
+  return (
+    <div className="mb-8 mx-auto max-w-xl">
+      <div className="relative">
+        <div className="aspect-video rounded-lg overflow-hidden border border-border">
+          <ImageViewer
+            src={images[current]}
+            alt={`Event image ${current + 1}`}
+            imgClassName="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+          />
+        </div>
+        {total > 1 && (
+          <>
+            <button
+              onClick={() => setCurrent((c) => (c - 1 + total) % total)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 border border-border flex items-center justify-center hover:bg-background transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setCurrent((c) => (c + 1) % total)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 border border-border flex items-center justify-center hover:bg-background transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </>
+        )}
+      </div>
+      {total > 1 && (
+        <div className="flex justify-center gap-1.5 mt-3">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              className={`h-2 w-2 rounded-full transition-colors ${i === current ? "bg-primary" : "bg-muted-foreground/30"}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const EventDetailPage = () => {
   const { className, eventId } = useParams<{ className: string; eventId: string }>();
   const { user, loading } = useAuth();
