@@ -112,7 +112,7 @@ const EventCardCarousel = ({ images }: { images: string[] }) => {
   );
 };
 
-
+function PublisherBadge({ email, avatarUrl }: { email: string; avatarUrl?: string | null }) {
   const name = email.split("@")[0];
   const initials = name.slice(0, 2).toUpperCase();
   return (
