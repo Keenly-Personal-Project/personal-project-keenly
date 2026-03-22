@@ -66,7 +66,53 @@ function getImages(ann: Announcement): string[] {
   return [];
 }
 
-function PublisherBadge({ email, avatarUrl }: { email: string; avatarUrl?: string | null }) {
+const EventCardCarousel = ({ images }: { images: string[] }) => {
+  const [current, setCurrent] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const total = images.length;
+
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (total > 1) {
+      timerRef.current = setInterval(() => {
+        setIsAnimating(true);
+        setTimeout(() => {
+          setCurrent((prev) => (prev + 1) % total);
+          setTimeout(() => setIsAnimating(false), 20);
+        }, 250);
+      }, 3000);
+    }
+  }, [total]);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }, []);
+
+  useEffect(() => () => stopTimer(), [stopTimer]);
+
+  return (
+    <div className="px-4" onMouseEnter={startTimer} onMouseLeave={stopTimer}>
+      <div className="rounded-md overflow-hidden aspect-video flex items-center justify-center bg-black/10 relative">
+        <div
+          className="w-full h-full flex items-center justify-center transition-all duration-300 ease-in-out"
+          style={{ opacity: isAnimating ? 0 : 1, transform: isAnimating ? "translateX(-30px)" : "translateX(0)" }}
+        >
+          <img src={images[current]} alt="" className="max-w-full max-h-full object-contain" />
+        </div>
+        {total > 1 && (
+          <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1">
+            {images.map((_, i) => (
+              <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === current ? "bg-white" : "bg-white/40"}`} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
   const name = email.split("@")[0];
   const initials = name.slice(0, 2).toUpperCase();
   return (
