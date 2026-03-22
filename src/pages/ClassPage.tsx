@@ -307,7 +307,7 @@ const ClassPage = () => {
               <button
                 key={note.id}
                 onClick={() => navigate(`/class/${className}/note/${note.id}`)}
-                className="p-5 text-left hover:opacity-80 transition-all cursor-pointer flex flex-col"
+                className="aspect-square p-5 text-left hover:opacity-80 transition-all cursor-pointer flex flex-col"
                 style={{
                   borderRadius: "0.75rem",
                   WebkitBorderRadius: "0.75rem",
