@@ -312,8 +312,8 @@ const ClassPage = () => {
                   borderRadius: "0.75rem",
                   WebkitBorderRadius: "0.75rem",
                   background: note.color?.includes("gradient")
-                    ? `linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, ${note.color} border-box`
-                    : undefined,
+                    ? `linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, ${note.color} border-box`
+                    : "hsl(var(--card))",
                   border: note.color?.includes("gradient")
                     ? "3px solid transparent"
                     : `3px solid ${note.color || "hsl(var(--border))"}`,
