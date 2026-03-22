@@ -86,13 +86,7 @@ const EventDetailPage = () => {
 
         {/* Images */}
         {event.images && event.images.length > 0 && (
-          <div className="space-y-3 mb-8">
-            {event.images.map((img, i) => (
-              <div key={i} className="mx-auto max-w-xl">
-                <ImageViewer src={img} alt={`Event image ${i + 1}`} imgClassName="w-full object-contain rounded-lg border border-border cursor-pointer hover:opacity-90 transition-opacity" />
-              </div>
-            ))}
-          </div>
+          <EventImageCarousel images={event.images} />
         )}
 
         {/* Description */}

@@ -54,6 +54,7 @@ const SettingsPage = () => {
   const [bgPosY, setBgPosY] = useState<number>(() => parseInt(localStorage.getItem(BG_POSY_KEY) || "50", 10));
   const [bgUploading, setBgUploading] = useState(false);
   const bgInputRef = useRef<HTMLInputElement>(null);
+  const [activeSettingsTab, setActiveSettingsTab] = useState("profile");
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
