@@ -307,13 +307,13 @@ const ClassPage = () => {
               <button
                 key={note.id}
                 onClick={() => navigate(`/class/${className}/note/${note.id}`)}
-                className="p-5 text-left hover:opacity-80 transition-all cursor-pointer flex flex-col"
+                className="aspect-square p-5 text-left hover:opacity-80 transition-all cursor-pointer flex flex-col"
                 style={{
                   borderRadius: "0.75rem",
                   WebkitBorderRadius: "0.75rem",
                   background: note.color?.includes("gradient")
-                    ? `linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, ${note.color} border-box`
-                    : undefined,
+                    ? `linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, ${note.color} border-box`
+                    : "hsl(var(--card))",
                   border: note.color?.includes("gradient")
                     ? "3px solid transparent"
                     : `3px solid ${note.color || "hsl(var(--border))"}`,
@@ -404,8 +404,8 @@ const ClassPage = () => {
                   {/* Images */}
                   {ev.images && ev.images.length > 0 && (
                     <div className="px-4">
-                      <div className="rounded-md overflow-hidden aspect-video">
-                        <img src={ev.images[0]} alt="" className="w-full h-full object-cover" />
+                      <div className="rounded-md overflow-hidden aspect-video flex items-center justify-center bg-black/10">
+                        <img src={ev.images[0]} alt="" className="max-w-full max-h-full object-contain" />
                       </div>
                     </div>
                   )}
@@ -459,7 +459,7 @@ const ClassPage = () => {
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
         <div className="text-center -mt-4 mb-2" style={{ marginTop: '-0.75rem' }}>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground underline underline-offset-4" style={{ fontFamily: "'Amatic SC', cursive" }}>{displayName}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground underline underline-offset-4" style={{ fontFamily: "'Courier New', monospace" }}>{displayName}</h1>
         </div>
         <div className="text-center mb-6">
           <p className="text-xl md:text-2xl text-foreground mt-3">{activeTab}</p>
