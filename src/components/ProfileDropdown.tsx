@@ -131,13 +131,16 @@ const ProfileDropdown = () => {
     <>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring" title="Profile">
+          <button className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-ring" title="Profile">
             <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
               {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt="Avatar" />}
               <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
+            <span
+              className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card ${availConfig.dotClass}`}
+            />
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-72 p-0" align="end" sideOffset={8}>
