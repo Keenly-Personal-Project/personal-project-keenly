@@ -4,11 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ProfileDropdown from "@/components/ProfileDropdown";
 
 interface Announcement {
@@ -36,26 +32,26 @@ const Header = () => {
   const location = useLocation();
 
   const handleLogoClick = () => {
-    if (location.pathname === '/') return;
-    const main = document.querySelector('main');
+    if (location.pathname === "/") return;
+    const main = document.querySelector("main");
     if (main) {
-      main.style.transition = 'opacity 0.3s ease-out';
-      main.style.opacity = '0';
+      main.style.transition = "opacity 0.3s ease-out";
+      main.style.opacity = "0";
       setTimeout(() => {
-        navigate('/');
+        navigate("/");
         requestAnimationFrame(() => {
-          const newMain = document.querySelector('main');
+          const newMain = document.querySelector("main");
           if (newMain) {
-            newMain.style.opacity = '0';
-            newMain.style.transition = 'opacity 0.3s ease-in';
+            newMain.style.opacity = "0";
+            newMain.style.transition = "opacity 0.3s ease-in";
             requestAnimationFrame(() => {
-              newMain.style.opacity = '1';
+              newMain.style.opacity = "1";
             });
           }
         });
       }, 300);
     } else {
-      navigate('/');
+      navigate("/");
     }
   };
 
@@ -63,15 +59,15 @@ const Header = () => {
 
   useEffect(() => {
     const buildNotifications = () => {
-      const classes: ClassInfo[] = JSON.parse(localStorage.getItem('keen_classes') || '[]');
-      const seenKey = 'keen_seen_announcements';
-      const seen: string[] = JSON.parse(localStorage.getItem(seenKey) || '[]');
+      const classes: ClassInfo[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
+      const seenKey = "keen_seen_announcements";
+      const seen: string[] = JSON.parse(localStorage.getItem(seenKey) || "[]");
       const notifs: Notification[] = [];
 
       classes.forEach((cls) => {
         const slug = cls.name.toLowerCase().replace(/\s+/g, "-");
         const storageKey = `keen_announcements_${slug}`;
-        const announcements: Announcement[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const announcements: Announcement[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
         announcements.forEach((ann) => {
           const uid = `${slug}_${ann.id}`;
           if (!seen.includes(uid)) {
@@ -95,14 +91,16 @@ const Header = () => {
   }, []);
 
   const handleNotificationClick = (notif: Notification) => {
-    const seenKey = 'keen_seen_announcements';
-    const seen: string[] = JSON.parse(localStorage.getItem(seenKey) || '[]');
+    const seenKey = "keen_seen_announcements";
+    const seen: string[] = JSON.parse(localStorage.getItem(seenKey) || "[]");
     const uid = `${notif.keenSlug}_${notif.announcementId}`;
     if (!seen.includes(uid)) {
       seen.push(uid);
       localStorage.setItem(seenKey, JSON.stringify(seen));
     }
-    setNotifications((prev) => prev.filter((n) => !(n.keenSlug === notif.keenSlug && n.announcementId === notif.announcementId)));
+    setNotifications((prev) =>
+      prev.filter((n) => !(n.keenSlug === notif.keenSlug && n.announcementId === notif.announcementId)),
+    );
     navigate(`/class/${notif.keenSlug}/announcement/${notif.announcementId}`);
   };
 
@@ -113,13 +111,19 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
       <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 md:px-8 lg:px-[1cm]">
         {/* Logo - left */}
-        <div className="inline-flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary cursor-pointer shrink-0" onClick={handleLogoClick}>
+        <div
+          className="inline-flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary cursor-pointer shrink-0"
+          onClick={handleLogoClick}
+        >
           <span className="text-primary-foreground text-sm sm:text-lg font-bold leading-none">|&lt;</span>
         </div>
 
         {/* Date - center */}
         <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
-          <span className="text-lg sm:text-2xl md:text-3xl text-foreground font-bold whitespace-nowrap" style={{ fontFamily: "'Courier New', monospace" }}>
+          <span
+            className="text-lg sm:text-2xl md:text-3xl text-foreground font-bold whitespace-nowrap"
+            style={{ fontFamily: "'Amatic SC', cursive" }}
+          >
             {formattedDate}
           </span>
         </div>
@@ -160,9 +164,7 @@ const Header = () => {
               </div>
             </PopoverContent>
           </Popover>
-          {user && (
-            <ProfileDropdown />
-          )}
+          {user && <ProfileDropdown />}
         </div>
       </div>
     </header>
