@@ -13,13 +13,7 @@ import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, Heart } from "lucide-r
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 
-const sidebarTabs = [
-  "Announcements",
-  "Absentee List",
-  "Meeting Recordings",
-  "Events List",
-  "Notes/Guides",
-];
+const sidebarTabs = ["Announcements", "Absentee List", "Meeting Recordings", "Events List", "Notes/Guides"];
 
 interface Announcement {
   id: string;
@@ -86,7 +80,10 @@ const EventCardCarousel = ({ images }: { images: string[] }) => {
   }, [total]);
 
   const stopTimer = useCallback(() => {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   }, []);
 
   useEffect(() => () => stopTimer(), [stopTimer]);
@@ -170,7 +167,7 @@ const ClassPage = () => {
 
   const toggleFavorite = (eventId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setFavoritedEvents(prev => {
+    setFavoritedEvents((prev) => {
       const next = new Set(prev);
       const wasFav = next.has(eventId);
       if (wasFav) next.delete(eventId);
@@ -198,7 +195,7 @@ const ClassPage = () => {
       localStorage.setItem(storageKey, JSON.stringify(announcements));
     } catch (e) {
       console.warn("LocalStorage quota exceeded for announcements. Clearing images from stored data.");
-      const withoutImages = announcements.map(a => ({ ...a, image: undefined, images: undefined }));
+      const withoutImages = announcements.map((a) => ({ ...a, image: undefined, images: undefined }));
       try {
         localStorage.setItem(storageKey, JSON.stringify(withoutImages));
       } catch {
@@ -208,7 +205,7 @@ const ClassPage = () => {
   }, [announcements, storageKey]);
 
   useEffect(() => {
-    if (!loading && !user) navigate('/auth');
+    if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
   if (loading) {
@@ -220,9 +217,9 @@ const ClassPage = () => {
   }
   if (!user) return null;
 
-  const savedClasses = JSON.parse(localStorage.getItem('keen_classes') || '[]');
+  const savedClasses = JSON.parse(localStorage.getItem("keen_classes") || "[]");
   const matchedClass = savedClasses.find(
-    (cls: { name: string }) => cls.name.toLowerCase().replace(/\s+/g, "-") === slug
+    (cls: { name: string }) => cls.name.toLowerCase().replace(/\s+/g, "-") === slug,
   );
   const displayName = matchedClass?.name || slug.replace(/-/g, " ");
 
@@ -232,18 +229,18 @@ const ClassPage = () => {
     setImageUploading(true);
     try {
       for (const file of Array.from(files)) {
-        const fileExt = file.name.split('.').pop();
+        const fileExt = file.name.split(".").pop();
         const filePath = `announcements/${slug}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-        const { error } = await supabase.storage.from('note-attachments').upload(filePath, file);
+        const { error } = await supabase.storage.from("note-attachments").upload(filePath, file);
         if (error) throw error;
-        const { data: urlData } = supabase.storage.from('note-attachments').getPublicUrl(filePath);
-        setNewImages(prev => [...prev, urlData.publicUrl]);
+        const { data: urlData } = supabase.storage.from("note-attachments").getPublicUrl(filePath);
+        setNewImages((prev) => [...prev, urlData.publicUrl]);
       }
     } catch (err) {
       console.error("Image upload failed, falling back to base64", err);
       for (const file of Array.from(files)) {
         const reader = new FileReader();
-        reader.onload = (ev) => setNewImages(prev => [...prev, ev.target?.result as string]);
+        reader.onload = (ev) => setNewImages((prev) => [...prev, ev.target?.result as string]);
         reader.readAsDataURL(file);
       }
     } finally {
@@ -262,7 +259,7 @@ const ClassPage = () => {
       publisherEmail: user?.email || "Unknown",
       publisherAvatar: profile?.avatar_url || null,
     };
-    setAnnouncements(prev => [newAnn, ...prev]);
+    setAnnouncements((prev) => [newAnn, ...prev]);
     setNewBrief("");
     setNewDescription("");
     setNewImages([]);
@@ -276,10 +273,15 @@ const ClassPage = () => {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {(title === "Announcements" || title === "Events List") && (
-            <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => {
-              if (title === "Events List") navigate(`/class/${className}/event/new`);
-              else setAddDialogOpen(true);
-            }}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1 h-7 text-xs"
+              onClick={() => {
+                if (title === "Events List") navigate(`/class/${className}/event/new`);
+                else setAddDialogOpen(true);
+              }}
+            >
               <Plus className="h-3 w-3" /> Add
             </Button>
           )}
@@ -291,7 +293,9 @@ const ClassPage = () => {
     if (activeTab === "Announcements") {
       return contentWrapper(
         announcements.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic text-center py-8">No announcements yet. Add one to get started.</p>
+          <p className="text-sm text-muted-foreground italic text-center py-8">
+            No announcements yet. Add one to get started.
+          </p>
         ) : (
           <div className="space-y-4">
             {announcements.map((ann) => {
@@ -306,18 +310,26 @@ const ClassPage = () => {
                 >
                   <PublisherBadge email={email} avatarUrl={ann.publisherAvatar} />
 
-                  <h3 className="font-bold text-foreground underline underline-offset-2 break-words mb-1" style={{ overflowWrap: 'anywhere' }}>
+                  <h3
+                    className="font-bold text-foreground underline underline-offset-2 break-words mb-1"
+                    style={{ overflowWrap: "anywhere" }}
+                  >
                     {ann.brief}
                   </h3>
 
                   {ann.description && (
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-3 break-words line-clamp-3" style={{ overflowWrap: 'anywhere' }}>
+                    <p
+                      className="text-sm text-muted-foreground leading-relaxed mb-3 break-words line-clamp-3"
+                      style={{ overflowWrap: "anywhere" }}
+                    >
                       {ann.description}
                     </p>
                   )}
 
                   {imgs.length > 0 && (
-                    <div className={`grid gap-2 mb-2 ${imgs.length === 1 ? 'grid-cols-1 max-w-md' : imgs.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                    <div
+                      className={`grid gap-2 mb-2 ${imgs.length === 1 ? "grid-cols-1 max-w-md" : imgs.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}
+                    >
                       {imgs.slice(0, 3).map((img, i) => (
                         <div key={i} className="rounded-md overflow-hidden border border-border bg-muted/30">
                           <img src={img} alt="" className="w-full object-contain max-h-64" />
@@ -326,7 +338,9 @@ const ClassPage = () => {
                     </div>
                   )}
                   {imgs.length > 3 && (
-                    <p className="text-xs text-muted-foreground mb-2">+{imgs.length - 3} more image{imgs.length - 3 > 1 ? 's' : ''}</p>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      +{imgs.length - 3} more image{imgs.length - 3 > 1 ? "s" : ""}
+                    </p>
                   )}
 
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -337,7 +351,7 @@ const ClassPage = () => {
             })}
           </div>
         ),
-        "Announcements"
+        "Announcements",
       );
     }
     if (activeTab === "Notes/Guides") {
@@ -367,7 +381,10 @@ const ClassPage = () => {
                 }}
               >
                 <PublisherBadge email={noteEmail} avatarUrl={note.publisherAvatar} />
-                <p className="text-sm font-bold underline underline-offset-2 mb-2 shrink-0" style={{ color: note.color || "hsl(var(--foreground))" }}>
+                <p
+                  className="text-sm font-bold underline underline-offset-2 mb-2 shrink-0"
+                  style={{ color: note.color || "hsl(var(--foreground))" }}
+                >
                   {note.title || "Untitled"}
                 </p>
                 <p className="text-muted-foreground text-xs leading-relaxed line-clamp-[8] flex-1 overflow-hidden">
@@ -393,7 +410,7 @@ const ClassPage = () => {
             <span className="text-sm text-muted-foreground font-medium">Add notes</span>
           </button>
         </div>,
-        "Notes/Guides"
+        "Notes/Guides",
       );
     }
     if (activeTab === "Meeting Recordings") {
@@ -402,13 +419,15 @@ const ClassPage = () => {
           <PublisherBadge email={user?.email || "Unknown"} avatarUrl={profile?.avatar_url} />
           <p className="text-muted-foreground text-sm italic text-center py-8">No meeting recordings yet.</p>
         </div>,
-        "Meeting Recordings"
+        "Meeting Recordings",
       );
     }
     if (activeTab === "Events List") {
       return contentWrapper(
         events.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic text-center py-8">No events yet. Add one to get started.</p>
+          <p className="text-sm text-muted-foreground italic text-center py-8">
+            No events yet. Add one to get started.
+          </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map((ev) => {
@@ -437,37 +456,42 @@ const ClassPage = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <span className="text-xs font-medium leading-tight" style={{ color: textCol || "inherit" }}>{email.split("@")[0]}</span>
-                      <span className="text-[10px] leading-tight opacity-70" style={{ color: textCol || "inherit" }}>{formatDate(ev.date)}</span>
+                      <span className="text-xs font-medium leading-tight" style={{ color: textCol || "inherit" }}>
+                        {email.split("@")[0]}
+                      </span>
+                      <span className="text-[10px] leading-tight opacity-70" style={{ color: textCol || "inherit" }}>
+                        {formatDate(ev.date)}
+                      </span>
                     </div>
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-center font-bold underline underline-offset-2 px-4 pt-3 pb-2 break-words" style={{ overflowWrap: "anywhere", color: textCol || "inherit" }}>
+                  <h3
+                    className="text-center font-bold underline underline-offset-2 px-4 pt-3 pb-2 break-words"
+                    style={{ overflowWrap: "anywhere", color: textCol || "inherit" }}
+                  >
                     {ev.title}
                   </h3>
 
                   {/* Images */}
-                  {ev.images && ev.images.length > 0 && (
-                    <EventCardCarousel images={ev.images} />
-                  )}
+                  {ev.images && ev.images.length > 0 && <EventCardCarousel images={ev.images} />}
 
                   {/* Description */}
                   {ev.description && (
-                    <p className="text-sm leading-relaxed px-4 pt-3 break-words line-clamp-3 opacity-80" style={{ overflowWrap: "anywhere", color: textCol || "inherit" }}>
+                    <p
+                      className="text-sm leading-relaxed px-4 pt-3 break-words line-clamp-3 opacity-80"
+                      style={{ overflowWrap: "anywhere", color: textCol || "inherit" }}
+                    >
                       {ev.description}
                     </p>
                   )}
 
                   {/* Favorite */}
                   <div className="mt-auto px-4 pb-4 pt-3">
-                    <button
-                      onClick={(e) => toggleFavorite(ev.id, e)}
-                      className="transition-transform active:scale-90"
-                    >
+                    <button onClick={(e) => toggleFavorite(ev.id, e)} className="transition-transform active:scale-90">
                       <Heart
                         className={`h-5 w-5 transition-colors ${isFav ? "fill-destructive text-destructive" : "opacity-60 hover:opacity-100"}`}
-                        style={{ color: isFav ? undefined : (textCol || "currentColor") }}
+                        style={{ color: isFav ? undefined : textCol || "currentColor" }}
                       />
                     </button>
                   </div>
@@ -476,13 +500,13 @@ const ClassPage = () => {
             })}
           </div>
         ),
-        "Events List"
+        "Events List",
       );
     }
     if (activeTab === "Absentee List") {
       return contentWrapper(
         <p className="text-muted-foreground text-sm italic text-center py-8">Absentee tracking coming soon.</p>,
-        "Absentee List"
+        "Absentee List",
       );
     }
 
@@ -497,19 +521,27 @@ const ClassPage = () => {
     <div className="min-h-screen">
       <Header />
       <main className="container py-6 px-4">
-        <Button variant="ghost" onClick={() => navigate('/')} className="mb-2 gap-2">
+        <Button variant="ghost" onClick={() => navigate("/")} className="mb-2 gap-2">
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
-        <div className="text-center -mt-4 mb-2" style={{ marginTop: '-0.75rem' }}>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground underline underline-offset-4" style={{ fontFamily: "'Courier New', monospace" }}>{displayName}</h1>
+        <div className="text-center -mt-4 mb-2" style={{ marginTop: "-0.75rem" }}>
+          <h1
+            className="text-3xl md:text-4xl font-bold text-foreground underline underline-offset-4"
+            style={{ fontFamily: "'Amatic SC', cursive" }}
+          >
+            {displayName}
+          </h1>
         </div>
         <div className="text-center mb-6">
           <p className="text-xl md:text-2xl text-foreground mt-3">{activeTab}</p>
         </div>
         <div className="md:hidden flex gap-2 overflow-x-auto pb-4">
           {sidebarTabs.map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`whitespace-nowrap px-3 py-2 rounded-lg border text-xs font-medium transition-all ${activeTab === tab ? "bg-primary text-primary-foreground border-primary px-5" : "bg-card text-foreground border-border"}`}>
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`whitespace-nowrap px-3 py-2 rounded-lg border text-xs font-medium transition-all ${activeTab === tab ? "bg-primary text-primary-foreground border-primary px-5" : "bg-card text-foreground border-border"}`}
+            >
               {tab}
             </button>
           ))}
@@ -517,17 +549,18 @@ const ClassPage = () => {
         <div className="hidden md:flex gap-6">
           <div className="flex flex-col gap-2 w-48 shrink-0">
             {sidebarTabs.map((tab) => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`text-left py-4 rounded-lg border border-foreground/30 text-sm font-medium transition-all ${activeTab === tab ? "bg-primary text-primary-foreground border-primary px-6 w-[13rem]" : "bg-card text-foreground hover:bg-muted px-4 w-48"}`}>
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`text-left py-4 rounded-lg border border-foreground/30 text-sm font-medium transition-all ${activeTab === tab ? "bg-primary text-primary-foreground border-primary px-6 w-[13rem]" : "bg-card text-foreground hover:bg-muted px-4 w-48"}`}
+              >
                 {tab}
               </button>
             ))}
           </div>
           <div className="flex-1">{renderContent()}</div>
         </div>
-        <div className="md:hidden">
-          {renderContent()}
-        </div>
+        <div className="md:hidden">{renderContent()}</div>
       </main>
 
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -546,10 +579,17 @@ const ClassPage = () => {
             </div>
             <div className="space-y-2">
               <Label>Full Description</Label>
-              <Textarea placeholder="Detailed description..." value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4} />
+              <Textarea
+                placeholder="Detailed description..."
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                rows={4}
+              />
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Pictures (optional)</Label>
+              <Label className="flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" /> Pictures (optional)
+              </Label>
               <Input type="file" accept="image/*" multiple onChange={handleImageUpload} />
               {imageUploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
               {newImages.length > 0 && (
@@ -557,7 +597,10 @@ const ClassPage = () => {
                   {newImages.map((img, i) => (
                     <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
                       <img src={img} alt="Preview" className="w-full h-full object-cover" />
-                      <button onClick={() => setNewImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                      <button
+                        onClick={() => setNewImages((prev) => prev.filter((_, idx) => idx !== i))}
+                        className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                      >
                         <X className="h-2.5 w-2.5" />
                       </button>
                     </div>
@@ -567,7 +610,9 @@ const ClassPage = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleAddAnnouncement}>Add</Button>
           </DialogFooter>
         </DialogContent>
