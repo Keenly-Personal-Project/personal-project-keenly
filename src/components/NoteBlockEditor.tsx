@@ -102,7 +102,13 @@ const NoteBlockEditor = forwardRef<NoteBlockEditorHandle, NoteBlockEditorProps>(
         <div key={block.id}>
           {block.type === "text" && (
             <Textarea
-              ref={(el) => { textareaRefs.current[block.id] = el; }}
+              ref={(el) => {
+                textareaRefs.current[block.id] = el;
+                if (el) {
+                  el.style.height = 'auto';
+                  el.style.height = el.scrollHeight + 'px';
+                }
+              }}
               value={block.data.content}
               onChange={(e) => updateBlock(block.id, { content: e.target.value })}
               onFocus={() => handleTextFocus(block.id)}
