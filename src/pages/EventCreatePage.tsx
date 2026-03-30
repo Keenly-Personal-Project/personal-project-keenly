@@ -46,6 +46,8 @@ const EventCreatePage = () => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
+  useEscapeBack(`/class/${className}?tab=Events%20List`);
+
   // Load existing event for editing
   useEffect(() => {
     if (isEdit) {

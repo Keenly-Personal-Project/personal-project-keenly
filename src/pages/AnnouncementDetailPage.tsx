@@ -68,6 +68,8 @@ const AnnouncementDetailPage = () => {
     if (!loading && !user) navigate('/auth');
   }, [user, loading, navigate]);
 
+  useEscapeBack(`/class/${className}`, [showDeleteConfirm, editOpen]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

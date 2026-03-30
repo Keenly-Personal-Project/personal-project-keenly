@@ -33,6 +33,8 @@ const NoteSetupPage = () => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
+  useEscapeBack(`/class/${className}?tab=Notes%2FGuides`);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

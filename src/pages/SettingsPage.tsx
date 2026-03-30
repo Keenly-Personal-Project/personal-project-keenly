@@ -61,6 +61,8 @@ const SettingsPage = () => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
+  useEscapeBack(-1 as any);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
