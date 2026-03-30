@@ -183,8 +183,10 @@ const EventDetailPage = () => {
 
         {/* Description */}
         {event.description && (
-          <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap break-words" style={{ overflowWrap: "anywhere" }}>
-            {event.description}
+          <div className="rounded-xl border border-border bg-card/60 backdrop-blur-md p-6 shadow-sm">
+            <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap break-words" style={{ overflowWrap: "anywhere" }}>
+              {event.description}
+            </div>
           </div>
         )}
       </main>
