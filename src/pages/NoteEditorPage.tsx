@@ -171,6 +171,26 @@ const NoteEditorPage = () => {
   }
   if (!user) return null;
 
+  if (!currentNote) {
+    return (
+      <div className="min-h-screen animate-fade-in">
+        <Header />
+        <main className="container py-6 px-4 max-w-3xl mx-auto">
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+              <p className="font-medium">Note not found</p>
+              <p className="text-sm text-destructive/80">This note may have been deleted or the link is invalid.</p>
+            </div>
+          </div>
+          <Button variant="ghost" onClick={() => navigate(`/class/${className}?tab=Notes%2FGuides`)} className="gap-2 mt-4">
+            <ArrowLeft className="h-4 w-4" /> Back to Notes
+          </Button>
+        </main>
+      </div>
+    );
+  }
+
   const handleDelete = () => {
     setIsDeleting(true);
     setTimeout(() => {
