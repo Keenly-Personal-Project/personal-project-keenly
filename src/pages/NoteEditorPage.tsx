@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEscapeBack } from "@/hooks/useEscapeBack";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Header from "@/components/Header";
 import NoteBlockEditor, {
