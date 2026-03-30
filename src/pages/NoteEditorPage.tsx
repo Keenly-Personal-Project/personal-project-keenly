@@ -162,6 +162,16 @@ const NoteEditorPage = () => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !deleteDialogOpen && !imageDialogOpen && !tableDialogOpen && !chartDialogOpen && !videoDialogOpen && !colorDialogOpen) {
+        navigate(`/class/${className}?tab=Notes%2FGuides`);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [navigate, className, deleteDialogOpen, imageDialogOpen, tableDialogOpen, chartDialogOpen, videoDialogOpen, colorDialogOpen]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
