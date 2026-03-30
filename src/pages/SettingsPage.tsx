@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
+import { useEscapeBack } from "@/hooks/useEscapeBack";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

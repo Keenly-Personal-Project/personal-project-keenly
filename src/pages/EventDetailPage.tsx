@@ -123,6 +123,8 @@ const EventDetailPage = () => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
+  useEscapeBack(`/class/${className}?tab=Events%20List`);
+
   useEffect(() => {
     const saved = localStorage.getItem(eventsKey);
     if (saved) {
