@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useEffect, useState } from "react";
+import { useEscapeBack } from "@/hooks/useEscapeBack";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,8 @@ const EventCreatePage = () => {
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
+
+  useEscapeBack(`/class/${className}?tab=Events%20List`);
 
   // Load existing event for editing
   useEffect(() => {

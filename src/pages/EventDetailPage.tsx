@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useEscapeBack } from "@/hooks/useEscapeBack";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
@@ -121,6 +122,8 @@ const EventDetailPage = () => {
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
+
+  useEscapeBack(`/class/${className}?tab=Events%20List`);
 
   useEffect(() => {
     const saved = localStorage.getItem(eventsKey);

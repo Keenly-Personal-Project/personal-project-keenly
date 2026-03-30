@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEscapeBack } from "@/hooks/useEscapeBack";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Header from "@/components/Header";
 import NoteBlockEditor, {
@@ -162,15 +163,7 @@ const NoteEditorPage = () => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !deleteDialogOpen && !imageDialogOpen && !tableDialogOpen && !chartDialogOpen && !videoDialogOpen && !colorDialogOpen) {
-        navigate(`/class/${className}?tab=Notes%2FGuides`);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate, className, deleteDialogOpen, imageDialogOpen, tableDialogOpen, chartDialogOpen, videoDialogOpen, colorDialogOpen]);
+  useEscapeBack(`/class/${className}?tab=Notes%2FGuides`, [deleteDialogOpen, imageDialogOpen, tableDialogOpen, chartDialogOpen, videoDialogOpen, colorDialogOpen]);
 
   if (loading) {
     return (
