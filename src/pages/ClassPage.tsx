@@ -166,6 +166,8 @@ const ClassPage = () => {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
+  useEscapeBack("/", [addDialogOpen]);
+
   const toggleFavorite = (eventId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setFavoritedEvents((prev) => {
