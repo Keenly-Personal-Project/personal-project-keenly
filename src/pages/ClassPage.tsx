@@ -171,6 +171,25 @@ const ClassPage = () => {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
+  interface Recording {
+    id: string;
+    title: string;
+    description: string;
+    mediaUrl: string;
+    mediaType: string;
+    mediaName: string;
+    duration: number;
+    date?: string;
+    publisherEmail?: string;
+    publisherAvatar?: string | null;
+  }
+
+  const [recordings, setRecordings] = useState<Recording[]>(() => {
+    const saved = localStorage.getItem(recordingsKey);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [deleteRecordingId, setDeleteRecordingId] = useState<string | null>(null);
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
 
   useEscapeBack("/", [addDialogOpen, !!deleteEventId]);
