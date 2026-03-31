@@ -101,9 +101,9 @@ const MeetingRecordingPage = () => {
     setIsSummarizing(true);
     // Simulate AI summary for now
     await new Promise((r) => setTimeout(r, 2000));
-    setSummary(
-      "This meeting covered the following key points:\n\n• Project timeline was discussed and deadlines were confirmed\n• Action items were assigned to team members\n• Next meeting scheduled for follow-up\n\n(AI summary will be powered by Lovable AI once fully integrated.)"
-    );
+    const summaryText =
+      "This meeting covered the following key points:\n\n• Project timeline was discussed and deadlines were confirmed\n• Action items were assigned to team members\n• Next meeting scheduled for follow-up\n\n(AI summary will be powered by Lovable AI once fully integrated.)";
+    setDescription((prev) => prev.trim() ? `${prev}\n\n${summaryText}` : summaryText);
     setIsSummarizing(false);
     toast.success("Summary generated!");
   };
