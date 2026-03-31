@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Mic, Upload, Sparkles, Send, Square, Pause, Play, Trash2 } from "lucide-react";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const MeetingRecordingPage = () => {
   const { className } = useParams();
@@ -108,7 +109,7 @@ const MeetingRecordingPage = () => {
     toast.success("Summary generated!");
   };
 
-  const handlePost = () => {
+  const handlePost = async () => {
     if (!title.trim()) {
       toast.error("Please add a title before posting.");
       return;
@@ -119,33 +120,47 @@ const MeetingRecordingPage = () => {
     }
     setIsPosting(true);
 
-    // Store media as data URL for display
-    const reader = new FileReader();
-    const mediaFile = uploadedFile || (audioBlob ? new File([audioBlob], "recording.webm", { type: "audio/webm" }) : null);
-    if (!mediaFile) return;
+    try {
+      const mediaFile = uploadedFile || (audioBlob ? new File([audioBlob], "recording.webm", { type: "audio/webm" }) : null);
+      if (!mediaFile) return;
 
-    reader.onloadend = () => {
-      const mediaUrl = reader.result as string;
+      const fileExt = mediaFile.name.split(".").pop() || "webm";
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("meeting-recordings")
+        .upload(filePath, mediaFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("meeting-recordings")
+        .getPublicUrl(filePath);
+
       const recordingsKey = `keen_recordings_${className}`;
       const existing = JSON.parse(localStorage.getItem(recordingsKey) || "[]");
       const newRecording = {
         id: crypto.randomUUID(),
         title: title.trim(),
         description: description.trim(),
-        mediaUrl,
+        mediaUrl: urlData.publicUrl,
         mediaType: mediaFile.type,
         mediaName: uploadedFile?.name || "Recording",
         duration: recordingTime,
         date: new Date().toISOString(),
+        storagePath: filePath,
         publisherEmail: "",
         publisherAvatar: null,
       };
       localStorage.setItem(recordingsKey, JSON.stringify([newRecording, ...existing]));
       toast.success("Recording posted successfully!");
-      setIsPosting(false);
       navigate(`/class/${className}?tab=Meeting+Recordings`);
-    };
-    reader.readAsDataURL(mediaFile);
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      toast.error("Failed to upload recording. Please try again.");
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   const hasMedia = mode === "recorded" || mode === "uploaded";
