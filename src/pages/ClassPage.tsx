@@ -180,14 +180,39 @@ const ClassPage = () => {
     mediaName: string;
     duration: number;
     date?: string;
+    userId?: string;
     publisherEmail?: string;
     publisherAvatar?: string | null;
   }
 
-  const [recordings, setRecordings] = useState<Recording[]>(() => {
-    const saved = localStorage.getItem(recordingsKey);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [loadingRecordings, setLoadingRecordings] = useState(false);
+
+  // Fetch recordings from DB
+  useEffect(() => {
+    const fetchRecordings = async () => {
+      setLoadingRecordings(true);
+      const { data, error } = await (supabase.from as any)("meeting_recordings")
+        .select("*")
+        .eq("class_name", slug)
+        .order("created_at", { ascending: false });
+      if (!error && data) {
+        setRecordings(data.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description || "",
+          mediaUrl: r.media_url,
+          mediaType: r.media_type,
+          mediaName: r.media_name,
+          duration: r.duration || 0,
+          date: r.created_at,
+          userId: r.user_id,
+        })));
+      }
+      setLoadingRecordings(false);
+    };
+    fetchRecordings();
+  }, [slug]);
 
   const [deleteRecordingId, setDeleteRecordingId] = useState<string | null>(null);
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
@@ -443,10 +468,13 @@ const ClassPage = () => {
       );
     }
     if (activeTab === "Meeting Recordings") {
-      const deleteRecording = (id: string) => {
-        const updated = recordings.filter((r) => r.id !== id);
-        setRecordings(updated);
-        localStorage.setItem(recordingsKey, JSON.stringify(updated));
+      const deleteRecording = async (id: string) => {
+        const { error } = await (supabase.from as any)("meeting_recordings").delete().eq("id", id);
+        if (error) {
+          toast.error("Failed to delete recording.");
+          return;
+        }
+        setRecordings((prev) => prev.filter((r) => r.id !== id));
         setDeleteRecordingId(null);
         toast.success("Recording deleted");
       };

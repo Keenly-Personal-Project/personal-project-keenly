@@ -1,5 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEscapeBack } from "@/hooks/useEscapeBack";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +12,7 @@ import { toast } from "sonner";
 const MeetingRecordingPage = () => {
   const { className } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   useEscapeBack(`/class/${className}?tab=Meeting+Recordings`);
 
   const [mode, setMode] = useState<"idle" | "recording" | "paused" | "recorded" | "uploaded">("idle");
@@ -108,7 +111,7 @@ const MeetingRecordingPage = () => {
     toast.success("Summary generated!");
   };
 
-  const handlePost = () => {
+  const handlePost = async () => {
     if (!title.trim()) {
       toast.error("Please add a title before posting.");
       return;
@@ -117,35 +120,50 @@ const MeetingRecordingPage = () => {
       toast.error("No recording or upload to post.");
       return;
     }
+    if (!user) {
+      toast.error("You must be logged in to post.");
+      return;
+    }
     setIsPosting(true);
 
-    // Store media as data URL for display
-    const reader = new FileReader();
-    const mediaFile = uploadedFile || (audioBlob ? new File([audioBlob], "recording.webm", { type: "audio/webm" }) : null);
-    if (!mediaFile) return;
+    try {
+      const mediaFile = uploadedFile || (audioBlob ? new File([audioBlob], "recording.webm", { type: "audio/webm" }) : null);
+      if (!mediaFile) return;
 
-    reader.onloadend = () => {
-      const mediaUrl = reader.result as string;
-      const recordingsKey = `keen_recordings_${className}`;
-      const existing = JSON.parse(localStorage.getItem(recordingsKey) || "[]");
-      const newRecording = {
-        id: crypto.randomUUID(),
+      // Upload to storage
+      const fileExt = mediaFile.name.split(".").pop() || "webm";
+      const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("recordings")
+        .upload(filePath, mediaFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("recordings")
+        .getPublicUrl(filePath);
+
+      // Insert DB record
+      const { error: dbError } = await (supabase.from as any)("meeting_recordings").insert({
+        user_id: user.id,
+        class_name: className || "",
         title: title.trim(),
         description: description.trim(),
-        mediaUrl,
-        mediaType: mediaFile.type,
-        mediaName: uploadedFile?.name || "Recording",
+        media_url: urlData.publicUrl,
+        media_type: mediaFile.type,
+        media_name: uploadedFile?.name || "Recording",
         duration: recordingTime,
-        date: new Date().toISOString(),
-        publisherEmail: "",
-        publisherAvatar: null,
-      };
-      localStorage.setItem(recordingsKey, JSON.stringify([newRecording, ...existing]));
+      });
+
+      if (dbError) throw dbError;
+
       toast.success("Recording posted successfully!");
-      setIsPosting(false);
       navigate(`/class/${className}?tab=Meeting+Recordings`);
-    };
-    reader.readAsDataURL(mediaFile);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to post recording.");
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   const hasMedia = mode === "recorded" || mode === "uploaded";
