@@ -184,10 +184,34 @@ const ClassPage = () => {
     publisherAvatar?: string | null;
   }
 
-  const [recordings, setRecordings] = useState<Recording[]>(() => {
-    const saved = localStorage.getItem(recordingsKey);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [loadingRecordings, setLoadingRecordings] = useState(false);
+
+  // Fetch recordings from DB
+  useEffect(() => {
+    const fetchRecordings = async () => {
+      setLoadingRecordings(true);
+      const { data, error } = await (supabase.from as any)("meeting_recordings")
+        .select("*")
+        .eq("class_name", slug)
+        .order("created_at", { ascending: false });
+      if (!error && data) {
+        setRecordings(data.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description || "",
+          mediaUrl: r.media_url,
+          mediaType: r.media_type,
+          mediaName: r.media_name,
+          duration: r.duration || 0,
+          date: r.created_at,
+          userId: r.user_id,
+        })));
+      }
+      setLoadingRecordings(false);
+    };
+    fetchRecordings();
+  }, [slug]);
 
   const [deleteRecordingId, setDeleteRecordingId] = useState<string | null>(null);
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
