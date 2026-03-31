@@ -180,6 +180,7 @@ const ClassPage = () => {
     mediaName: string;
     duration: number;
     date?: string;
+    userId?: string;
     publisherEmail?: string;
     publisherAvatar?: string | null;
   }
