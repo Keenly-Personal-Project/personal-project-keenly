@@ -257,7 +257,11 @@ const MeetingRecordingPage = () => {
                   <audio controls className="w-full" src={URL.createObjectURL(audioBlob)} />
                 )}
                 {uploadedFile && (
-                  <audio controls className="w-full" src={URL.createObjectURL(uploadedFile)} />
+                  uploadedFile.type.startsWith("video/") ? (
+                    <video controls className="w-full rounded-lg" src={URL.createObjectURL(uploadedFile)} />
+                  ) : (
+                    <audio controls className="w-full" src={URL.createObjectURL(uploadedFile)} />
+                  )
                 )}
               </div>
             )}
