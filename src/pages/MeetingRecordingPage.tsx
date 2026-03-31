@@ -256,14 +256,14 @@ const MeetingRecordingPage = () => {
                   </Button>
                 </div>
 
-                {audioBlob && (
-                  <audio controls className="w-full" src={URL.createObjectURL(audioBlob)} />
+                {audioBlobUrl && (
+                  <audio controls className="w-full" src={audioBlobUrl} />
                 )}
-                {uploadedFile && (
+                {uploadedFile && uploadedFileUrl && (
                   uploadedFile.type.startsWith("video/") ? (
-                    <video controls className="w-full rounded-lg" src={URL.createObjectURL(uploadedFile)} />
+                    <video controls className="w-full rounded-lg" src={uploadedFileUrl} />
                   ) : (
-                    <audio controls className="w-full" src={URL.createObjectURL(uploadedFile)} />
+                    <audio controls className="w-full" src={uploadedFileUrl} />
                   )
                 )}
               </div>
