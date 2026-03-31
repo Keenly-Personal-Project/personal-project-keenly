@@ -118,11 +118,34 @@ const MeetingRecordingPage = () => {
       return;
     }
     setIsPosting(true);
-    setTimeout(() => {
+
+    // Store media as data URL for display
+    const reader = new FileReader();
+    const mediaFile = uploadedFile || (audioBlob ? new File([audioBlob], "recording.webm", { type: "audio/webm" }) : null);
+    if (!mediaFile) return;
+
+    reader.onloadend = () => {
+      const mediaUrl = reader.result as string;
+      const recordingsKey = `keen_recordings_${className}`;
+      const existing = JSON.parse(localStorage.getItem(recordingsKey) || "[]");
+      const newRecording = {
+        id: crypto.randomUUID(),
+        title: title.trim(),
+        description: description.trim(),
+        mediaUrl,
+        mediaType: mediaFile.type,
+        mediaName: uploadedFile?.name || "Recording",
+        duration: recordingTime,
+        date: new Date().toISOString(),
+        publisherEmail: "",
+        publisherAvatar: null,
+      };
+      localStorage.setItem(recordingsKey, JSON.stringify([newRecording, ...existing]));
       toast.success("Recording posted successfully!");
       setIsPosting(false);
       navigate(`/class/${className}?tab=Meeting+Recordings`);
-    }, 1000);
+    };
+    reader.readAsDataURL(mediaFile);
   };
 
   const hasMedia = mode === "recorded" || mode === "uploaded";
