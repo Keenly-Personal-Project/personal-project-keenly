@@ -12,6 +12,7 @@ import { toast } from "sonner";
 const MeetingRecordingPage = () => {
   const { className } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   useEscapeBack(`/class/${className}?tab=Meeting+Recordings`);
 
   const [mode, setMode] = useState<"idle" | "recording" | "paused" | "recorded" | "uploaded">("idle");
