@@ -495,14 +495,22 @@ const ClassPage = () => {
                     </p>
                   )}
 
-                  {/* Favorite */}
-                  <div className="mt-auto px-4 pb-4 pt-3">
+                  {/* Favorite & Delete */}
+                  <div className="mt-auto px-4 pb-4 pt-3 flex items-center justify-between">
                     <button onClick={(e) => toggleFavorite(ev.id, e)} className="transition-transform active:scale-90">
                       <Heart
                         className={`h-5 w-5 transition-colors ${isFav ? "fill-destructive text-destructive" : "opacity-60 hover:opacity-100"}`}
                         style={{ color: isFav ? undefined : textCol || "currentColor" }}
                       />
                     </button>
+                    {ev.publisherEmail === user?.email && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteEventId(ev.id); }}
+                        className="opacity-60 hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-4 w-4" style={{ color: textCol || "currentColor" }} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
