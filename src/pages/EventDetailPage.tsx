@@ -204,6 +204,35 @@ const EventDetailPage = () => {
           </div>
         )}
       </main>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this event. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                const saved = localStorage.getItem(eventsKey);
+                if (saved) {
+                  const events: EventItem[] = JSON.parse(saved);
+                  const updated = events.filter((e) => e.id !== eventId);
+                  localStorage.setItem(eventsKey, JSON.stringify(updated));
+                }
+                toast("Event deleted");
+                navigate(`/class/${className}?tab=Events%20List`);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
