@@ -14,6 +14,7 @@ import NoteSetupPage from "./pages/NoteSetupPage";
 import SettingsPage from "./pages/SettingsPage";
 import EventCreatePage from "./pages/EventCreatePage";
 import EventDetailPage from "./pages/EventDetailPage";
+import MeetingRecordingPage from "./pages/MeetingRecordingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
