@@ -424,9 +424,16 @@ const ClassPage = () => {
     }
     if (activeTab === "Meeting Recordings") {
       return contentWrapper(
-        <div>
-          <PublisherBadge email={user?.email || "Unknown"} avatarUrl={profile?.avatar_url} />
-          <p className="text-muted-foreground text-sm italic text-center py-8">No meeting recordings yet.</p>
+        <div className="grid grid-cols-1 gap-4">
+          <button
+            onClick={() => {
+              // TODO: implement add recording flow
+              toast("Coming soon!");
+            }}
+            className="w-full rounded-xl border-2 border-dashed border-primary/50 flex items-center justify-center py-12 hover:bg-muted/50 transition-colors cursor-pointer"
+          >
+            <Plus className="h-8 w-8 text-foreground" />
+          </button>
         </div>,
         "Meeting Recordings",
       );
