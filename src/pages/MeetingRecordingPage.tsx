@@ -127,6 +127,9 @@ const MeetingRecordingPage = () => {
 
   const hasMedia = mode === "recorded" || mode === "uploaded";
 
+  const audioBlobUrl = useMemo(() => audioBlob ? URL.createObjectURL(audioBlob) : null, [audioBlob]);
+  const uploadedFileUrl = useMemo(() => uploadedFile ? URL.createObjectURL(uploadedFile) : null, [uploadedFile]);
+
   const deleteMedia = () => {
     setAudioBlob(null);
     setUploadedFile(null);
