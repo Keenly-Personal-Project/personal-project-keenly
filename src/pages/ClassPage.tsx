@@ -10,7 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, Heart } from "lucide-react";
+import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, Heart, Trash2 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -166,7 +170,9 @@ const ClassPage = () => {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
-  useEscapeBack("/", [addDialogOpen]);
+  const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
+
+  useEscapeBack("/", [addDialogOpen, !!deleteEventId]);
 
   const toggleFavorite = (eventId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -489,14 +495,22 @@ const ClassPage = () => {
                     </p>
                   )}
 
-                  {/* Favorite */}
-                  <div className="mt-auto px-4 pb-4 pt-3">
+                  {/* Favorite & Delete */}
+                  <div className="mt-auto px-4 pb-4 pt-3 flex items-center justify-between">
                     <button onClick={(e) => toggleFavorite(ev.id, e)} className="transition-transform active:scale-90">
                       <Heart
                         className={`h-5 w-5 transition-colors ${isFav ? "fill-destructive text-destructive" : "opacity-60 hover:opacity-100"}`}
                         style={{ color: isFav ? undefined : textCol || "currentColor" }}
                       />
                     </button>
+                    {ev.publisherEmail === user?.email && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteEventId(ev.id); }}
+                        className="opacity-60 hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-4 w-4" style={{ color: textCol || "currentColor" }} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -620,6 +634,33 @@ const ClassPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteEventId} onOpenChange={(open) => { if (!open) setDeleteEventId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this event. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (!deleteEventId) return;
+                const updated = events.filter((ev) => ev.id !== deleteEventId);
+                setEvents(updated);
+                localStorage.setItem(eventsKey, JSON.stringify(updated));
+                setDeleteEventId(null);
+                toast("Event deleted");
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

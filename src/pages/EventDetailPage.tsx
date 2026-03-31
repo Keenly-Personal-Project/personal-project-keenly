@@ -2,9 +2,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useEscapeBack } from "@/hooks/useEscapeBack";
+import { toast } from "sonner";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Loader2, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import ImageViewer from "@/components/ImageViewer";
 
 interface EventItem {
@@ -118,12 +123,13 @@ const EventDetailPage = () => {
   const eventsKey = `keen_events_${slug}`;
 
   const [event, setEvent] = useState<EventItem | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
-  useEscapeBack(`/class/${className}?tab=Events%20List`);
+  useEscapeBack(`/class/${className}?tab=Events%20List`, [deleteDialogOpen]);
 
   useEffect(() => {
     const saved = localStorage.getItem(eventsKey);
@@ -168,9 +174,14 @@ const EventDetailPage = () => {
             <ArrowLeft className="h-4 w-4" /> Back to Events
           </Button>
           {isOwner && (
-            <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/class/${className}/event/${eventId}/edit`)}>
-              <Pencil className="h-3.5 w-3.5" /> Edit
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/class/${className}/event/${eventId}/edit`)}>
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1 text-destructive hover:text-destructive" onClick={() => setDeleteDialogOpen(true)}>
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </Button>
+            </div>
           )}
         </div>
 
@@ -193,6 +204,35 @@ const EventDetailPage = () => {
           </div>
         )}
       </main>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this event. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                const saved = localStorage.getItem(eventsKey);
+                if (saved) {
+                  const events: EventItem[] = JSON.parse(saved);
+                  const updated = events.filter((e) => e.id !== eventId);
+                  localStorage.setItem(eventsKey, JSON.stringify(updated));
+                }
+                toast("Event deleted");
+                navigate(`/class/${className}?tab=Events%20List`);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
