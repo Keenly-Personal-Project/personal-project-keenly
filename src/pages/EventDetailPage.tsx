@@ -2,9 +2,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useEscapeBack } from "@/hooks/useEscapeBack";
+import { toast } from "sonner";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Loader2, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import ImageViewer from "@/components/ImageViewer";
 
 interface EventItem {
