@@ -150,6 +150,7 @@ const ClassPage = () => {
   const notesKey = `keen_notes_${slug}`;
   const eventsKey = `keen_events_${slug}`;
   const favKey = `keen_event_favs_${slug}`;
+  const recordingsKey = `keen_recordings_${slug}`;
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
