@@ -174,9 +174,14 @@ const EventDetailPage = () => {
             <ArrowLeft className="h-4 w-4" /> Back to Events
           </Button>
           {isOwner && (
-            <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/class/${className}/event/${eventId}/edit`)}>
-              <Pencil className="h-3.5 w-3.5" /> Edit
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/class/${className}/event/${eventId}/edit`)}>
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1 text-destructive hover:text-destructive" onClick={() => setDeleteDialogOpen(true)}>
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </Button>
+            </div>
           )}
         </div>
 
