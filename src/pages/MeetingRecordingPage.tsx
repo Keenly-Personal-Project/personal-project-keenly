@@ -127,6 +127,14 @@ const MeetingRecordingPage = () => {
 
   const hasMedia = mode === "recorded" || mode === "uploaded";
 
+  const deleteMedia = () => {
+    setAudioBlob(null);
+    setUploadedFile(null);
+    setSummary("");
+    setRecordingTime(0);
+    setMode("idle");
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -166,40 +174,39 @@ const MeetingRecordingPage = () => {
               />
             </div>
 
-            {/* Action buttons row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Record button */}
-              <button
-                onClick={mode === "idle" || mode === "recorded" || mode === "uploaded" ? startRecording : undefined}
-                disabled={mode === "recording" || mode === "paused"}
-                className="flex items-center gap-3 rounded-xl border border-foreground/30 bg-muted/50 p-4 hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
-                  <Mic className="h-5 w-5 text-destructive" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium text-foreground">Record</p>
-                  <p className="text-xs text-muted-foreground">Use your microphone</p>
-                </div>
-              </button>
+            {/* Action buttons row — only show when no media yet */}
+            {!hasMedia && mode !== "recording" && mode !== "paused" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  onClick={startRecording}
+                  className="flex items-center gap-3 rounded-xl border border-foreground/30 bg-muted/50 p-4 hover:bg-muted transition-colors"
+                >
+                  <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <Mic className="h-5 w-5 text-destructive" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Record</p>
+                    <p className="text-xs text-muted-foreground">Use your microphone</p>
+                  </div>
+                </button>
 
-              {/* Upload button */}
-              <label className="flex items-center gap-3 rounded-xl border border-foreground/30 bg-muted/50 p-4 hover:bg-muted transition-colors cursor-pointer">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Upload className="h-5 w-5 text-primary" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium text-foreground">Upload</p>
-                  <p className="text-xs text-muted-foreground">Audio or video file</p>
-                </div>
-                <input
-                  type="file"
-                  accept="audio/*,video/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </label>
-            </div>
+                <label className="flex items-center gap-3 rounded-xl border border-foreground/30 bg-muted/50 p-4 hover:bg-muted transition-colors cursor-pointer">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Upload className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Upload</p>
+                    <p className="text-xs text-muted-foreground">Audio or video file</p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="audio/*,video/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            )}
 
             {/* Recording controls */}
             {(mode === "recording" || mode === "paused") && (
@@ -232,16 +239,20 @@ const MeetingRecordingPage = () => {
             {/* Media status */}
             {hasMedia && (
               <div className="rounded-xl border border-foreground/30 bg-muted/50 p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-primary" />
-                  <span className="text-sm font-medium text-foreground">
-                    {mode === "recorded"
-                      ? `Recording ready (${formatTime(recordingTime)})`
-                      : `Uploaded: ${uploadedFile?.name}`}
-                  </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-primary" />
+                    <span className="text-sm font-medium text-foreground">
+                      {mode === "recorded"
+                        ? `Recording ready (${formatTime(recordingTime)})`
+                        : `Uploaded: ${uploadedFile?.name}`}
+                    </span>
+                  </div>
+                  <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive h-8 px-2" onClick={deleteMedia}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
 
-                {/* Audio preview */}
                 {audioBlob && (
                   <audio controls className="w-full" src={URL.createObjectURL(audioBlob)} />
                 )}
@@ -266,9 +277,13 @@ const MeetingRecordingPage = () => {
               {summary && (
                 <div className="rounded-xl border border-foreground/30 bg-muted/50 p-4">
                   <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" /> AI Summary
+                    <Sparkles className="h-3 w-3" /> AI Summary (editable)
                   </p>
-                  <p className="text-sm text-foreground whitespace-pre-line">{summary}</p>
+                  <textarea
+                    value={summary}
+                    onChange={(e) => setSummary(e.target.value)}
+                    className="w-full bg-transparent text-sm text-foreground resize-none focus:outline-none min-h-[120px]"
+                  />
                 </div>
               )}
             </div>
