@@ -468,10 +468,13 @@ const ClassPage = () => {
       );
     }
     if (activeTab === "Meeting Recordings") {
-      const deleteRecording = (id: string) => {
-        const updated = recordings.filter((r) => r.id !== id);
-        setRecordings(updated);
-        localStorage.setItem(recordingsKey, JSON.stringify(updated));
+      const deleteRecording = async (id: string) => {
+        const { error } = await (supabase.from as any)("meeting_recordings").delete().eq("id", id);
+        if (error) {
+          toast.error("Failed to delete recording.");
+          return;
+        }
+        setRecordings((prev) => prev.filter((r) => r.id !== id));
         setDeleteRecordingId(null);
         toast.success("Recording deleted");
       };
