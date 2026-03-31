@@ -144,7 +144,7 @@ const MeetingRecordingPage = () => {
         .getPublicUrl(filePath);
 
       // Insert DB record
-      const { error: dbError } = await supabase.from("meeting_recordings").insert({
+      const { error: dbError } = await (supabase.from as any)("meeting_recordings").insert({
         user_id: user.id,
         class_name: className || "",
         title: title.trim(),
