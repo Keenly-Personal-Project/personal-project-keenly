@@ -17,7 +17,7 @@ const MeetingRecordingPage = () => {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
-  const [summary, setSummary] = useState("");
+  const [description, setDescription] = useState("");
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
 
@@ -101,9 +101,9 @@ const MeetingRecordingPage = () => {
     setIsSummarizing(true);
     // Simulate AI summary for now
     await new Promise((r) => setTimeout(r, 2000));
-    setSummary(
-      "This meeting covered the following key points:\n\n• Project timeline was discussed and deadlines were confirmed\n• Action items were assigned to team members\n• Next meeting scheduled for follow-up\n\n(AI summary will be powered by Lovable AI once fully integrated.)"
-    );
+    const summaryText =
+      "This meeting covered the following key points:\n\n• Project timeline was discussed and deadlines were confirmed\n• Action items were assigned to team members\n• Next meeting scheduled for follow-up\n\n(AI summary will be powered by Lovable AI once fully integrated.)";
+    setDescription((prev) => prev.trim() ? `${prev}\n\n${summaryText}` : summaryText);
     setIsSummarizing(false);
     toast.success("Summary generated!");
   };
@@ -118,11 +118,34 @@ const MeetingRecordingPage = () => {
       return;
     }
     setIsPosting(true);
-    setTimeout(() => {
+
+    // Store media as data URL for display
+    const reader = new FileReader();
+    const mediaFile = uploadedFile || (audioBlob ? new File([audioBlob], "recording.webm", { type: "audio/webm" }) : null);
+    if (!mediaFile) return;
+
+    reader.onloadend = () => {
+      const mediaUrl = reader.result as string;
+      const recordingsKey = `keen_recordings_${className}`;
+      const existing = JSON.parse(localStorage.getItem(recordingsKey) || "[]");
+      const newRecording = {
+        id: crypto.randomUUID(),
+        title: title.trim(),
+        description: description.trim(),
+        mediaUrl,
+        mediaType: mediaFile.type,
+        mediaName: uploadedFile?.name || "Recording",
+        duration: recordingTime,
+        date: new Date().toISOString(),
+        publisherEmail: "",
+        publisherAvatar: null,
+      };
+      localStorage.setItem(recordingsKey, JSON.stringify([newRecording, ...existing]));
       toast.success("Recording posted successfully!");
       setIsPosting(false);
       navigate(`/class/${className}?tab=Meeting+Recordings`);
-    }, 1000);
+    };
+    reader.readAsDataURL(mediaFile);
   };
 
   const hasMedia = mode === "recorded" || mode === "uploaded";
@@ -133,7 +156,6 @@ const MeetingRecordingPage = () => {
   const deleteMedia = () => {
     setAudioBlob(null);
     setUploadedFile(null);
-    setSummary("");
     setRecordingTime(0);
     setMode("idle");
   };
@@ -269,31 +291,27 @@ const MeetingRecordingPage = () => {
               </div>
             )}
 
-            {/* AI Summary */}
-            <div className="space-y-3">
-              <Button
-                onClick={handleSummarize}
-                disabled={!hasMedia || isSummarizing}
-                variant="outline"
-                className="w-full gap-2 border-foreground/30"
-              >
-                <Sparkles className="h-4 w-4" />
-                {isSummarizing ? "Generating Summary..." : "Generate AI Summary"}
-              </Button>
-
-              {summary && (
-                <div className="rounded-xl border border-foreground/30 bg-muted/50 p-4">
-                  <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" /> AI Summary (editable)
-                  </p>
-                  <textarea
-                    value={summary}
-                    onChange={(e) => setSummary(e.target.value)}
-                    className="w-full bg-transparent text-sm text-foreground resize-none focus:outline-none min-h-[120px]"
-                  />
-                </div>
-              )}
+            {/* Description */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Add a description for this recording..."
+                className="w-full rounded-lg border border-foreground/30 bg-muted/50 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[120px] resize-none"
+              />
             </div>
+
+            {/* AI Summary button */}
+            <Button
+              onClick={handleSummarize}
+              disabled={!hasMedia || isSummarizing}
+              variant="outline"
+              className="w-full gap-2 border-foreground/30"
+            >
+              <Sparkles className="h-4 w-4" />
+              {isSummarizing ? "Generating Summary..." : "Generate AI Summary"}
+            </Button>
 
             {/* Post button */}
             <Button

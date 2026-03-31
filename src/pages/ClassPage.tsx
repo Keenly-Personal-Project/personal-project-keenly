@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, Heart, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, Heart, Trash2, Mic } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -150,6 +150,7 @@ const ClassPage = () => {
   const notesKey = `keen_notes_${slug}`;
   const eventsKey = `keen_events_${slug}`;
   const favKey = `keen_event_favs_${slug}`;
+  const recordingsKey = `keen_recordings_${slug}`;
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
@@ -170,6 +171,25 @@ const ClassPage = () => {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
+  interface Recording {
+    id: string;
+    title: string;
+    description: string;
+    mediaUrl: string;
+    mediaType: string;
+    mediaName: string;
+    duration: number;
+    date?: string;
+    publisherEmail?: string;
+    publisherAvatar?: string | null;
+  }
+
+  const [recordings, setRecordings] = useState<Recording[]>(() => {
+    const saved = localStorage.getItem(recordingsKey);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [deleteRecordingId, setDeleteRecordingId] = useState<string | null>(null);
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
 
   useEscapeBack("/", [addDialogOpen, !!deleteEventId]);
@@ -423,6 +443,14 @@ const ClassPage = () => {
       );
     }
     if (activeTab === "Meeting Recordings") {
+      const deleteRecording = (id: string) => {
+        const updated = recordings.filter((r) => r.id !== id);
+        setRecordings(updated);
+        localStorage.setItem(recordingsKey, JSON.stringify(updated));
+        setDeleteRecordingId(null);
+        toast.success("Recording deleted");
+      };
+
       return contentWrapper(
         <div className="grid grid-cols-1 gap-4">
           <button
@@ -431,6 +459,59 @@ const ClassPage = () => {
           >
             <Plus className="h-8 w-8 text-foreground" />
           </button>
+
+          {recordings.map((rec) => {
+            const email = rec.publisherEmail || user?.email || "";
+            return (
+              <div key={rec.id} className="rounded-xl border border-foreground/30 bg-card overflow-hidden">
+                <div className="p-4 pb-2">
+                  <PublisherBadge email={email} avatarUrl={rec.publisherAvatar} />
+                  <h3 className="text-sm font-semibold text-foreground">{rec.title}</h3>
+                </div>
+
+                {/* Media preview */}
+                <div className="px-4">
+                  {rec.mediaType.startsWith("video/") ? (
+                    <video controls className="w-full rounded-md" src={rec.mediaUrl} />
+                  ) : (
+                    <audio controls className="w-full" src={rec.mediaUrl} />
+                  )}
+                </div>
+
+                {rec.description && (
+                  <p className="px-4 pt-2 text-sm text-muted-foreground whitespace-pre-wrap">{rec.description}</p>
+                )}
+
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-xs text-muted-foreground">{formatDate(rec.date)}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive h-7 px-2"
+                    onClick={() => setDeleteRecordingId(rec.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Delete recording confirmation */}
+          <AlertDialog open={!!deleteRecordingId} onOpenChange={() => setDeleteRecordingId(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Recording?</AlertDialogTitle>
+                <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteRecordingId && deleteRecording(deleteRecordingId)}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>,
         "Meeting Recordings",
       );
