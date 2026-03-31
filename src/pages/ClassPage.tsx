@@ -430,7 +430,7 @@ const ClassPage = () => {
               // TODO: implement add recording flow
               toast("Coming soon!");
             }}
-            className="w-full rounded-xl border-2 border-foreground flex items-center justify-center py-12 hover:bg-muted/50 transition-colors cursor-pointer"
+            className="w-full rounded-xl border border-foreground/30 flex items-center justify-center py-12 hover:bg-muted/50 transition-colors cursor-pointer"
           >
             <Plus className="h-8 w-8 text-foreground" />
           </button>
