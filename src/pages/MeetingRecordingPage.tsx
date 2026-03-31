@@ -156,7 +156,6 @@ const MeetingRecordingPage = () => {
   const deleteMedia = () => {
     setAudioBlob(null);
     setUploadedFile(null);
-    setSummary("");
     setRecordingTime(0);
     setMode("idle");
   };
