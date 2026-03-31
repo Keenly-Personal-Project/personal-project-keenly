@@ -233,7 +233,7 @@ const MeetingRecordingPage = () => {
             {hasMedia && (
               <div className="rounded-xl border border-foreground/30 bg-muted/50 p-4 space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-green-500" />
+                  <span className="h-2 w-2 rounded-full bg-primary" />
                   <span className="text-sm font-medium text-foreground">
                     {mode === "recorded"
                       ? `Recording ready (${formatTime(recordingTime)})`
