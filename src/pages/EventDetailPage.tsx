@@ -123,12 +123,13 @@ const EventDetailPage = () => {
   const eventsKey = `keen_events_${slug}`;
 
   const [event, setEvent] = useState<EventItem | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
-  useEscapeBack(`/class/${className}?tab=Events%20List`);
+  useEscapeBack(`/class/${className}?tab=Events%20List`, [deleteDialogOpen]);
 
   useEffect(() => {
     const saved = localStorage.getItem(eventsKey);
