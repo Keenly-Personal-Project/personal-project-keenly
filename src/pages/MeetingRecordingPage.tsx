@@ -291,31 +291,27 @@ const MeetingRecordingPage = () => {
               </div>
             )}
 
-            {/* AI Summary */}
-            <div className="space-y-3">
-              <Button
-                onClick={handleSummarize}
-                disabled={!hasMedia || isSummarizing}
-                variant="outline"
-                className="w-full gap-2 border-foreground/30"
-              >
-                <Sparkles className="h-4 w-4" />
-                {isSummarizing ? "Generating Summary..." : "Generate AI Summary"}
-              </Button>
-
-              {summary && (
-                <div className="rounded-xl border border-foreground/30 bg-muted/50 p-4">
-                  <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" /> AI Summary (editable)
-                  </p>
-                  <textarea
-                    value={summary}
-                    onChange={(e) => setSummary(e.target.value)}
-                    className="w-full bg-transparent text-sm text-foreground resize-none focus:outline-none min-h-[120px]"
-                  />
-                </div>
-              )}
+            {/* Description */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Add a description for this recording..."
+                className="w-full rounded-lg border border-foreground/30 bg-muted/50 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[120px] resize-none"
+              />
             </div>
+
+            {/* AI Summary button */}
+            <Button
+              onClick={handleSummarize}
+              disabled={!hasMedia || isSummarizing}
+              variant="outline"
+              className="w-full gap-2 border-foreground/30"
+            >
+              <Sparkles className="h-4 w-4" />
+              {isSummarizing ? "Generating Summary..." : "Generate AI Summary"}
+            </Button>
 
             {/* Post button */}
             <Button
