@@ -17,7 +17,7 @@ const MeetingRecordingPage = () => {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
-  const [summary, setSummary] = useState("");
+  const [description, setDescription] = useState("");
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
 
