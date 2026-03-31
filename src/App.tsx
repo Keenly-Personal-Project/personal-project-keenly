@@ -14,6 +14,7 @@ import NoteSetupPage from "./pages/NoteSetupPage";
 import SettingsPage from "./pages/SettingsPage";
 import EventCreatePage from "./pages/EventCreatePage";
 import EventDetailPage from "./pages/EventDetailPage";
+import MeetingRecordingPage from "./pages/MeetingRecordingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/class/:className/event/new" element={<EventCreatePage />} />
               <Route path="/class/:className/event/:eventId" element={<EventDetailPage />} />
               <Route path="/class/:className/event/:eventId/edit" element={<EventCreatePage />} />
+              <Route path="/class/:className/recording/new" element={<MeetingRecordingPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
