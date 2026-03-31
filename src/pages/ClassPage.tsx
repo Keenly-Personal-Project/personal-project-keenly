@@ -426,10 +426,7 @@ const ClassPage = () => {
       return contentWrapper(
         <div className="grid grid-cols-1 gap-4">
           <button
-            onClick={() => {
-              // TODO: implement add recording flow
-              toast("Coming soon!");
-            }}
+            onClick={() => navigate(`/class/${className}/recording/new`)}
             className="w-full rounded-xl border border-foreground/30 flex items-center justify-center py-12 hover:bg-muted/50 transition-colors cursor-pointer"
           >
             <Plus className="h-8 w-8 text-foreground" />
