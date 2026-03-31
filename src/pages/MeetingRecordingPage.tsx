@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Mic, Upload, Sparkles, Send, Square, Pause, Play, Trash2 } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
 const MeetingRecordingPage = () => {
@@ -126,6 +126,9 @@ const MeetingRecordingPage = () => {
   };
 
   const hasMedia = mode === "recorded" || mode === "uploaded";
+
+  const audioBlobUrl = useMemo(() => audioBlob ? URL.createObjectURL(audioBlob) : null, [audioBlob]);
+  const uploadedFileUrl = useMemo(() => uploadedFile ? URL.createObjectURL(uploadedFile) : null, [uploadedFile]);
 
   const deleteMedia = () => {
     setAudioBlob(null);
@@ -253,14 +256,14 @@ const MeetingRecordingPage = () => {
                   </Button>
                 </div>
 
-                {audioBlob && (
-                  <audio controls className="w-full" src={URL.createObjectURL(audioBlob)} />
+                {audioBlobUrl && (
+                  <audio controls className="w-full" src={audioBlobUrl} />
                 )}
-                {uploadedFile && (
+                {uploadedFile && uploadedFileUrl && (
                   uploadedFile.type.startsWith("video/") ? (
-                    <video controls className="w-full rounded-lg" src={URL.createObjectURL(uploadedFile)} />
+                    <video controls className="w-full rounded-lg" src={uploadedFileUrl} />
                   ) : (
-                    <audio controls className="w-full" src={URL.createObjectURL(uploadedFile)} />
+                    <audio controls className="w-full" src={uploadedFileUrl} />
                   )
                 )}
               </div>
