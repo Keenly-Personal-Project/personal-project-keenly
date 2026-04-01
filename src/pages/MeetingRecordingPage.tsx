@@ -127,6 +127,15 @@ const MeetingRecordingPage = () => {
       return;
     }
     setIsPosting(true);
+    setUploadProgress(0);
+
+    // Simulate progress during upload
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 400);
 
     try {
       const mediaFile = uploadedFile || (audioBlob ? new File([audioBlob], "recording.webm", { type: "audio/webm" }) : null);
@@ -140,6 +149,7 @@ const MeetingRecordingPage = () => {
         .upload(filePath, mediaFile);
 
       if (uploadError) throw uploadError;
+      setUploadProgress(80);
 
       const { data: urlData } = supabase.storage
         .from("meeting-recordings")
@@ -159,12 +169,17 @@ const MeetingRecordingPage = () => {
 
       if (dbError) throw dbError;
 
+      setUploadProgress(100);
+      await new Promise((r) => setTimeout(r, 400));
+
       toast.success("Recording posted successfully!");
       navigate(`/class/${className}?tab=Meeting+Recordings`);
     } catch (err: any) {
       toast.error(err.message || "Failed to post recording.");
     } finally {
+      clearInterval(progressInterval);
       setIsPosting(false);
+      setUploadProgress(0);
     }
   };
 
