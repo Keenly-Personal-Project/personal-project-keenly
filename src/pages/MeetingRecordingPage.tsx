@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Mic, Upload, Sparkles, Send, Square, Pause, Play, Trash2 } from "lucide-react";
+import { ArrowLeft, Mic, Upload, Sparkles, Send, Square, Pause, Play, Trash2, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
