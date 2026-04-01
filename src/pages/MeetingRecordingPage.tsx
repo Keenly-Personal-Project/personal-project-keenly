@@ -134,13 +134,13 @@ const MeetingRecordingPage = () => {
       const fileExt = mediaFile.name.split(".").pop() || "webm";
       const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
-        .from("recordings")
+        .from("meeting-recordings")
         .upload(filePath, mediaFile);
 
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage
-        .from("recordings")
+        .from("meeting-recordings")
         .getPublicUrl(filePath);
 
       // Insert DB record
