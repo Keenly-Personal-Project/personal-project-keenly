@@ -24,6 +24,7 @@ const MeetingRecordingPage = () => {
   const [description, setDescription] = useState("");
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
