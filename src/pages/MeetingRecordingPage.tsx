@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Mic, Upload, Sparkles, Send, Square, Pause, Play, Trash2 } from "lucide-react";
+import { ArrowLeft, Mic, Upload, Sparkles, Send, Square, Pause, Play, Trash2, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -23,6 +24,7 @@ const MeetingRecordingPage = () => {
   const [description, setDescription] = useState("");
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -125,6 +127,15 @@ const MeetingRecordingPage = () => {
       return;
     }
     setIsPosting(true);
+    setUploadProgress(0);
+
+    // Simulate progress during upload
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 400);
 
     try {
       const mediaFile = uploadedFile || (audioBlob ? new File([audioBlob], "recording.webm", { type: "audio/webm" }) : null);
@@ -138,6 +149,7 @@ const MeetingRecordingPage = () => {
         .upload(filePath, mediaFile);
 
       if (uploadError) throw uploadError;
+      setUploadProgress(80);
 
       const { data: urlData } = supabase.storage
         .from("meeting-recordings")
@@ -157,12 +169,17 @@ const MeetingRecordingPage = () => {
 
       if (dbError) throw dbError;
 
+      setUploadProgress(100);
+      await new Promise((r) => setTimeout(r, 400));
+
       toast.success("Recording posted successfully!");
       navigate(`/class/${className}?tab=Meeting+Recordings`);
     } catch (err: any) {
       toast.error(err.message || "Failed to post recording.");
     } finally {
+      clearInterval(progressInterval);
       setIsPosting(false);
+      setUploadProgress(0);
     }
   };
 
@@ -342,6 +359,20 @@ const MeetingRecordingPage = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Upload overlay */}
+        {isPosting && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4 rounded-2xl border border-foreground/10 bg-card p-8 shadow-lg w-[320px]">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="text-sm font-medium text-foreground">
+                {uploadProgress < 80 ? "Uploading media..." : uploadProgress < 100 ? "Saving recording..." : "Done!"}
+              </p>
+              <Progress value={uploadProgress} className="h-2 w-full" />
+              <p className="text-xs text-muted-foreground">{Math.round(uploadProgress)}%</p>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
