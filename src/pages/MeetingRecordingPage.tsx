@@ -359,7 +359,22 @@ const MeetingRecordingPage = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Upload overlay */}
+        {isPosting && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4 rounded-2xl border border-foreground/10 bg-card p-8 shadow-lg w-[320px]">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="text-sm font-medium text-foreground">
+                {uploadProgress < 80 ? "Uploading media..." : uploadProgress < 100 ? "Saving recording..." : "Done!"}
+              </p>
+              <Progress value={uploadProgress} className="h-2 w-full" />
+              <p className="text-xs text-muted-foreground">{Math.round(uploadProgress)}%</p>
+            </div>
+          </div>
+        )}
       </main>
+    </div>
     </div>
   );
 };
