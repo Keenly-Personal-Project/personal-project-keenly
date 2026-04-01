@@ -35,6 +35,48 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_recordings: {
+        Row: {
+          class_name: string
+          created_at: string
+          description: string
+          duration: number
+          id: string
+          media_name: string
+          media_type: string
+          media_url: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_name?: string
+          created_at?: string
+          description?: string
+          duration?: number
+          id?: string
+          media_name?: string
+          media_type: string
+          media_url: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_name?: string
+          created_at?: string
+          description?: string
+          duration?: number
+          id?: string
+          media_name?: string
+          media_type?: string
+          media_url?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           availability_mode: string
