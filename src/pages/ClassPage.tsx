@@ -196,7 +196,14 @@ const ClassPage = () => {
         .select("*")
         .eq("class_name", slug)
         .order("created_at", { ascending: false });
-      if (!error && data) {
+      if (error) {
+        console.error("Failed to fetch meeting recordings", error);
+        setRecordings([]);
+        setLoadingRecordings(false);
+        return;
+      }
+
+      if (data) {
         setRecordings(data.map((r: any) => ({
           id: r.id,
           title: r.title,
