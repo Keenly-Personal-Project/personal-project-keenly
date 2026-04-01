@@ -375,7 +375,6 @@ const MeetingRecordingPage = () => {
         )}
       </main>
     </div>
-    </div>
   );
 };
 
