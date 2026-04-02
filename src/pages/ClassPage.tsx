@@ -474,7 +474,7 @@ const ClassPage = () => {
         "Notes/Guides",
       );
     }
-    if (activeTab === "Meeting Recordings") {
+    if (activeTab === "Recordings") {
       const deleteRecording = async (id: string) => {
         const { error } = await (supabase.from as any)("meeting_recordings").delete().eq("id", id);
         if (error) {
