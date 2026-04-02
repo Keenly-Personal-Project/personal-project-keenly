@@ -333,7 +333,7 @@ const ClassPage = () => {
       <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 max-w-5xl min-h-[38rem]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          {(title === "Announcements" || title === "Events List") && (
+          {(title === "Announcements" || title === "Events") && (
             <Button
               size="sm"
               variant="outline"
