@@ -1,25 +1,51 @@
-import { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Trash2 } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Send, Loader2, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
+import { useChat } from "@/contexts/ChatContext";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+const STORAGE_KEY = "ryu_chat_messages";
+
+function loadMessages(): Msg[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveMessages(msgs: Msg[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs));
+}
 
 export default function AIChatPanel() {
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const { setChatOpen } = useChat();
+  const [messages, setMessages] = useState<Msg[]>(loadMessages);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Persist messages on change
+  useEffect(() => {
+    saveMessages(messages);
+  }, [messages]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
 
   const send = async () => {
     const text = input.trim();
@@ -107,15 +133,20 @@ export default function AIChatPanel() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full border-l border-border bg-card">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground">Ryu</h3>
-        {messages.length > 0 && (
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setMessages([])}>
-            <Trash2 className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-1">
+          {messages.length > 0 && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearMessages} title="Clear chat">
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setChatOpen(false)} title="Close">
+            <X className="h-3.5 w-3.5" />
           </Button>
-        )}
+        </div>
       </div>
 
       {/* Messages */}
