@@ -157,10 +157,8 @@ export default function AIChatPanel() {
       <ScrollArea className="flex-1 px-4 py-3" ref={scrollRef}>
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-              <span className="text-xl">🤖</span>
-            </div>
-            <p className="text-sm font-medium text-foreground">Hi! I'm Ryu</p>
+            <img src={ryuAvatar} alt="Ryu" className="h-12 w-12 rounded-full object-cover" />
+            <p className="text-sm font-medium text-foreground mt-3">Hi! I'm Ryu</p>
             <p className="text-xs text-muted-foreground mt-1">Your AI study assistant — ask me anything</p>
           </div>
         ) : (
