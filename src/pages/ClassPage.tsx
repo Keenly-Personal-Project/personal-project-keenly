@@ -330,7 +330,7 @@ const ClassPage = () => {
 
   const renderContent = () => {
     const contentWrapper = (children: React.ReactNode, title: string) => (
-      <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 max-w-5xl min-h-[38rem]">
+      <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 min-h-[38rem]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {(title === "Announcements" || title === "Events") && (
@@ -672,6 +672,7 @@ const ClassPage = () => {
         <div className="text-center mb-6">
           <p className="text-xl md:text-2xl text-foreground mt-3">{activeTab}</p>
         </div>
+        {/* Mobile tab bar */}
         <div className="md:hidden flex gap-2 overflow-x-auto pb-4">
           {sidebarTabs.map((tab) => (
             <button
@@ -683,21 +684,33 @@ const ClassPage = () => {
             </button>
           ))}
         </div>
-        <div className="hidden md:flex gap-6">
-          <div className="flex flex-col gap-2 w-48 shrink-0">
-            {sidebarTabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`text-left py-4 rounded-lg border border-foreground/30 text-sm font-medium transition-all ${activeTab === tab ? "bg-primary text-primary-foreground border-primary px-6 w-[13rem]" : "bg-card text-foreground hover:bg-muted px-4 w-48"}`}
-              >
-                {tab}
-              </button>
-            ))}
+
+        {/* Semicircle hover nav (desktop) */}
+        <div className="hidden md:block fixed left-0 top-1/2 -translate-y-1/2 z-30 group">
+          <div className="flex items-center">
+            {/* Semicircle trigger */}
+            <div className="w-5 h-20 bg-primary rounded-r-full flex items-center justify-center cursor-pointer shadow-md group-hover:w-6 transition-all duration-200">
+              <span className="text-primary-foreground text-xs font-bold select-none">&gt;</span>
+            </div>
+            {/* Flyout menu */}
+            <div className="absolute left-5 top-1/2 -translate-y-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 translate-x-0">
+              <div className="flex flex-col gap-1.5 bg-card border border-border rounded-xl shadow-lg p-2 min-w-[11rem]">
+                {sidebarTabs.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`text-left py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex-1">{renderContent()}</div>
         </div>
-        <div className="md:hidden">{renderContent()}</div>
+
+        {/* Content area – full width */}
+        <div className="w-full">{renderContent()}</div>
       </main>
 
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
