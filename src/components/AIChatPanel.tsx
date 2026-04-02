@@ -137,7 +137,10 @@ export default function AIChatPanel() {
     <div className="flex flex-col h-full border-l border-border bg-card">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold text-foreground">Ryu</h3>
+        <div className="flex items-center gap-2">
+          <img src={ryuAvatar} alt="Ryu" className="h-6 w-6 rounded-full object-cover" />
+          <h3 className="text-sm font-semibold text-foreground">Ryu</h3>
+        </div>
         <div className="flex items-center gap-1">
           {messages.length > 0 && (
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearMessages} title="Clear chat">
