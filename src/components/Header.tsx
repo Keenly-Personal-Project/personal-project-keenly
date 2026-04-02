@@ -58,6 +58,7 @@ const Header = () => {
   };
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     const buildNotifications = () => {
