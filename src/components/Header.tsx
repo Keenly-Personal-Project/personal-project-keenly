@@ -178,7 +178,7 @@ const Header = () => {
             </Button>
             <Sheet open={chatOpen} onOpenChange={setChatOpen}>
               <SheetContent side="right" className="p-0 w-[360px] sm:max-w-[400px]">
-                <SheetTitle className="sr-only">AI Assistant</SheetTitle>
+                <SheetTitle className="sr-only">Ryu</SheetTitle>
                 <AIChatPanel />
               </SheetContent>
             </Sheet>
