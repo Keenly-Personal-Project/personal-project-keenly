@@ -110,7 +110,7 @@ export default function AIChatPanel() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold text-foreground">AI Assistant</h3>
+        <h3 className="text-sm font-semibold text-foreground">Ryu</h3>
         {messages.length > 0 && (
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setMessages([])}>
             <Trash2 className="h-3.5 w-3.5" />
@@ -125,8 +125,8 @@ export default function AIChatPanel() {
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
               <span className="text-xl">🤖</span>
             </div>
-            <p className="text-sm font-medium text-foreground">Hi! I'm your AI assistant</p>
-            <p className="text-xs text-muted-foreground mt-1">Ask me anything about your studies</p>
+            <p className="text-sm font-medium text-foreground">Hi! I'm Ryu</p>
+            <p className="text-xs text-muted-foreground mt-1">Your AI study assistant — ask me anything</p>
           </div>
         ) : (
           <div className="space-y-3">
