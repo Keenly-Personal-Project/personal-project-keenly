@@ -551,7 +551,7 @@ const ClassPage = () => {
         "Recordings",
       );
     }
-    if (activeTab === "Events List") {
+    if (activeTab === "Events") {
       return contentWrapper(
         events.length === 0 ? (
           <p className="text-sm text-muted-foreground italic text-center py-8">
