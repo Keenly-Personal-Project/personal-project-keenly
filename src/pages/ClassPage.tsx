@@ -18,7 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 
-const sidebarTabs = ["Announcements", "Absentee List", "Meeting Recordings", "Events List", "Notes/Guides"];
+const sidebarTabs = ["Announcements", "Absentee List", "Recordings", "Events List", "Notes/Guides"];
 
 interface Announcement {
   id: string;
