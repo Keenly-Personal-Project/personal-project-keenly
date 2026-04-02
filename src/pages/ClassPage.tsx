@@ -637,7 +637,7 @@ const ClassPage = () => {
             })}
           </div>
         ),
-        "Events List",
+        "Events",
       );
     }
     if (activeTab === "Absentee List") {
