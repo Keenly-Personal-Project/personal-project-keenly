@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { useChat } from "@/contexts/ChatContext";
+import ryuAvatar from "@/assets/ryu-avatar.png";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -136,7 +137,10 @@ export default function AIChatPanel() {
     <div className="flex flex-col h-full border-l border-border bg-card">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold text-foreground">Ryu</h3>
+        <div className="flex items-center gap-2">
+          <img src={ryuAvatar} alt="Ryu" className="h-6 w-6 rounded-full object-cover" />
+          <h3 className="text-sm font-semibold text-foreground">Ryu</h3>
+        </div>
         <div className="flex items-center gap-1">
           {messages.length > 0 && (
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearMessages} title="Clear chat">
@@ -153,18 +157,19 @@ export default function AIChatPanel() {
       <ScrollArea className="flex-1 px-4 py-3" ref={scrollRef}>
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-              <span className="text-xl">🤖</span>
-            </div>
-            <p className="text-sm font-medium text-foreground">Hi! I'm Ryu</p>
+            <img src={ryuAvatar} alt="Ryu" className="h-12 w-12 rounded-full object-cover" />
+            <p className="text-sm font-medium text-foreground mt-3">Hi! I'm Ryu</p>
             <p className="text-xs text-muted-foreground mt-1">Your AI study assistant — ask me anything</p>
           </div>
         ) : (
           <div className="space-y-3">
             {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                {msg.role === "assistant" && (
+                  <img src={ryuAvatar} alt="Ryu" className="h-6 w-6 rounded-full object-cover shrink-0 mt-1" />
+                )}
                 <div
-                  className={`max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
+                  className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-foreground"
