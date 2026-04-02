@@ -18,7 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 
-const sidebarTabs = ["Announcements", "Absentee List", "Recordings", "Events List", "Notes/Guides"];
+const sidebarTabs = ["Announcements", "Absentee List", "Recordings", "Events", "Notes/Guides"];
 
 interface Announcement {
   id: string;
@@ -333,13 +333,13 @@ const ClassPage = () => {
       <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 max-w-5xl min-h-[38rem]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          {(title === "Announcements" || title === "Events List") && (
+          {(title === "Announcements" || title === "Events") && (
             <Button
               size="sm"
               variant="outline"
               className="gap-1 h-7 text-xs"
               onClick={() => {
-                if (title === "Events List") navigate(`/class/${className}/event/new`);
+                if (title === "Events") navigate(`/class/${className}/event/new`);
                 else setAddDialogOpen(true);
               }}
             >
@@ -551,7 +551,7 @@ const ClassPage = () => {
         "Recordings",
       );
     }
-    if (activeTab === "Events List") {
+    if (activeTab === "Events") {
       return contentWrapper(
         events.length === 0 ? (
           <p className="text-sm text-muted-foreground italic text-center py-8">
@@ -637,7 +637,7 @@ const ClassPage = () => {
             })}
           </div>
         ),
-        "Events List",
+        "Events",
       );
     }
     if (activeTab === "Absentee List") {
