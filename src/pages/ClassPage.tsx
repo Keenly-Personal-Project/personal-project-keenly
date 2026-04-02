@@ -548,7 +548,7 @@ const ClassPage = () => {
             </AlertDialogContent>
           </AlertDialog>
         </div>,
-        "Meeting Recordings",
+        "Recordings",
       );
     }
     if (activeTab === "Events List") {
