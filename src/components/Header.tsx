@@ -1,11 +1,13 @@
-import { Bell } from "lucide-react";
+import { Bell, BotMessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import AIChatPanel from "@/components/AIChatPanel";
 
 interface Announcement {
   id: string;
