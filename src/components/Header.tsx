@@ -1,11 +1,13 @@
-import { Bell } from "lucide-react";
+import { Bell, BotMessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import AIChatPanel from "@/components/AIChatPanel";
 
 interface Announcement {
   id: string;
@@ -56,6 +58,7 @@ const Header = () => {
   };
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     const buildNotifications = () => {
@@ -164,6 +167,21 @@ const Header = () => {
               </div>
             </PopoverContent>
           </Popover>
+          <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 sm:h-10 sm:w-10"
+              title="AI Assistant"
+              onClick={() => setChatOpen(true)}
+            >
+              <BotMessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+            <Sheet open={chatOpen} onOpenChange={setChatOpen}>
+              <SheetContent side="right" className="p-0 w-[360px] sm:max-w-[400px]">
+                <SheetTitle className="sr-only">AI Assistant</SheetTitle>
+                <AIChatPanel />
+              </SheetContent>
+            </Sheet>
           {user && <ProfileDropdown />}
         </div>
       </div>
