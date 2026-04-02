@@ -699,10 +699,10 @@ const ClassPage = () => {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`text-left py-3 px-4 rounded-xl border text-sm font-medium shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 hover:shadow-lg ${
+                    className={`text-left py-1.5 rounded-xl border text-xs font-medium shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 hover:shadow-lg ${
                       activeTab === tab
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card text-foreground border-border hover:bg-muted"
+                        ? "bg-primary text-primary-foreground border-primary px-5"
+                        : "bg-card text-foreground border-border hover:bg-muted px-3"
                     }`}
                     style={{ transitionDelay: `${i * 50}ms`, animationDelay: `${i * 50}ms` }}
                   >
