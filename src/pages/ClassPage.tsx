@@ -694,15 +694,15 @@ const ClassPage = () => {
             </div>
             {/* Flyout menu – separate boxes */}
             <div className="absolute left-5 top-1/2 -translate-y-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200">
-              <div className="flex flex-col gap-2 min-w-[12rem]">
+              <div className="flex flex-col items-start gap-2">
                 {sidebarTabs.map((tab, i) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`text-left py-2.5 rounded-xl border text-sm font-medium shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 hover:shadow-lg ${
+                    className={`text-left py-4 rounded-lg border text-sm font-medium transition-all duration-200 opacity-0 -translate-x-2 group-hover:translate-x-0 group-hover:opacity-100 hover:translate-x-1 ${
                       activeTab === tab
-                        ? "bg-primary text-primary-foreground border-primary px-6 min-w-[14rem]"
-                        : "bg-card text-foreground border-border hover:bg-muted px-4 min-w-[12rem]"
+                        ? "bg-primary text-primary-foreground border-primary px-6 w-[13rem]"
+                        : "bg-card text-foreground border-foreground/30 hover:bg-muted px-4 w-48"
                     }`}
                     style={{ transitionDelay: `${i * 50}ms`, animationDelay: `${i * 50}ms` }}
                   >
