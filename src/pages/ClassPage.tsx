@@ -339,7 +339,7 @@ const ClassPage = () => {
               variant="outline"
               className="gap-1 h-7 text-xs"
               onClick={() => {
-                if (title === "Events List") navigate(`/class/${className}/event/new`);
+                if (title === "Events") navigate(`/class/${className}/event/new`);
                 else setAddDialogOpen(true);
               }}
             >
