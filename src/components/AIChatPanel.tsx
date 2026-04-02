@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { useChat } from "@/contexts/ChatContext";
+import ryuAvatar from "@/assets/ryu-avatar.png";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
