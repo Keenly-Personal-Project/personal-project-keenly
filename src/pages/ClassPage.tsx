@@ -18,7 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 
-const sidebarTabs = ["Announcements", "Absentee List", "Meeting Recordings", "Events List", "Notes/Guides"];
+const sidebarTabs = ["Announcements", "Absentee List", "Recordings", "Events List", "Notes/Guides"];
 
 interface Announcement {
   id: string;
@@ -474,7 +474,7 @@ const ClassPage = () => {
         "Notes/Guides",
       );
     }
-    if (activeTab === "Meeting Recordings") {
+    if (activeTab === "Recordings") {
       const deleteRecording = async (id: string) => {
         const { error } = await (supabase.from as any)("meeting_recordings").delete().eq("id", id);
         if (error) {
@@ -548,7 +548,7 @@ const ClassPage = () => {
             </AlertDialogContent>
           </AlertDialog>
         </div>,
-        "Meeting Recordings",
+        "Recordings",
       );
     }
     if (activeTab === "Events List") {

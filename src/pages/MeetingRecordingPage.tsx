@@ -214,7 +214,7 @@ const MeetingRecordingPage = () => {
           className="text-3xl font-bold text-foreground"
           style={{ fontFamily: "'Amatic SC', cursive" }}
         >
-          New Meeting Recording
+          New Recording
         </h1>
 
         {/* Main card */}
