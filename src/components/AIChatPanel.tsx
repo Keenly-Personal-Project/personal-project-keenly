@@ -125,8 +125,8 @@ export default function AIChatPanel() {
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
               <span className="text-xl">🤖</span>
             </div>
-            <p className="text-sm font-medium text-foreground">Hi! I'm your AI assistant</p>
-            <p className="text-xs text-muted-foreground mt-1">Ask me anything about your studies</p>
+            <p className="text-sm font-medium text-foreground">Hi! I'm Ryu</p>
+            <p className="text-xs text-muted-foreground mt-1">Your AI study assistant — ask me anything</p>
           </div>
         ) : (
           <div className="space-y-3">
