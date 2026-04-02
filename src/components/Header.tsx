@@ -167,6 +167,21 @@ const Header = () => {
               </div>
             </PopoverContent>
           </Popover>
+          <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 sm:h-10 sm:w-10"
+              title="AI Assistant"
+              onClick={() => setChatOpen(true)}
+            >
+              <BotMessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+            <Sheet open={chatOpen} onOpenChange={setChatOpen}>
+              <SheetContent side="right" className="p-0 w-[360px] sm:max-w-[400px]">
+                <SheetTitle className="sr-only">AI Assistant</SheetTitle>
+                <AIChatPanel />
+              </SheetContent>
+            </Sheet>
           {user && <ProfileDropdown />}
         </div>
       </div>
