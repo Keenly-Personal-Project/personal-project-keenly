@@ -119,28 +119,21 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background p-4 relative overflow-hidden">
       {/* Grid of hello words covering entire background */}
-      <div className="absolute inset-0 flex flex-row items-stretch pointer-events-none select-none overflow-hidden">
-        {Array.from({ length: COLS }, (_, col) => (
-          <div key={col} className="flex-1 flex flex-col items-center justify-start gap-1 py-2">
-            {Array.from({ length: ROWS }, (_, row) => {
-              const word = helloWords[(col * ROWS + row) % helloWords.length];
-              return (
-                <span
-                  key={row}
-                  className="text-primary font-bold whitespace-nowrap"
-                  style={{
-                    fontFamily: "'Kablammo', cursive",
-                    fontSize: `clamp(0.7rem, 1.6vw, 1.3rem)`,
-                    opacity: 0.2,
-                    writingMode: 'vertical-rl',
-                    textOrientation: 'mixed',
-                  }}
-                >
-                  {word}
-                </span>
-              );
-            })}
-          </div>
+      <div className="absolute inset-0 flex flex-wrap content-start justify-center gap-x-6 gap-y-2 p-4 pointer-events-none select-none overflow-hidden">
+        {helloWords.map((word, i) => (
+          <span
+            key={i}
+            className="text-primary font-bold flex flex-col items-center leading-tight"
+            style={{
+              fontFamily: "'Kablammo', cursive",
+              fontSize: `clamp(0.7rem, 1.4vw, 1.2rem)`,
+              opacity: 0.2,
+            }}
+          >
+            {word.split('').map((char, j) => (
+              <span key={j}>{char}</span>
+            ))}
+          </span>
         ))}
       </div>
 
