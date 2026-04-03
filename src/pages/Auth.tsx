@@ -14,158 +14,33 @@ const authSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }).max(72),
 });
 
-const floatingHellos = [
-  { text: "你好!", lang: "Chinese", top: "15%", left: "18%", size: "text-4xl", rotate: "-12deg", opacity: "0.22" },
-  { text: "こんにちは!", lang: "Japanese", top: "18%", right: "12%", size: "text-5xl", rotate: "8deg", opacity: "0.2" },
-  { text: "Bonjour!", lang: "French", top: "30%", left: "8%", size: "text-3xl", rotate: "15deg", opacity: "0.25" },
-  { text: "Ciao!", lang: "Italian", bottom: "22%", right: "10%", size: "text-6xl", rotate: "-8deg", opacity: "0.18" },
-  { text: "Halo!", lang: "Indonesian", bottom: "18%", left: "15%", size: "text-2xl", rotate: "20deg", opacity: "0.28" },
-  { text: "Γεια σου!", lang: "Greek", top: "48%", right: "8%", size: "text-4xl", rotate: "-18deg", opacity: "0.22" },
-  { text: "Olá!", lang: "Portuguese", top: "40%", left: "5%", size: "text-5xl", rotate: "5deg", opacity: "0.2" },
-  { text: "Hallo!", lang: "German", bottom: "28%", right: "18%", size: "text-3xl", rotate: "-6deg", opacity: "0.25" },
-  { text: "你好!", lang: "Chinese", bottom: "14%", right: "28%", size: "text-2xl", rotate: "12deg", opacity: "0.22" },
-  { text: "Bonjour!", lang: "French", top: "12%", right: "28%", size: "text-3xl", rotate: "-5deg", opacity: "0.24" },
-  { text: "こんにちは!", lang: "Japanese", bottom: "30%", left: "22%", size: "text-3xl", rotate: "10deg", opacity: "0.2" },
-  { text: "Ciao!", lang: "Italian", top: "22%", left: "28%", size: "text-2xl", rotate: "-15deg", opacity: "0.26" },
-  { text: "Halo!", lang: "Indonesian", top: "55%", left: "10%", size: "text-4xl", rotate: "7deg", opacity: "0.18" },
-  { text: "Γεια σου!", lang: "Greek", bottom: "10%", left: "35%", size: "text-2xl", rotate: "-10deg", opacity: "0.22" },
-  { text: "Olá!", lang: "Portuguese", top: "10%", left: "38%", size: "text-4xl", rotate: "18deg", opacity: "0.18" },
-  { text: "Hallo!", lang: "German", top: "42%", right: "15%", size: "text-5xl", rotate: "-3deg", opacity: "0.2" },
-  { text: "Merhaba!", lang: "Turkish", top: "35%", left: "25%", size: "text-3xl", rotate: "6deg", opacity: "0.2" },
-  { text: "Sawubona!", lang: "Zulu", top: "50%", right: "25%", size: "text-2xl", rotate: "-14deg", opacity: "0.24" },
-  { text: "Namaste!", lang: "Hindi", bottom: "35%", left: "30%", size: "text-4xl", rotate: "11deg", opacity: "0.16" },
-  { text: "Annyeong!", lang: "Korean", top: "25%", right: "20%", size: "text-3xl", rotate: "-7deg", opacity: "0.22" },
-  { text: "Hej!", lang: "Swedish", top: "20%", right: "32%", size: "text-2xl", rotate: "16deg", opacity: "0.24" },
-  { text: "Salam!", lang: "Arabic", top: "55%", left: "28%", size: "text-4xl", rotate: "-4deg", opacity: "0.18" },
-  { text: "Aloha!", lang: "Hawaiian", top: "38%", left: "12%", size: "text-3xl", rotate: "9deg", opacity: "0.22" },
-  { text: "Shalom!", lang: "Hebrew", bottom: "24%", left: "40%", size: "text-2xl", rotate: "-11deg", opacity: "0.2" },
-  { text: "Kamusta!", lang: "Filipino", bottom: "15%", right: "22%", size: "text-3xl", rotate: "4deg", opacity: "0.18" },
-  { text: "Xin chào!", lang: "Vietnamese", top: "28%", left: "35%", size: "text-2xl", rotate: "-9deg", opacity: "0.22" },
-  { text: "Habari!", lang: "Swahili", bottom: "25%", left: "18%", size: "text-3xl", rotate: "13deg", opacity: "0.18" },
+const helloWords = [
+  "Hello!", "你好!", "こんにちは!", "Bonjour!", "Ciao!", "Halo!", "Γεια σου!", "Olá!", "Hallo!",
+  "Merhaba!", "Sawubona!", "Namaste!", "Annyeong!", "Hej!", "Salam!", "Aloha!", "Shalom!",
+  "Kamusta!", "Xin chào!", "Habari!", "Hola!", "Привет!", "Ahoj!", "Cześć!", "Salut!",
+  "Hei!", "Halló!", "Saluton!", "Kumusta!", "Selam!", "Buna!", "Sveiki!", "Tere!",
+  "Nǐ hǎo!", "Konnichiwa!", "Anyoung!", "Sawasdee!", "Mingalaba!", "Vanakkam!", "Ayubowan!",
+  "Jambo!", "Mbote!", "Sanibonani!", "Dumela!", "Mholweni!", "Salaam!", "Zdravo!", "Bog!",
+  "Szia!", "Ahlan!", "Barev!", "Gamarjoba!", "Sain bainuu!", "Salaw!", "Selamat!",
+  "Kumusta!", "Kia ora!", "Bula!", "Talofa!", "Malo!", "Hafa adai!", "Yokwe!",
+  "Alii!", "Ran annim!", "Mogethin!", "Iakwe!", "Mauri!", "Halo!", "Bonjou!",
+  "Saluton!", "Përshëndetje!", "Tungjatjeta!", "Mirëdita!", "Zdravstvuyte!", "Pryvit!",
 ];
 
-const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  
-  const { signIn, signUp, user, loading } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (!loading && user) {
-      navigate('/');
+// Build a grid that covers the entire background
+const gridHellos = (() => {
+  const cols = 8;
+  const rows = 12;
+  const items: { text: string; row: number; col: number }[] = [];
+  let idx = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      items.push({ text: helloWords[idx % helloWords.length], row: r, col: c });
+      idx++;
     }
-  }, [user, loading, navigate]);
-
-  const validateForm = () => {
-    try {
-      authSchema.parse({ email, password });
-      setErrors({});
-      return true;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const fieldErrors: { email?: string; password?: string } = {};
-        error.errors.forEach((err) => {
-          if (err.path[0] === 'email') fieldErrors.email = err.message;
-          if (err.path[0] === 'password') fieldErrors.password = err.message;
-        });
-        setErrors(fieldErrors);
-      }
-      return false;
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setIsLoading(true);
-
-    try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast({
-              variant: "destructive",
-              title: "Login failed",
-              description: "Invalid email or password. Please try again.",
-            });
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Login failed",
-              description: error.message,
-            });
-          }
-        } else {
-          toast({
-            title: "Welcome back!",
-            description: "You have successfully logged in.",
-          });
-        }
-      } else {
-        const { error } = await signUp(email, password);
-        if (error) {
-          if (error.message.includes('already registered')) {
-            toast({
-              variant: "destructive",
-              title: "Sign up failed",
-              description: "This email is already registered. Please sign in instead.",
-            });
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Sign up failed",
-              description: error.message,
-            });
-          }
-        } else {
-          toast({
-            title: "Account created!",
-            description: "Please check your email to confirm your account.",
-          });
-        }
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
   }
-
-  return (
-    <div className="min-h-screen flex flex-col bg-background p-4 relative overflow-hidden">
-      {/* Floating HELLO words */}
-      {floatingHellos.map((hello, i) => (
-        <span
-          key={i}
-          className={`absolute ${hello.size} font-bold text-primary select-none pointer-events-none`}
-          style={{
-            top: hello.top,
-            left: hello.left,
-            right: hello.right,
-            bottom: hello.bottom,
-            transform: `rotate(${hello.rotate})`,
-            opacity: hello.opacity,
-            fontFamily: "'Kablammo', cursive",
-          } as React.CSSProperties}
-        >
-          {hello.text}
-        </span>
-      ))}
-
+  return items;
+})();
       {/* Top left logo */}
       <div className="mb-8 z-10">
         <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary">
