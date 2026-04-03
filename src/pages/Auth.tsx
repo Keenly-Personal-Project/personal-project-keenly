@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,29 +18,127 @@ const helloWords = [
   "Hello!", "你好!", "こんにちは!", "Bonjour!", "Ciao!", "Halo!", "Γεια σου!", "Olá!", "Hallo!",
   "Merhaba!", "Sawubona!", "Namaste!", "Annyeong!", "Hej!", "Salam!", "Aloha!", "Shalom!",
   "Kamusta!", "Xin chào!", "Habari!", "Hola!", "Привет!", "Ahoj!", "Cześć!", "Salut!",
-  "Hei!", "Halló!", "Saluton!", "Kumusta!", "Selam!", "Buna!", "Sveiki!", "Tere!",
-  "Nǐ hǎo!", "Konnichiwa!", "Anyoung!", "Sawasdee!", "Mingalaba!", "Vanakkam!", "Ayubowan!",
-  "Jambo!", "Mbote!", "Sanibonani!", "Dumela!", "Mholweni!", "Salaam!", "Zdravo!", "Bog!",
-  "Szia!", "Ahlan!", "Barev!", "Gamarjoba!", "Sain bainuu!", "Salaw!", "Selamat!",
-  "Kumusta!", "Kia ora!", "Bula!", "Talofa!", "Malo!", "Hafa adai!", "Yokwe!",
-  "Alii!", "Ran annim!", "Mogethin!", "Iakwe!", "Mauri!", "Halo!", "Bonjou!",
-  "Saluton!", "Përshëndetje!", "Tungjatjeta!", "Mirëdita!", "Zdravstvuyte!", "Pryvit!",
+  "Hei!", "Halló!", "Saluton!", "Selam!", "Buna!", "Sveiki!", "Tere!", "Konnichiwa!",
+  "Sawasdee!", "Mingalaba!", "Vanakkam!", "Ayubowan!", "Jambo!", "Mbote!", "Sanibonani!",
+  "Dumela!", "Mholweni!", "Salaam!", "Zdravo!", "Bog!", "Szia!", "Ahlan!", "Barev!",
+  "Gamarjoba!", "Sain bainuu!", "Selamat!", "Kia ora!", "Bula!", "Talofa!", "Malo!",
+  "Hafa adai!", "Yokwe!", "Alii!", "Mauri!", "Bonjou!", "Përshëndetje!", "Mirëdita!",
+  "Pryvit!", "Saluton!", "Nǐ hǎo!", "Anyoung!", "Kumusta!", "Zdravstvuyte!", "Habari!",
+  "Shalom!", "Hej!", "Merhaba!", "Sawubona!", "Aloha!", "Ciao!", "Olá!", "Hallo!",
 ];
 
-// Build a grid that covers the entire background
-const gridHellos = (() => {
-  const cols = 8;
-  const rows = 12;
-  const items: { text: string; row: number; col: number }[] = [];
-  let idx = 0;
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      items.push({ text: helloWords[idx % helloWords.length], row: r, col: c });
-      idx++;
+const COLS = 8;
+const ROWS = 10;
+
+const gridHellos = Array.from({ length: ROWS * COLS }, (_, i) => ({
+  text: helloWords[i % helloWords.length],
+  row: Math.floor(i / COLS),
+  col: i % COLS,
+}));
+
+const Auth = () => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  
+  const { signIn, signUp, user, loading } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/');
     }
+  }, [user, loading, navigate]);
+
+  const validateForm = () => {
+    try {
+      authSchema.parse({ email, password });
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: { email?: string; password?: string } = {};
+        error.errors.forEach((err) => {
+          if (err.path[0] === 'email') fieldErrors.email = err.message;
+          if (err.path[0] === 'password') fieldErrors.password = err.message;
+        });
+        setErrors(fieldErrors);
+      }
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    setIsLoading(true);
+    try {
+      if (isLogin) {
+        const { error } = await signIn(email, password);
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Login failed",
+            description: error.message.includes('Invalid login credentials')
+              ? "Invalid email or password. Please try again."
+              : error.message,
+          });
+        } else {
+          toast({ title: "Welcome back!", description: "You have successfully logged in." });
+        }
+      } else {
+        const { error } = await signUp(email, password);
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Sign up failed",
+            description: error.message.includes('already registered')
+              ? "This email is already registered. Please sign in instead."
+              : error.message,
+          });
+        } else {
+          toast({ title: "Account created!", description: "Please check your email to confirm your account." });
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
-  return items;
-})();
+
+  return (
+    <div className="min-h-screen flex flex-col bg-background p-4 relative overflow-hidden">
+      {/* Grid of hello words covering entire background */}
+      <div className="absolute inset-0 grid pointer-events-none select-none" style={{
+        gridTemplateColumns: `repeat(${COLS}, 1fr)`,
+        gridTemplateRows: `repeat(${ROWS}, 1fr)`,
+      }}>
+        {gridHellos.map((item, i) => (
+          <span
+            key={i}
+            className="flex items-center justify-center text-primary font-bold"
+            style={{
+              fontFamily: "'Kablammo', cursive",
+              fontSize: `clamp(0.8rem, 1.8vw, 1.5rem)`,
+              opacity: 0.2,
+              transform: `rotate(${((item.row + item.col) % 5 - 2) * 4}deg)`,
+            }}
+          >
+            {item.text}
+          </span>
+        ))}
+      </div>
+
       {/* Top left logo */}
       <div className="mb-8 z-10">
         <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary">
@@ -50,7 +148,6 @@ const gridHellos = (() => {
 
       {/* Center content */}
       <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] z-10">
-        {/* Greeting */}
         <div className="text-center mb-6">
           <h1 className="text-5xl font-bold text-foreground mb-2" style={{ fontFamily: "'Kablammo', cursive" }}>
             HELLO!!!
@@ -74,9 +171,7 @@ const gridHellos = (() => {
                   disabled={isLoading}
                   className="h-12"
                 />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
-                )}
+                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
@@ -89,9 +184,7 @@ const gridHellos = (() => {
                   disabled={isLoading}
                   className="h-12"
                 />
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password}</p>
-                )}
+                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4 px-8 pb-8">
