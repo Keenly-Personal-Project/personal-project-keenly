@@ -120,7 +120,7 @@ const Auth = () => {
     <div className="min-h-screen flex flex-col bg-background p-4 relative overflow-hidden">
       {/* Grid of hello words covering entire background */}
       <div className="absolute inset-0 flex flex-wrap items-start content-start justify-center gap-x-3 gap-y-0 p-2 pointer-events-none select-none overflow-hidden">
-        {[...helloWords, ...helloWords, ...helloWords].map((word, i) => (
+        {Array.from({ length: 8 }, () => helloWords).flat().map((word, i) => (
           <span
             key={i}
             className="text-primary font-bold flex flex-col items-center"
