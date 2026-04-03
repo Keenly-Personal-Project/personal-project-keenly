@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,35 +14,27 @@ const authSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }).max(72),
 });
 
-const floatingHellos = [
-  { text: "你好!", lang: "Chinese", top: "15%", left: "18%", size: "text-4xl", rotate: "-12deg", opacity: "0.22" },
-  { text: "こんにちは!", lang: "Japanese", top: "18%", right: "12%", size: "text-5xl", rotate: "8deg", opacity: "0.2" },
-  { text: "Bonjour!", lang: "French", top: "30%", left: "8%", size: "text-3xl", rotate: "15deg", opacity: "0.25" },
-  { text: "Ciao!", lang: "Italian", bottom: "22%", right: "10%", size: "text-6xl", rotate: "-8deg", opacity: "0.18" },
-  { text: "Halo!", lang: "Indonesian", bottom: "18%", left: "15%", size: "text-2xl", rotate: "20deg", opacity: "0.28" },
-  { text: "Γεια σου!", lang: "Greek", top: "48%", right: "8%", size: "text-4xl", rotate: "-18deg", opacity: "0.22" },
-  { text: "Olá!", lang: "Portuguese", top: "40%", left: "5%", size: "text-5xl", rotate: "5deg", opacity: "0.2" },
-  { text: "Hallo!", lang: "German", bottom: "28%", right: "18%", size: "text-3xl", rotate: "-6deg", opacity: "0.25" },
-  { text: "你好!", lang: "Chinese", bottom: "14%", right: "28%", size: "text-2xl", rotate: "12deg", opacity: "0.22" },
-  { text: "Bonjour!", lang: "French", top: "12%", right: "28%", size: "text-3xl", rotate: "-5deg", opacity: "0.24" },
-  { text: "こんにちは!", lang: "Japanese", bottom: "30%", left: "22%", size: "text-3xl", rotate: "10deg", opacity: "0.2" },
-  { text: "Ciao!", lang: "Italian", top: "22%", left: "28%", size: "text-2xl", rotate: "-15deg", opacity: "0.26" },
-  { text: "Halo!", lang: "Indonesian", top: "55%", left: "10%", size: "text-4xl", rotate: "7deg", opacity: "0.18" },
-  { text: "Γεια σου!", lang: "Greek", bottom: "10%", left: "35%", size: "text-2xl", rotate: "-10deg", opacity: "0.22" },
-  { text: "Olá!", lang: "Portuguese", top: "10%", left: "38%", size: "text-4xl", rotate: "18deg", opacity: "0.18" },
-  { text: "Hallo!", lang: "German", top: "42%", right: "15%", size: "text-5xl", rotate: "-3deg", opacity: "0.2" },
-  { text: "Merhaba!", lang: "Turkish", top: "35%", left: "25%", size: "text-3xl", rotate: "6deg", opacity: "0.2" },
-  { text: "Sawubona!", lang: "Zulu", top: "50%", right: "25%", size: "text-2xl", rotate: "-14deg", opacity: "0.24" },
-  { text: "Namaste!", lang: "Hindi", bottom: "35%", left: "30%", size: "text-4xl", rotate: "11deg", opacity: "0.16" },
-  { text: "Annyeong!", lang: "Korean", top: "25%", right: "20%", size: "text-3xl", rotate: "-7deg", opacity: "0.22" },
-  { text: "Hej!", lang: "Swedish", top: "20%", right: "32%", size: "text-2xl", rotate: "16deg", opacity: "0.24" },
-  { text: "Salam!", lang: "Arabic", top: "55%", left: "28%", size: "text-4xl", rotate: "-4deg", opacity: "0.18" },
-  { text: "Aloha!", lang: "Hawaiian", top: "38%", left: "12%", size: "text-3xl", rotate: "9deg", opacity: "0.22" },
-  { text: "Shalom!", lang: "Hebrew", bottom: "24%", left: "40%", size: "text-2xl", rotate: "-11deg", opacity: "0.2" },
-  { text: "Kamusta!", lang: "Filipino", bottom: "15%", right: "22%", size: "text-3xl", rotate: "4deg", opacity: "0.18" },
-  { text: "Xin chào!", lang: "Vietnamese", top: "28%", left: "35%", size: "text-2xl", rotate: "-9deg", opacity: "0.22" },
-  { text: "Habari!", lang: "Swahili", bottom: "25%", left: "18%", size: "text-3xl", rotate: "13deg", opacity: "0.18" },
+const helloWords = [
+  "Hello!", "你好!", "こんにちは!", "Bonjour!", "Ciao!", "Halo!", "Γεια σου!", "Olá!", "Hallo!",
+  "Merhaba!", "Sawubona!", "Namaste!", "Annyeong!", "Hej!", "Salam!", "Aloha!", "Shalom!",
+  "Kamusta!", "Xin chào!", "Habari!", "Hola!", "Привет!", "Ahoj!", "Cześć!", "Salut!",
+  "Hei!", "Halló!", "Saluton!", "Selam!", "Buna!", "Sveiki!", "Tere!", "Konnichiwa!",
+  "Sawasdee!", "Mingalaba!", "Vanakkam!", "Ayubowan!", "Jambo!", "Mbote!", "Sanibonani!",
+  "Dumela!", "Mholweni!", "Salaam!", "Zdravo!", "Bog!", "Szia!", "Ahlan!", "Barev!",
+  "Gamarjoba!", "Sain bainuu!", "Selamat!", "Kia ora!", "Bula!", "Talofa!", "Malo!",
+  "Hafa adai!", "Yokwe!", "Alii!", "Mauri!", "Bonjou!", "Përshëndetje!", "Mirëdita!",
+  "Pryvit!", "Saluton!", "Nǐ hǎo!", "Anyoung!", "Kumusta!", "Zdravstvuyte!", "Habari!",
+  "Shalom!", "Hej!", "Merhaba!", "Sawubona!", "Aloha!", "Ciao!", "Olá!", "Hallo!",
 ];
+
+const COLS = 8;
+const ROWS = 10;
+
+const gridHellos = Array.from({ length: ROWS * COLS }, (_, i) => ({
+  text: helloWords[i % helloWords.length],
+  row: Math.floor(i / COLS),
+  col: i % COLS,
+}));
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -81,55 +73,34 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
-    
     setIsLoading(true);
-
     try {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast({
-              variant: "destructive",
-              title: "Login failed",
-              description: "Invalid email or password. Please try again.",
-            });
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Login failed",
-              description: error.message,
-            });
-          }
-        } else {
           toast({
-            title: "Welcome back!",
-            description: "You have successfully logged in.",
+            variant: "destructive",
+            title: "Login failed",
+            description: error.message.includes('Invalid login credentials')
+              ? "Invalid email or password. Please try again."
+              : error.message,
           });
+        } else {
+          toast({ title: "Welcome back!", description: "You have successfully logged in." });
         }
       } else {
         const { error } = await signUp(email, password);
         if (error) {
-          if (error.message.includes('already registered')) {
-            toast({
-              variant: "destructive",
-              title: "Sign up failed",
-              description: "This email is already registered. Please sign in instead.",
-            });
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Sign up failed",
-              description: error.message,
-            });
-          }
-        } else {
           toast({
-            title: "Account created!",
-            description: "Please check your email to confirm your account.",
+            variant: "destructive",
+            title: "Sign up failed",
+            description: error.message.includes('already registered')
+              ? "This email is already registered. Please sign in instead."
+              : error.message,
           });
+        } else {
+          toast({ title: "Account created!", description: "Please check your email to confirm your account." });
         }
       }
     } finally {
@@ -147,24 +118,26 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background p-4 relative overflow-hidden">
-      {/* Floating HELLO words */}
-      {floatingHellos.map((hello, i) => (
-        <span
-          key={i}
-          className={`absolute ${hello.size} font-bold text-primary select-none pointer-events-none`}
-          style={{
-            top: hello.top,
-            left: hello.left,
-            right: hello.right,
-            bottom: hello.bottom,
-            transform: `rotate(${hello.rotate})`,
-            opacity: hello.opacity,
-            fontFamily: "'Kablammo', cursive",
-          } as React.CSSProperties}
-        >
-          {hello.text}
-        </span>
-      ))}
+      {/* Grid of hello words covering entire background */}
+      <div className="absolute inset-0 grid pointer-events-none select-none" style={{
+        gridTemplateColumns: `repeat(${COLS}, 1fr)`,
+        gridTemplateRows: `repeat(${ROWS}, 1fr)`,
+      }}>
+        {gridHellos.map((item, i) => (
+          <span
+            key={i}
+            className="flex items-center justify-center text-primary font-bold"
+            style={{
+              fontFamily: "'Kablammo', cursive",
+              fontSize: `clamp(0.8rem, 1.8vw, 1.5rem)`,
+              opacity: 0.2,
+              transform: `rotate(${((item.row + item.col) % 5 - 2) * 4}deg)`,
+            }}
+          >
+            {item.text}
+          </span>
+        ))}
+      </div>
 
       {/* Top left logo */}
       <div className="mb-8 z-10">
@@ -175,7 +148,6 @@ const Auth = () => {
 
       {/* Center content */}
       <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] z-10">
-        {/* Greeting */}
         <div className="text-center mb-6">
           <h1 className="text-5xl font-bold text-foreground mb-2" style={{ fontFamily: "'Kablammo', cursive" }}>
             HELLO!!!
@@ -199,9 +171,7 @@ const Auth = () => {
                   disabled={isLoading}
                   className="h-12"
                 />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
-                )}
+                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
@@ -214,9 +184,7 @@ const Auth = () => {
                   disabled={isLoading}
                   className="h-12"
                 />
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password}</p>
-                )}
+                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4 px-8 pb-8">
