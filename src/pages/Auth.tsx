@@ -119,20 +119,21 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background p-4 relative overflow-hidden">
       {/* Grid of hello words covering entire background */}
-      <div className="absolute inset-0 flex flex-wrap items-start content-start justify-center gap-x-6 gap-y-1 p-4 pointer-events-none select-none overflow-hidden">
-        {helloWords.map((word, i) => (
+      <div className="absolute inset-0 flex flex-wrap items-start content-start justify-center gap-x-3 gap-y-0 p-2 pointer-events-none select-none overflow-hidden">
+        {[...helloWords, ...helloWords, ...helloWords].map((word, i) => (
           <span
             key={i}
             className="text-primary font-bold flex flex-col items-center"
             style={{
               fontFamily: "'Kablammo', cursive",
-              fontSize: `clamp(0.7rem, 1.4vw, 1.2rem)`,
+              fontSize: `clamp(0.65rem, 1.2vw, 1rem)`,
               opacity: 0.2,
-              lineHeight: 1.1,
+              lineHeight: 0.9,
+              letterSpacing: '-0.02em',
             }}
           >
             {word.split('').map((char, j) => (
-              <span key={j} style={{ lineHeight: 1 }}>{char}</span>
+              <span key={j} style={{ lineHeight: 0.85, margin: 0, padding: 0 }}>{char}</span>
             ))}
           </span>
         ))}
