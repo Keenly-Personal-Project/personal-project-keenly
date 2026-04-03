@@ -119,23 +119,28 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background p-4 relative overflow-hidden">
       {/* Grid of hello words covering entire background */}
-      <div className="absolute inset-0 grid pointer-events-none select-none" style={{
-        gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-        gridTemplateRows: `repeat(${ROWS}, 1fr)`,
-      }}>
-        {gridHellos.map((item, i) => (
-          <span
-            key={i}
-            className="flex items-center justify-center text-primary font-bold"
-            style={{
-              fontFamily: "'Kablammo', cursive",
-              fontSize: `clamp(0.8rem, 1.8vw, 1.5rem)`,
-              opacity: 0.2,
-              transform: `rotate(${((item.row + item.col) % 5 - 2) * 4}deg)`,
-            }}
-          >
-            {item.text}
-          </span>
+      <div className="absolute inset-0 flex flex-row items-stretch pointer-events-none select-none overflow-hidden">
+        {Array.from({ length: COLS }, (_, col) => (
+          <div key={col} className="flex-1 flex flex-col items-center justify-start gap-1 py-2">
+            {Array.from({ length: ROWS }, (_, row) => {
+              const word = helloWords[(col * ROWS + row) % helloWords.length];
+              return (
+                <span
+                  key={row}
+                  className="text-primary font-bold whitespace-nowrap"
+                  style={{
+                    fontFamily: "'Kablammo', cursive",
+                    fontSize: `clamp(0.7rem, 1.6vw, 1.3rem)`,
+                    opacity: 0.2,
+                    writingMode: 'vertical-rl',
+                    textOrientation: 'mixed',
+                  }}
+                >
+                  {word}
+                </span>
+              );
+            })}
+          </div>
         ))}
       </div>
 
