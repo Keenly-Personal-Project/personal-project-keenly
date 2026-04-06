@@ -642,7 +642,7 @@ const ClassPage = () => {
                         style={{ color: isFav ? undefined : textCol || "currentColor" }}
                       />
                     </button>
-                    {ev.publisherEmail === user?.email && (
+                    {canEdit && ev.publisherEmail === user?.email && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeleteEventId(ev.id); }}
                         className="opacity-60 hover:opacity-100 transition-opacity"
