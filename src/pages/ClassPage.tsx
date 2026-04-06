@@ -155,6 +155,9 @@ const ClassPage = () => {
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
   const [imageUploading, setImageUploading] = useState(false);
 
+  const [previewRole, setPreviewRole] = useState<KeenRole>("owner");
+  const canEdit = previewRole === "owner" || previewRole === "admin";
+
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
   const notesKey = `keen_notes_${slug}`;
