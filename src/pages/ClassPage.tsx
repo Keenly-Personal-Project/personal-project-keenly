@@ -476,13 +476,15 @@ const ClassPage = () => {
               </button>
             );
           })}
-          <button
-            onClick={handleAddNote}
-            className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
-          >
-            <Plus className="h-8 w-8 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground font-medium">Add notes</span>
-          </button>
+          {canEdit && (
+            <button
+              onClick={handleAddNote}
+              className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
+            >
+              <Plus className="h-8 w-8 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground font-medium">Add notes</span>
+            </button>
+          )}
         </div>,
         "Notes/Guides",
       );
