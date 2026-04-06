@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, Heart, Trash2, Mic } from "lucide-react";
+import { ArrowLeft, Loader2, Image as ImageIcon, Plus, X, Heart, Trash2, Mic, Shield, ShieldCheck, Crown, Users, ChevronDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -18,7 +20,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 
-const sidebarTabs = ["Announcements", "Absentee List", "Recordings", "Events", "Notes/Guides"];
+const sidebarTabs = ["Announcements", "Absentee List", "Recordings", "Events", "Notes/Guides", "Details"];
+
+type KeenRole = "owner" | "admin" | "member";
+
+const roleConfig: Record<KeenRole, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; description: string }> = {
+  owner: { label: "Owner", icon: Crown, color: "hsl(45, 93%, 47%)", description: "Full control — can assign roles and manage everything" },
+  admin: { label: "Admin", icon: ShieldCheck, color: "hsl(210, 80%, 55%)", description: "Can update sections — announcements, events, notes, etc." },
+  member: { label: "Member", icon: Shield, color: "hsl(var(--muted-foreground))", description: "View-only access to all sections" },
+};
 
 interface Announcement {
   id: string;
@@ -144,6 +154,9 @@ const ClassPage = () => {
   const [newImages, setNewImages] = useState<string[]>([]);
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
   const [imageUploading, setImageUploading] = useState(false);
+
+  const [previewRole, setPreviewRole] = useState<KeenRole>("owner");
+  const canEdit = previewRole === "owner" || previewRole === "admin";
 
   const slug = decodeURIComponent(className || "");
   const storageKey = `keen_announcements_${slug}`;
@@ -333,7 +346,7 @@ const ClassPage = () => {
       <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 min-h-[38rem]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          {(title === "Announcements" || title === "Events") && (
+          {canEdit && (title === "Announcements" || title === "Events") && (
             <Button
               size="sm"
               variant="outline"
@@ -463,13 +476,15 @@ const ClassPage = () => {
               </button>
             );
           })}
-          <button
-            onClick={handleAddNote}
-            className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
-          >
-            <Plus className="h-8 w-8 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground font-medium">Add notes</span>
-          </button>
+          {canEdit && (
+            <button
+              onClick={handleAddNote}
+              className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
+            >
+              <Plus className="h-8 w-8 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground font-medium">Add notes</span>
+            </button>
+          )}
         </div>,
         "Notes/Guides",
       );
@@ -488,12 +503,14 @@ const ClassPage = () => {
 
       return contentWrapper(
         <div className="grid grid-cols-1 gap-4">
-          <button
-            onClick={() => navigate(`/class/${className}/recording/new`)}
-            className="w-full rounded-xl border border-foreground/30 flex items-center justify-center py-12 hover:bg-muted/50 transition-colors cursor-pointer"
-          >
-            <Plus className="h-8 w-8 text-foreground" />
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => navigate(`/class/${className}/recording/new`)}
+              className="w-full rounded-xl border border-foreground/30 flex items-center justify-center py-12 hover:bg-muted/50 transition-colors cursor-pointer"
+            >
+              <Plus className="h-8 w-8 text-foreground" />
+            </button>
+          )}
 
           {recordings.map((rec) => {
             const email = rec.publisherEmail || user?.email || "";
@@ -519,14 +536,16 @@ const ClassPage = () => {
 
                 <div className="flex items-center justify-between px-4 py-3">
                   <span className="text-xs text-muted-foreground">{formatDate(rec.date)}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive h-7 px-2"
-                    onClick={() => setDeleteRecordingId(rec.id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive h-7 px-2"
+                      onClick={() => setDeleteRecordingId(rec.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
               </div>
             );
@@ -623,7 +642,7 @@ const ClassPage = () => {
                         style={{ color: isFav ? undefined : textCol || "currentColor" }}
                       />
                     </button>
-                    {ev.publisherEmail === user?.email && (
+                    {canEdit && ev.publisherEmail === user?.email && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeleteEventId(ev.id); }}
                         className="opacity-60 hover:opacity-100 transition-opacity"
@@ -644,6 +663,128 @@ const ClassPage = () => {
       return contentWrapper(
         <p className="text-muted-foreground text-sm italic text-center py-8">Absentee tracking coming soon.</p>,
         "Absentee List",
+      );
+    }
+    if (activeTab === "Details") {
+      const currentRole = roleConfig[previewRole];
+      const RoleIcon = currentRole.icon;
+      
+      return (
+        <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 min-h-[38rem]">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-sm font-semibold text-foreground">Details</h3>
+          </div>
+
+          {/* Role Preview Switcher */}
+          <div className="mb-6 p-4 rounded-lg border border-dashed border-primary/40 bg-primary/5">
+            <p className="text-xs font-medium text-primary mb-2">🔀 Preview Mode — Switch role to test UI visibility</p>
+            <div className="flex gap-2">
+              {(["owner", "admin", "member"] as KeenRole[]).map((role) => {
+                const cfg = roleConfig[role];
+                const Icon = cfg.icon;
+                const isActive = previewRole === role;
+                return (
+                  <button
+                    key={role}
+                    onClick={() => setPreviewRole(role)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                      isActive
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {cfg.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Current User Card */}
+          <div className="rounded-lg border border-foreground/20 bg-card p-5 mb-6">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-12 w-12">
+                {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt="You" />}
+                <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                  {(user?.email || "U").slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <p className="font-semibold text-foreground">{user?.email?.split("@")[0] || "User"}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge
+                  className="gap-1 px-3 py-1 text-xs font-semibold border-0"
+                  style={{ backgroundColor: currentRole.color, color: "#fff" }}
+                >
+                  <RoleIcon className="h-3 w-3" />
+                  {currentRole.label}
+                </Badge>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">{currentRole.description}</p>
+          </div>
+
+          {/* Role Assignment (Owner only) */}
+          {previewRole === "owner" && (
+            <div className="rounded-lg border border-foreground/20 bg-card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="h-4 w-4 text-foreground" />
+                <h4 className="text-sm font-semibold text-foreground">Manage Roles</h4>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                As the owner, you can assign and change roles for members of this Keen.
+              </p>
+              
+              {/* Example members for demonstration */}
+              <div className="space-y-3">
+                {[
+                  { name: "You", email: user?.email || "you@example.com", role: "owner" as KeenRole, isSelf: true },
+                ].map((member, i) => {
+                  const mCfg = roleConfig[member.role];
+                  const MIcon = mCfg.icon;
+                  return (
+                    <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          {member.isSelf && profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                            {member.name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{member.name}</p>
+                          <p className="text-xs text-muted-foreground">{member.email}</p>
+                        </div>
+                      </div>
+                      <Badge
+                        className="gap-1 px-2.5 py-0.5 text-[10px] font-semibold border-0"
+                        style={{ backgroundColor: mCfg.color, color: "#fff" }}
+                      >
+                        <MIcon className="h-2.5 w-2.5" />
+                        {mCfg.label}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-4 italic">
+                Invite members to this Keen to manage their roles here.
+              </p>
+            </div>
+          )}
+
+          {/* Non-owner info */}
+          {previewRole !== "owner" && (
+            <div className="rounded-lg border border-foreground/20 bg-card p-5">
+              <p className="text-xs text-muted-foreground italic">
+                Only the owner can manage roles in this Keen.
+              </p>
+            </div>
+          )}
+        </div>
       );
     }
 
