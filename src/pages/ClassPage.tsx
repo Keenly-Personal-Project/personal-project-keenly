@@ -536,14 +536,16 @@ const ClassPage = () => {
 
                 <div className="flex items-center justify-between px-4 py-3">
                   <span className="text-xs text-muted-foreground">{formatDate(rec.date)}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive h-7 px-2"
-                    onClick={() => setDeleteRecordingId(rec.id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive h-7 px-2"
+                      onClick={() => setDeleteRecordingId(rec.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
               </div>
             );
