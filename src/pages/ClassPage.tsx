@@ -20,7 +20,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 
-const sidebarTabs = ["Announcements", "Absentee List", "Recordings", "Events", "Notes/Guides"];
+const sidebarTabs = ["Announcements", "Absentee List", "Recordings", "Events", "Notes/Guides", "Details"];
+
+type KeenRole = "owner" | "admin" | "member";
+
+const roleConfig: Record<KeenRole, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; description: string }> = {
+  owner: { label: "Owner", icon: Crown, color: "hsl(45, 93%, 47%)", description: "Full control — can assign roles and manage everything" },
+  admin: { label: "Admin", icon: ShieldCheck, color: "hsl(210, 80%, 55%)", description: "Can update sections — announcements, events, notes, etc." },
+  member: { label: "Member", icon: Shield, color: "hsl(var(--muted-foreground))", description: "View-only access to all sections" },
+};
 
 interface Announcement {
   id: string;
