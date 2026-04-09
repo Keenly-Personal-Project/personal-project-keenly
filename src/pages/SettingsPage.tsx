@@ -125,6 +125,7 @@ const SettingsPage = () => {
       const url = urlData.publicUrl;
       localStorage.setItem(BG_STORAGE_KEY, url);
       setBgUrl(url);
+      window.dispatchEvent(new Event("bg-updated"));
       toast.success("Background updated!");
     } catch (err) {
       // Fallback to base64
@@ -133,6 +134,7 @@ const SettingsPage = () => {
         const url = ev.target?.result as string;
         localStorage.setItem(BG_STORAGE_KEY, url);
         setBgUrl(url);
+        window.dispatchEvent(new Event("bg-updated"));
         toast.success("Background updated!");
       };
       reader.readAsDataURL(file);
@@ -145,18 +147,21 @@ const SettingsPage = () => {
     const v = val[0];
     setBgBlur(v);
     localStorage.setItem(BG_BLUR_KEY, v.toString());
+    window.dispatchEvent(new Event("bg-updated"));
   };
 
   const handlePosXChange = (val: number[]) => {
     const v = val[0];
     setBgPosX(v);
     localStorage.setItem(BG_POSX_KEY, v.toString());
+    window.dispatchEvent(new Event("bg-updated"));
   };
 
   const handlePosYChange = (val: number[]) => {
     const v = val[0];
     setBgPosY(v);
     localStorage.setItem(BG_POSY_KEY, v.toString());
+    window.dispatchEvent(new Event("bg-updated"));
   };
 
   const handleRemoveBg = () => {
@@ -168,6 +173,7 @@ const SettingsPage = () => {
     setBgBlur(0);
     setBgPosX(50);
     setBgPosY(50);
+    window.dispatchEvent(new Event("bg-updated"));
     toast.success("Background removed.");
   };
 
