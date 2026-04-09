@@ -1,15 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getCustomBackground } from "@/pages/SettingsPage";
 
 const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
   const [bg, setBg] = useState(getCustomBackground);
+  const bgRef = useRef(bg);
 
   useEffect(() => {
-    const handler = () => setBg(getCustomBackground());
+    const handler = () => {
+      const newBg = getCustomBackground();
+      // Only update state if values actually changed
+      if (
+        newBg.url !== bgRef.current.url ||
+        newBg.blur !== bgRef.current.blur ||
+        newBg.posX !== bgRef.current.posX ||
+        newBg.posY !== bgRef.current.posY
+      ) {
+        bgRef.current = newBg;
+        setBg(newBg);
+      }
+    };
     window.addEventListener("storage", handler);
-    const interval = setInterval(handler, 1000);
+    window.addEventListener("bg-updated", handler);
+    const interval = setInterval(handler, 2000);
     return () => {
       window.removeEventListener("storage", handler);
+      window.removeEventListener("bg-updated", handler);
       clearInterval(interval);
     };
   }, []);
