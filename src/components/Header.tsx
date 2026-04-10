@@ -1,12 +1,15 @@
-import { Bell, BotMessageSquare } from "lucide-react";
+import { Bell, BotMessageSquare, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import { useChat } from "@/contexts/ChatContext";
+import { toast } from "sonner";
 
 interface Announcement {
   id: string;
@@ -17,6 +20,7 @@ interface Announcement {
 
 interface ClassInfo {
   name: string;
+  code?: string;
 }
 
 interface Notification {
@@ -27,11 +31,27 @@ interface Notification {
   description: string;
 }
 
+function generateHexCode(): string {
+  const classes: ClassInfo[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
+  const existingCodes = new Set(classes.map(c => c.code).filter(Boolean));
+  let code: string;
+  do {
+    code = Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase().padStart(6, "0");
+  } while (existingCodes.has(code));
+  return code;
+}
+
 const Header = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { chatOpen, toggleChat } = useChat();
+
+  const [keenPopoverOpen, setKeenPopoverOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [newClassName, setNewClassName] = useState("");
+  const [joinCode, setJoinCode] = useState("");
 
   const handleLogoClick = () => {
     if (location.pathname === "/") return;
@@ -106,79 +126,199 @@ const Header = () => {
     navigate(`/class/${notif.keenSlug}/announcement/${notif.announcementId}`);
   };
 
+  const handleCreateKeen = () => {
+    if (!newClassName.trim()) return;
+    const classes = JSON.parse(localStorage.getItem("keen_classes") || "[]");
+    const code = generateHexCode();
+    const newClass = { name: newClassName.trim(), icon: "BookOpen", code };
+    classes.push(newClass);
+    localStorage.setItem("keen_classes", JSON.stringify(classes));
+    setNewClassName("");
+    setCreateDialogOpen(false);
+    // Set the creator as owner
+    const slug = newClass.name.toLowerCase().replace(/\s+/g, "-");
+    localStorage.setItem(`keen_preview_role_${slug}`, "owner");
+    toast.success(`Keen created! Code: ${code}`);
+    window.dispatchEvent(new Event("keen_classes_updated"));
+    navigate(`/class/${slug}`);
+  };
+
+  const handleJoinKeen = () => {
+    const trimmed = joinCode.trim().toUpperCase();
+    if (!trimmed) return;
+    const classes: ClassInfo[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
+    // Check if already a member
+    const alreadyJoined = classes.find(c => c.code === trimmed);
+    if (alreadyJoined) {
+      toast.info("You're already in this Keen!");
+      setJoinCode("");
+      setJoinDialogOpen(false);
+      return;
+    }
+    // Search all keens stored by any user — for now we use a global registry
+    const registry: ClassInfo[] = JSON.parse(localStorage.getItem("keen_registry") || "[]");
+    const found = registry.find(c => c.code === trimmed);
+    if (!found) {
+      toast.error("No Keen found with that code.");
+      return;
+    }
+    classes.push({ ...found });
+    localStorage.setItem("keen_classes", JSON.stringify(classes));
+    const slug = found.name.toLowerCase().replace(/\s+/g, "-");
+    localStorage.setItem(`keen_preview_role_${slug}`, "member");
+    setJoinCode("");
+    setJoinDialogOpen(false);
+    toast.success(`Joined "${found.name}" as a member!`);
+    window.dispatchEvent(new Event("keen_classes_updated"));
+    navigate(`/class/${slug}`);
+  };
+
   const today = new Date();
   const formattedDate = format(today, "EEEE, do MMMM, yyyy");
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
-      <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 md:px-8 lg:px-[1cm]">
-        {/* Logo - left */}
-        <div
-          className="inline-flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary cursor-pointer shrink-0"
-          onClick={handleLogoClick}
-        >
-          <span className="text-primary-foreground text-sm sm:text-lg font-bold leading-none">|&lt;</span>
-        </div>
-
-        {/* Date - center */}
-        <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
-          <span
-            className="text-lg sm:text-2xl md:text-3xl text-foreground font-bold whitespace-nowrap"
-            style={{ fontFamily: "'Amatic SC', cursive" }}
+    <>
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-sm">
+        <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 md:px-8 lg:px-[1cm]">
+          {/* Logo - left */}
+          <div
+            className="inline-flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary cursor-pointer shrink-0"
+            onClick={handleLogoClick}
           >
-            {formattedDate}
-          </span>
-        </div>
+            <span className="text-primary-foreground text-sm sm:text-lg font-bold leading-none">|&lt;</span>
+          </div>
 
-        {/* Icons - right */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-10 sm:w-10" title="Notifications">
-                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
-              <div className="p-3 border-b border-border">
-                <h4 className="text-sm font-semibold text-foreground">Notifications</h4>
-              </div>
-              <div className="max-h-72 overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic text-center py-6">No new notifications</p>
-                ) : (
-                  notifications.map((notif, i) => (
-                    <button
-                      key={`${notif.keenSlug}-${notif.announcementId}-${i}`}
-                      onClick={() => handleNotificationClick(notif)}
-                      className="w-full text-left px-3 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-0"
-                    >
-                      <p className="text-xs font-semibold text-primary">{notif.keenName}</p>
-                      <p className="text-sm font-medium text-foreground mt-0.5">{notif.brief}</p>
-                      {notif.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.description}</p>
-                      )}
-                    </button>
-                  ))
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`h-8 w-8 sm:h-10 sm:w-10 ${chatOpen ? "bg-accent" : ""}`}
-            title="Ryu AI"
-            onClick={toggleChat}
-          >
-            <BotMessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
-          {user && <ProfileDropdown />}
+          {/* Date - center */}
+          <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
+            <span
+              className="text-lg sm:text-2xl md:text-3xl text-foreground font-bold whitespace-nowrap"
+              style={{ fontFamily: "'Amatic SC', cursive" }}
+            >
+              {formattedDate}
+            </span>
+          </div>
+
+          {/* Icons - right */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* Join/Create Keen */}
+            <Popover open={keenPopoverOpen} onOpenChange={setKeenPopoverOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className="h-8 sm:h-9 px-3 sm:px-4 rounded-md border border-border bg-card text-xs sm:text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-1.5"
+                  onMouseEnter={() => setKeenPopoverOpen(true)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Join/Create Keen</span>
+                  <span className="sm:hidden">Keen</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-48 p-1"
+                align="end"
+                onMouseLeave={() => setKeenPopoverOpen(false)}
+              >
+                <button
+                  onClick={() => { setKeenPopoverOpen(false); setCreateDialogOpen(true); }}
+                  className="w-full text-left px-3 py-2.5 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  Create Keen
+                </button>
+                <button
+                  onClick={() => { setKeenPopoverOpen(false); setJoinDialogOpen(true); }}
+                  className="w-full text-left px-3 py-2.5 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  Join Keen
+                </button>
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-10 sm:w-10" title="Notifications">
+                  <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+                  {notifications.length > 0 && (
+                    <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="p-3 border-b border-border">
+                  <h4 className="text-sm font-semibold text-foreground">Notifications</h4>
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic text-center py-6">No new notifications</p>
+                  ) : (
+                    notifications.map((notif, i) => (
+                      <button
+                        key={`${notif.keenSlug}-${notif.announcementId}-${i}`}
+                        onClick={() => handleNotificationClick(notif)}
+                        className="w-full text-left px-3 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-0"
+                      >
+                        <p className="text-xs font-semibold text-primary">{notif.keenName}</p>
+                        <p className="text-sm font-medium text-foreground mt-0.5">{notif.brief}</p>
+                        {notif.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.description}</p>
+                        )}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-8 w-8 sm:h-10 sm:w-10 ${chatOpen ? "bg-accent" : ""}`}
+              title="Ryu AI"
+              onClick={toggleChat}
+            >
+              <BotMessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+            {user && <ProfileDropdown />}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Create Keen Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create a new Keen</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Keen name"
+            value={newClassName}
+            onChange={(e) => setNewClassName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCreateKeen()}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateKeen}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Join Keen Dialog */}
+      <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Join a Keen</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Insert Keen code"
+            value={joinCode}
+            onChange={(e) => setJoinCode(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleJoinKeen()}
+            className="uppercase tracking-widest text-center font-mono"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setJoinDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleJoinKeen}>Join</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

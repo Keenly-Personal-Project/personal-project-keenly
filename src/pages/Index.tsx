@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from "@/components/Header";
-import { Loader2, BookOpen, FlaskConical, Plus, X, Pencil, Image, Palette } from 'lucide-react';
+import { Loader2, BookOpen, FlaskConical, X, Pencil, Image, Palette } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -18,6 +18,7 @@ interface ClassItem {
   icon: string;
   image?: string;
   color?: string;
+  code?: string;
 }
 
 const defaultClasses: ClassItem[] = [
@@ -38,8 +39,6 @@ const Index = () => {
     const saved = localStorage.getItem('keen_classes');
     return saved ? JSON.parse(saved) : defaultClasses;
   });
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [newClassName, setNewClassName] = useState('');
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editColor, setEditColor] = useState('');
   const [editImage, setEditImage] = useState('');
@@ -48,22 +47,37 @@ const Index = () => {
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
 
+  // Sync classes to localStorage and global registry
   useEffect(() => {
     localStorage.setItem('keen_classes', JSON.stringify(classes));
+    // Update global registry with any classes that have codes
+    const registry: ClassItem[] = JSON.parse(localStorage.getItem('keen_registry') || '[]');
+    const registryCodes = new Set(registry.map(r => r.code));
+    let updated = false;
+    classes.forEach(cls => {
+      if (cls.code && !registryCodes.has(cls.code)) {
+        registry.push({ name: cls.name, icon: cls.icon, code: cls.code });
+        updated = true;
+      }
+    });
+    if (updated) localStorage.setItem('keen_registry', JSON.stringify(registry));
   }, [classes]);
+
+  // Listen for class updates from header
+  useEffect(() => {
+    const handleUpdate = () => {
+      const saved = localStorage.getItem('keen_classes');
+      if (saved) setClasses(JSON.parse(saved));
+    };
+    window.addEventListener('keen_classes_updated', handleUpdate);
+    return () => window.removeEventListener('keen_classes_updated', handleUpdate);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
-
-  const handleAddClass = () => {
-    if (!newClassName.trim()) return;
-    setClasses(prev => [...prev, { name: newClassName.trim(), icon: 'BookOpen' }]);
-    setNewClassName('');
-    setDialogOpen(false);
-  };
 
   const handleRemoveClass = (index: number) => {
     setDeletingIndex(index);
@@ -175,38 +189,10 @@ const Index = () => {
                 );
               })}
 
-              {/* Add new card */}
-              <button
-                onClick={() => setDialogOpen(true)}
-                className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border transition-all duration-200 hover:border-primary hover:bg-primary/5 cursor-pointer"
-                style={{ aspectRatio: '3 / 4' }}
-              >
-                <Plus className="h-10 w-10 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground mt-2">Add Class</span>
-              </button>
             </div>
           </div>
         </div>
       </main>
-
-      {/* Add class dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add a new class</DialogTitle>
-          </DialogHeader>
-          <Input
-            placeholder="Class name"
-            value={newClassName}
-            onChange={(e) => setNewClassName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddClass()}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddClass}>Add</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit class dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
