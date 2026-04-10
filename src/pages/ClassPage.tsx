@@ -5,6 +5,7 @@ import { useEscapeBack } from "@/hooks/useEscapeBack";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import Header from "@/components/Header";
+import { generateHexCode } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -682,10 +683,15 @@ const ClassPage = () => {
     if (activeTab === "Details") {
       const currentRole = roleConfig[previewRole];
       const RoleIcon = currentRole.icon;
-      // Find Keen code
-      const allClasses: { name: string; code?: string }[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
+      // Find Keen code — auto-generate if missing
+      const allClasses: { name: string; code?: string; icon?: string }[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
       const currentClass = allClasses.find(c => c.name.toLowerCase().replace(/\s+/g, "-") === slug);
-      const keenCode = currentClass?.code;
+      let keenCode = currentClass?.code;
+      if (currentClass && !keenCode) {
+        keenCode = generateHexCode();
+        currentClass.code = keenCode;
+        localStorage.setItem("keen_classes", JSON.stringify(allClasses));
+      }
       
       return (
         <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 min-h-[38rem]">
