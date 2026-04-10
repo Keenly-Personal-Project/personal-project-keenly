@@ -687,7 +687,6 @@ const ClassPage = () => {
       const currentClass = allClasses.find(c => c.name.toLowerCase().replace(/\s+/g, "-") === slug);
       let keenCode = currentClass?.code;
       if (currentClass && !keenCode) {
-        const { generateHexCode } = await import("@/components/Header");
         keenCode = generateHexCode();
         currentClass.code = keenCode;
         localStorage.setItem("keen_classes", JSON.stringify(allClasses));
