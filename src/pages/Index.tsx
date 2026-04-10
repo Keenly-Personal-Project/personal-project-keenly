@@ -18,6 +18,7 @@ interface ClassItem {
   icon: string;
   image?: string;
   color?: string;
+  code?: string;
 }
 
 const defaultClasses: ClassItem[] = [
