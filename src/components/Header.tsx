@@ -155,22 +155,29 @@ const Header = () => {
       setJoinDialogOpen(false);
       return;
     }
-    // Search all keens stored by any user — for now we use a global registry
+    // Search registry
     const registry: ClassInfo[] = JSON.parse(localStorage.getItem("keen_registry") || "[]");
     const found = registry.find(c => c.code === trimmed);
     if (!found) {
       toast.error("No Keen found with that code.");
       return;
     }
-    classes.push({ ...found });
-    localStorage.setItem("keen_classes", JSON.stringify(classes));
-    const slug = found.name.toLowerCase().replace(/\s+/g, "-");
-    localStorage.setItem(`keen_preview_role_${slug}`, "member");
+    // Add to pending requests instead of directly joining
+    const pendingSlug = found.name.toLowerCase().replace(/\s+/g, "-");
+    const pendingKey = `keen_pending_${pendingSlug}`;
+    const pending: { email: string; timestamp: string }[] = JSON.parse(localStorage.getItem(pendingKey) || "[]");
+    const userEmail = user?.email || "unknown@user.com";
+    if (pending.find(p => p.email === userEmail)) {
+      toast.info("You've already requested to join this Keen. Waiting for approval.");
+      setJoinCode("");
+      setJoinDialogOpen(false);
+      return;
+    }
+    pending.push({ email: userEmail, timestamp: new Date().toISOString() });
+    localStorage.setItem(pendingKey, JSON.stringify(pending));
     setJoinCode("");
     setJoinDialogOpen(false);
-    toast.success(`Joined "${found.name}" as a member!`);
-    window.dispatchEvent(new Event("keen_classes_updated"));
-    navigate(`/class/${slug}`);
+    toast.success(`Join request sent for "${found.name}"! Waiting for owner/admin approval.`);
   };
 
   const today = new Date();
