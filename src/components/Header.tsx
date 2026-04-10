@@ -1,15 +1,31 @@
-import { Bell, BotMessageSquare, Plus } from "lucide-react";
+import { Bell, BotMessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import ProfileDropdown from "@/components/ProfileDropdown";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import { useChat } from "@/contexts/ChatContext";
 import { toast } from "sonner";
+
+// Export these for reuse in Index page
+export interface ClassInfo {
+  name: string;
+  code?: string;
+  icon?: string;
+}
+
+export function generateHexCode(): string {
+  const classes: ClassInfo[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
+  const existingCodes = new Set(classes.map(c => c.code).filter(Boolean));
+  let code: string;
+  do {
+    code = Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase().padStart(6, "0");
+  } while (existingCodes.has(code));
+  return code;
+}
 
 interface Announcement {
   id: string;
