@@ -691,6 +691,15 @@ const ClassPage = () => {
         keenCode = generateHexCode();
         currentClass.code = keenCode;
         localStorage.setItem("keen_classes", JSON.stringify(allClasses));
+        // Also update the global registry so the code persists
+        const registry: { name: string; code?: string; icon?: string }[] = JSON.parse(localStorage.getItem("keen_registry") || "[]");
+        const regEntry = registry.find(c => c.name.toLowerCase().replace(/\s+/g, "-") === slug);
+        if (regEntry) {
+          regEntry.code = keenCode;
+        } else {
+          registry.push({ name: currentClass.name, code: keenCode, icon: currentClass.icon });
+        }
+        localStorage.setItem("keen_registry", JSON.stringify(registry));
       }
       
       return (
