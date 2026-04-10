@@ -147,6 +147,18 @@ const ClassPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "Announcements";
+  const slug = decodeURIComponent(className || "");
+  const storageKey = `keen_announcements_${slug}`;
+  const notesKey = `keen_notes_${slug}`;
+  const eventsKey = `keen_events_${slug}`;
+  const favKey = `keen_event_favs_${slug}`;
+  const recordingsKey = `keen_recordings_${slug}`;
+  const roleKey = `keen_preview_role_${slug}`;
+  const getStoredRole = (): KeenRole => {
+    const savedRole = localStorage.getItem(roleKey);
+    return savedRole === "owner" || savedRole === "admin" || savedRole === "member" ? savedRole : "owner";
+  };
+
   const [activeTab, setActiveTab] = useState(initialTab);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newBrief, setNewBrief] = useState("");
@@ -154,16 +166,9 @@ const ClassPage = () => {
   const [newImages, setNewImages] = useState<string[]>([]);
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
   const [imageUploading, setImageUploading] = useState(false);
-
-  const [previewRole, setPreviewRole] = useState<KeenRole>("owner");
+  const [previewRole, setPreviewRole] = useState<KeenRole>(getStoredRole);
   const canEdit = previewRole === "owner" || previewRole === "admin";
 
-  const slug = decodeURIComponent(className || "");
-  const storageKey = `keen_announcements_${slug}`;
-  const notesKey = `keen_notes_${slug}`;
-  const eventsKey = `keen_events_${slug}`;
-  const favKey = `keen_event_favs_${slug}`;
-  const recordingsKey = `keen_recordings_${slug}`;
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
@@ -183,6 +188,15 @@ const ClassPage = () => {
     const saved = localStorage.getItem(favKey);
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
+
+  useEffect(() => {
+    setPreviewRole(getStoredRole());
+  }, [roleKey]);
+
+  useEffect(() => {
+    localStorage.setItem(roleKey, previewRole);
+  }, [previewRole, roleKey]);
+
 
   interface Recording {
     id: string;
