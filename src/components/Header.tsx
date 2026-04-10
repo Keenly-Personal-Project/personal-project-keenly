@@ -16,7 +16,11 @@ export interface ClassInfo {
 
 export function generateHexCode(): string {
   const classes: ClassInfo[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
-  const existingCodes = new Set(classes.map(c => c.code).filter(Boolean));
+  const registry: ClassInfo[] = JSON.parse(localStorage.getItem("keen_registry") || "[]");
+  const existingCodes = new Set([
+    ...classes.map(c => c.code).filter(Boolean),
+    ...registry.map(c => c.code).filter(Boolean),
+  ]);
   let code: string;
   do {
     code = Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase().padStart(6, "0");
