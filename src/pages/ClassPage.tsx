@@ -824,6 +824,76 @@ const ClassPage = () => {
               </p>
             </div>
           )}
+          {/* Pending Join Requests (Owner/Admin only) */}
+          {canEdit && (() => {
+            const pendingKey = `keen_pending_${slug}`;
+            const pending: { email: string; timestamp: string }[] = JSON.parse(localStorage.getItem(pendingKey) || "[]");
+            if (pending.length === 0) return null;
+            return (
+              <div className="rounded-lg border border-foreground/20 bg-card p-5 mt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="h-4 w-4 text-foreground" />
+                  <h4 className="text-sm font-semibold text-foreground">Pending Join Requests ({pending.length})</h4>
+                </div>
+                <div className="space-y-3">
+                  {pending.map((req, i) => (
+                    <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                            {req.email.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{req.email.split("@")[0]}</p>
+                          <p className="text-xs text-muted-foreground">{req.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            // Approve: add to their classes as member
+                            const userClasses: { name: string; icon: string; code?: string }[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
+                            const registry: { name: string; icon: string; code?: string }[] = JSON.parse(localStorage.getItem("keen_registry") || "[]");
+                            const found = registry.find(c => c.name.toLowerCase().replace(/\s+/g, "-") === slug);
+                            if (found && !userClasses.find(c => c.code === found.code)) {
+                              userClasses.push({ ...found });
+                              localStorage.setItem("keen_classes", JSON.stringify(userClasses));
+                              localStorage.setItem(`keen_preview_role_${slug}`, "member");
+                              window.dispatchEvent(new Event("keen_classes_updated"));
+                            }
+                            // Remove from pending
+                            const updated = pending.filter((_, idx) => idx !== i);
+                            localStorage.setItem(pendingKey, JSON.stringify(updated));
+                            toast.success(`Approved ${req.email.split("@")[0]}!`);
+                            // Force re-render
+                            window.dispatchEvent(new Event("keen_classes_updated"));
+                          }}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            const updated = pending.filter((_, idx) => idx !== i);
+                            localStorage.setItem(pendingKey, JSON.stringify(updated));
+                            toast.info(`Declined ${req.email.split("@")[0]}'s request.`);
+                            window.dispatchEvent(new Event("keen_classes_updated"));
+                          }}
+                        >
+                          Decline
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       );
     }
