@@ -230,6 +230,7 @@ const Index = () => {
                 </button>
               </PopoverContent>
             </Popover>
+            </div>
           </div>
 
           {/* Class cards grid */}
