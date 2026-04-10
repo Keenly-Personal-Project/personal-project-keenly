@@ -207,39 +207,7 @@ const Header = () => {
 
           {/* Icons - right */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            {/* Join/Create Keen */}
-            <Popover open={keenPopoverOpen} onOpenChange={setKeenPopoverOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  className="h-8 sm:h-9 px-3 sm:px-4 rounded-md border border-border bg-card text-xs sm:text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-1.5"
-                  onMouseEnter={() => setKeenPopoverOpen(true)}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Join/Create Keen</span>
-                  <span className="sm:hidden">Keen</span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-48 p-1"
-                align="end"
-                onMouseLeave={() => setKeenPopoverOpen(false)}
-              >
-                <button
-                  onClick={() => { setKeenPopoverOpen(false); setCreateDialogOpen(true); }}
-                  className="w-full text-left px-3 py-2.5 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
-                >
-                  Create Keen
-                </button>
-                <button
-                  onClick={() => { setKeenPopoverOpen(false); setJoinDialogOpen(true); }}
-                  className="w-full text-left px-3 py-2.5 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
-                >
-                  Join Keen
-                </button>
-              </PopoverContent>
-            </Popover>
-
-            <Popover>
+            {/* Notifications */}
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-10 sm:w-10" title="Notifications">
                   <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
