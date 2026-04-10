@@ -682,12 +682,38 @@ const ClassPage = () => {
     if (activeTab === "Details") {
       const currentRole = roleConfig[previewRole];
       const RoleIcon = currentRole.icon;
+      // Find Keen code
+      const allClasses: { name: string; code?: string }[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
+      const currentClass = allClasses.find(c => c.name.toLowerCase().replace(/\s+/g, "-") === slug);
+      const keenCode = currentClass?.code;
       
       return (
         <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 min-h-[38rem]">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-semibold text-foreground">Details</h3>
           </div>
+
+          {/* Keen Code */}
+          {keenCode && (
+            <div className="mb-6 p-4 rounded-lg border border-border bg-card">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Keen Code</p>
+              <div className="flex items-center gap-3">
+                <span className="text-lg font-mono font-bold tracking-[0.3em] text-foreground">{keenCode}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    navigator.clipboard.writeText(keenCode);
+                    toast.success("Code copied to clipboard!");
+                  }}
+                >
+                  Copy
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Share this code so others can request to join this Keen.</p>
+            </div>
+          )}
 
           {/* Role Preview Switcher */}
           <div className="mb-6 p-4 rounded-lg border border-dashed border-primary/40 bg-primary/5">
