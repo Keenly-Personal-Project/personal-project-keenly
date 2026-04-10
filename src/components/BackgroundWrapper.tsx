@@ -29,20 +29,22 @@ const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  if (!bg.url) return <>{children}</>;
-
   return (
     <div className="relative min-h-screen">
-      <div
-        className="fixed inset-0 z-0 bg-no-repeat"
-        style={{
-          backgroundImage: `url(${bg.url})`,
-          backgroundSize: "cover",
-          backgroundPosition: `${bg.posX}% ${bg.posY}%`,
-          filter: `blur(${bg.blur * 0.2}px)`,
-        }}
-      />
-      <div className="fixed inset-0 z-0 bg-background/60" />
+      {bg.url && (
+        <>
+          <div
+            className="fixed inset-0 z-0 bg-no-repeat"
+            style={{
+              backgroundImage: `url(${bg.url})`,
+              backgroundSize: "cover",
+              backgroundPosition: `${bg.posX}% ${bg.posY}%`,
+              filter: `blur(${bg.blur * 0.2}px)`,
+            }}
+          />
+          <div className="fixed inset-0 z-0 bg-background/60" />
+        </>
+      )}
       <div className="relative z-10">{children}</div>
     </div>
   );
