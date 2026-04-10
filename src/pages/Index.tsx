@@ -49,22 +49,37 @@ const Index = () => {
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
 
+  // Sync classes to localStorage and global registry
   useEffect(() => {
     localStorage.setItem('keen_classes', JSON.stringify(classes));
+    // Update global registry with any classes that have codes
+    const registry: ClassItem[] = JSON.parse(localStorage.getItem('keen_registry') || '[]');
+    const registryCodes = new Set(registry.map(r => r.code));
+    let updated = false;
+    classes.forEach(cls => {
+      if (cls.code && !registryCodes.has(cls.code)) {
+        registry.push({ name: cls.name, icon: cls.icon, code: cls.code });
+        updated = true;
+      }
+    });
+    if (updated) localStorage.setItem('keen_registry', JSON.stringify(registry));
   }, [classes]);
+
+  // Listen for class updates from header
+  useEffect(() => {
+    const handleUpdate = () => {
+      const saved = localStorage.getItem('keen_classes');
+      if (saved) setClasses(JSON.parse(saved));
+    };
+    window.addEventListener('keen_classes_updated', handleUpdate);
+    return () => window.removeEventListener('keen_classes_updated', handleUpdate);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
-
-  const handleAddClass = () => {
-    if (!newClassName.trim()) return;
-    setClasses(prev => [...prev, { name: newClassName.trim(), icon: 'BookOpen' }]);
-    setNewClassName('');
-    setDialogOpen(false);
-  };
 
   const handleRemoveClass = (index: number) => {
     setDeletingIndex(index);
