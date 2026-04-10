@@ -208,6 +208,7 @@ const Header = () => {
           {/* Icons - right */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Notifications */}
+            <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-10 sm:w-10" title="Notifications">
                   <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
