@@ -348,7 +348,7 @@ const ClassPage = () => {
       publisherEmail: user?.email || "Unknown",
       publisherAvatar: profile?.avatar_url || null,
     };
-    setAnnouncements((prev) => [newAnn, ...prev]);
+    setAnnouncements((prev) => [...prev, newAnn]);
     setNewBrief("");
     setNewDescription("");
     setNewImages([]);
@@ -386,7 +386,7 @@ const ClassPage = () => {
             No announcements yet. Add one to get started.
           </p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4" ref={(el) => { if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'end' }), 100); }}>
             {announcements.map((ann) => {
               const email = ann.publisherEmail || user?.email || "";
               const imgs = getImages(ann);
@@ -433,7 +433,7 @@ const ClassPage = () => {
                   )}
 
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>{formatDate(ann.date)}</span>
+                    <span>{formatDate(ann.date) || "No date"}</span>
                   </div>
                 </article>
               );
