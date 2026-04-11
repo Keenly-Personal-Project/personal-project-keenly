@@ -192,7 +192,7 @@ const Index = () => {
           <div className="w-full bg-primary py-4 sm:py-6 px-8 flex flex-col items-center justify-center">
             <h1
               className="text-3xl sm:text-4xl md:text-5xl text-primary-foreground font-bold"
-              style={{ fontFamily: "'Amatic SC', cursive", letterSpacing: '0.4em' }}
+              style={{ fontFamily: "'Amatic SC', cursive", letterSpacing: '0.4em', paddingLeft: '0.4em' }}
             >
               Keen's
             </h1>
