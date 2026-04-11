@@ -21,7 +21,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 
-const sidebarTabs = ["Announcements", "Absentee List", "Recordings", "Events", "Notes/Guides", "Details"];
+const sidebarTabs = ["Announcements", "Attendance", "Recordings", "Events", "Notes/Guides", "Details"];
 
 type KeenRole = "owner" | "admin" | "member";
 
@@ -674,10 +674,10 @@ const ClassPage = () => {
         "Events",
       );
     }
-    if (activeTab === "Absentee List") {
+    if (activeTab === "Attendance") {
       return contentWrapper(
-        <p className="text-muted-foreground text-sm italic text-center py-8">Absentee tracking coming soon.</p>,
-        "Absentee List",
+        <p className="text-muted-foreground text-sm italic text-center py-8">Attendance tracking coming soon.</p>,
+        "Attendance",
       );
     }
     if (activeTab === "Details") {
