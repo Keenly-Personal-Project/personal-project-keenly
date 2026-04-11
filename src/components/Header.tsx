@@ -139,7 +139,7 @@ const Header = () => {
         {/* Date - center */}
         <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
           <span
-            className="text-lg sm:text-2xl md:text-3xl text-foreground font-bold whitespace-nowrap"
+            className="text-sm sm:text-2xl md:text-3xl text-foreground font-bold whitespace-nowrap"
             style={{ fontFamily: "'Amatic SC', cursive" }}
           >
             {formattedDate}

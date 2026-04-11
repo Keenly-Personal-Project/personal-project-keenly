@@ -189,22 +189,20 @@ const Index = () => {
       <main className="container py-6 px-4">
         <div className="rounded-2xl border border-foreground/30 bg-card min-h-[calc(100vh-8rem)] overflow-hidden">
           {/* Banner */}
-          <div className="w-full bg-primary py-6 px-8 flex items-center justify-center relative">
+          <div className="w-full bg-primary py-4 sm:py-6 px-8 flex flex-col items-center justify-center">
             <h1
-              className="text-4xl md:text-5xl text-primary-foreground font-bold"
+              className="text-3xl sm:text-4xl md:text-5xl text-primary-foreground font-bold"
               style={{ fontFamily: "'Amatic SC', cursive", letterSpacing: '0.4em' }}
             >
               Keen's
             </h1>
 
-            {/* Join/Create Keen button - absolute right */}
-            <div className="absolute right-8">
-
-            {/* Join/Create Keen button */}
+            {/* Join/Create Keen button - below title */}
+            <div className="mt-2">
             <Popover open={keenPopoverOpen} onOpenChange={setKeenPopoverOpen}>
               <PopoverTrigger asChild>
                 <button
-                  className="h-9 px-4 rounded-md border border-primary-foreground/30 bg-primary-foreground/10 text-sm font-medium text-primary-foreground hover:bg-primary-foreground/20 transition-colors flex items-center gap-1.5"
+                  className="h-8 sm:h-9 px-3 sm:px-4 rounded-md border border-primary-foreground/30 bg-primary-foreground/10 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary-foreground/20 transition-colors flex items-center gap-1.5"
                   onMouseEnter={() => setKeenPopoverOpen(true)}
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -213,7 +211,7 @@ const Index = () => {
               </PopoverTrigger>
               <PopoverContent
                 className="w-48 p-1"
-                align="end"
+                align="center"
                 onMouseLeave={() => setKeenPopoverOpen(false)}
               >
                 <button
