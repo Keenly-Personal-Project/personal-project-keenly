@@ -348,7 +348,7 @@ const ClassPage = () => {
       publisherEmail: user?.email || "Unknown",
       publisherAvatar: profile?.avatar_url || null,
     };
-    setAnnouncements((prev) => [...prev, newAnn]);
+    setAnnouncements((prev) => [newAnn, ...prev]);
     setNewBrief("");
     setNewDescription("");
     setNewImages([]);
@@ -386,7 +386,7 @@ const ClassPage = () => {
             No announcements yet. Add one to get started.
           </p>
         ) : (
-          <div className="space-y-4" ref={(el) => { if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'end' }), 100); }}>
+          <div className="space-y-4">
             {announcements.map((ann) => {
               const email = ann.publisherEmail || user?.email || "";
               const imgs = getImages(ann);
