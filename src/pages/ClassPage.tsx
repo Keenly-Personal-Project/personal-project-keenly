@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
+import AttendanceSection from "@/components/AttendanceSection";
 
 const sidebarTabs = ["Announcements", "Attendance", "Recordings", "Events", "Notes/Guides", "Details"];
 
@@ -676,7 +677,7 @@ const ClassPage = () => {
     }
     if (activeTab === "Attendance") {
       return contentWrapper(
-        <p className="text-muted-foreground text-sm italic text-center py-8">Attendance tracking coming soon.</p>,
+        <AttendanceSection classSlug={slug} previewRole={previewRole} />,
         "Attendance",
       );
     }

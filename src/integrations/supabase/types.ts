@@ -14,6 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      assemblies: {
+        Row: {
+          absent_time: string
+          class_slug: string
+          created_at: string
+          created_by: string
+          id: string
+          late_time: string
+          qr_token: string
+          title: string
+        }
+        Insert: {
+          absent_time: string
+          class_slug: string
+          created_at?: string
+          created_by: string
+          id?: string
+          late_time: string
+          qr_token?: string
+          title?: string
+        }
+        Update: {
+          absent_time?: string
+          class_slug?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          late_time?: string
+          qr_token?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      assembly_attendance: {
+        Row: {
+          assembly_id: string
+          created_at: string
+          id: string
+          signed_in_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          assembly_id: string
+          created_at?: string
+          id?: string
+          signed_in_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          assembly_id?: string
+          created_at?: string
+          id?: string
+          signed_in_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assembly_attendance_assembly_id_fkey"
+            columns: ["assembly_id"]
+            isOneToOne: false
+            referencedRelation: "assemblies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       check_ins: {
         Row: {
           checked_in_at: string
@@ -31,6 +99,33 @@ export type Database = {
           checked_in_at?: string
           created_at?: string
           id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      keen_members: {
+        Row: {
+          class_slug: string
+          created_at: string
+          email: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          class_slug: string
+          created_at?: string
+          email?: string
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          class_slug?: string
+          created_at?: string
+          email?: string
+          id?: string
+          role?: string
           user_id?: string
         }
         Relationships: []
