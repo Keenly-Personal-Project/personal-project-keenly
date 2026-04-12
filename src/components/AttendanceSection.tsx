@@ -103,7 +103,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
     if (!user) return;
     const ensureMembership = async () => {
       const { data: existing } = await (supabase.from as any)("keen_members")
-        .select("id")
+        .select("id, role")
         .eq("class_slug", classSlug)
         .eq("user_id", user.id)
         .maybeSingle();
@@ -115,10 +115,15 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
           email: user.email || "",
           role: previewRole,
         });
+      } else if (existing.role !== previewRole) {
+        // Keep DB role in sync with localStorage role
+        await (supabase.from as any)("keen_members")
+          .update({ role: previewRole })
+          .eq("id", existing.id);
       }
     };
-    ensureMembership().then(fetchAll);
-  }, [user, classSlug]);
+    ensureMembership().then(() => fetchAll());
+  }, [user, classSlug, previewRole]);
 
   const fetchAll = async () => {
     if (!user) return;
