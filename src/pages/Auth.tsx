@@ -160,55 +160,77 @@ const Auth = () => {
           </p>
         </div>
 
-        <Card className="w-full max-w-lg">
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-5 pt-8 pb-4 px-8">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                  className="h-12"
-                />
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+        {showVerifyMessage ? (
+          <Card className="w-full max-w-lg">
+            <CardContent className="pt-8 pb-8 px-8 text-center space-y-4">
+              <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  className="h-12"
-                />
-                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4 px-8 pb-8">
-              <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLogin ? 'Log in' : 'Sign up'}
-              </Button>
-              <p className="text-sm text-muted-foreground text-center">
-                {isLogin ? "Don't have an account? " : 'Already have an account? '}
-                <button
-                  type="button"
-                  onClick={() => setIsLogin(!isLogin)}
-                  className="text-primary hover:underline font-medium"
-                  disabled={isLoading}
-                >
-                  {isLogin ? 'Sign up' : 'Log in'}
-                </button>
+              <h2 className="text-xl font-semibold text-foreground">Check your email</h2>
+              <p className="text-sm text-muted-foreground">
+                We've sent a verification link to <span className="font-medium text-foreground">{email}</span>. 
+                Please click the link in your email to verify your account before signing in.
               </p>
-            </CardFooter>
-          </form>
-        </Card>
+              <Button
+                variant="outline"
+                onClick={() => { setShowVerifyMessage(false); setIsLogin(true); }}
+                className="mt-4"
+              >
+                Back to login
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="w-full max-w-lg">
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-5 pt-8 pb-4 px-8">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                    className="h-12"
+                  />
+                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                    className="h-12"
+                  />
+                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-4 px-8 pb-8">
+                <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isLogin ? 'Log in' : 'Sign up'}
+                </Button>
+                <p className="text-sm text-muted-foreground text-center">
+                  {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                  <button
+                    type="button"
+                    onClick={() => setIsLogin(!isLogin)}
+                    className="text-primary hover:underline font-medium"
+                    disabled={isLoading}
+                  >
+                    {isLogin ? 'Sign up' : 'Log in'}
+                  </button>
+                </p>
+              </CardFooter>
+            </form>
+          </Card>
+        )}
       </div>
     </div>
   );
