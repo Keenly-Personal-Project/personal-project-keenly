@@ -160,36 +160,8 @@ const Header = () => {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
-              <div className="p-3 border-b border-border">
-                <h4 className="text-sm font-semibold text-foreground">Notifications</h4>
-              </div>
-              <div className="max-h-72 overflow-y-auto" ref={(el) => { if (el) requestAnimationFrame(() => el.scrollTop = el.scrollHeight); }}>
-                {notifications.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic text-center py-6">No new notifications</p>
-                ) : (
-                  notifications.map((notif, i) => (
-                    <button
-                      key={`${notif.keenSlug}-${notif.announcementId}-${i}`}
-                      onClick={() => handleNotificationClick(notif)}
-                      className="w-full text-left px-3 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-0"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold text-primary">{notif.keenName}</p>
-                        {notif.date && (
-                          <p className="text-[10px] text-muted-foreground">
-                            {new Date(notif.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </p>
-                        )}
-                      </div>
-                      <p className="text-sm font-medium text-foreground mt-0.5">{notif.brief}</p>
-                      {notif.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.description}</p>
-                      )}
-                    </button>
-                  ))
-                )}
-              </div>
+            <PopoverContent className="p-0 overflow-hidden" align="end" style={{ width: 320 }}>
+              <ResizableNotificationPanel notifications={notifications} onNotificationClick={handleNotificationClick} />
             </PopoverContent>
           </Popover>
           <Button
