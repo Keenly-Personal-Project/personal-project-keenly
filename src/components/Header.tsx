@@ -45,7 +45,95 @@ interface Notification {
   date?: string;
 }
 
-const Header = () => {
+function ResizableNotificationPanel({ notifications, onNotificationClick }: { notifications: Notification[]; onNotificationClick: (n: Notification) => void }) {
+  const [height, setHeight] = useState(288);
+  const isDragging = useRef(false);
+  const startY = useRef(0);
+  const startH = useRef(0);
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    startY.current = e.clientY;
+    startH.current = height;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return;
+      const delta = ev.clientY - startY.current;
+      setHeight(Math.max(120, Math.min(600, startH.current + delta)));
+    };
+    const onMouseUp = () => {
+      isDragging.current = false;
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }, [height]);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    isDragging.current = true;
+    startY.current = e.touches[0].clientY;
+    startH.current = height;
+
+    const onTouchMove = (ev: TouchEvent) => {
+      if (!isDragging.current) return;
+      const delta = ev.touches[0].clientY - startY.current;
+      setHeight(Math.max(120, Math.min(600, startH.current + delta)));
+    };
+    const onTouchEnd = () => {
+      isDragging.current = false;
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
+    document.addEventListener("touchmove", onTouchMove);
+    document.addEventListener("touchend", onTouchEnd);
+  }, [height]);
+
+  return (
+    <div>
+      <div className="p-3 border-b border-border">
+        <h4 className="text-sm font-semibold text-foreground">Notifications</h4>
+      </div>
+      <div className="overflow-y-auto" style={{ height }} ref={(el) => { if (el) requestAnimationFrame(() => el.scrollTop = el.scrollHeight); }}>
+        {notifications.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic text-center py-6">No new notifications</p>
+        ) : (
+          notifications.map((notif, i) => (
+            <button
+              key={`${notif.keenSlug}-${notif.announcementId}-${i}`}
+              onClick={() => onNotificationClick(notif)}
+              className="w-full text-left px-3 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-0"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-primary">{notif.keenName}</p>
+                {notif.date && (
+                  <p className="text-[10px] text-muted-foreground">
+                    {new Date(notif.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </p>
+                )}
+              </div>
+              <p className="text-sm font-medium text-foreground mt-0.5">{notif.brief}</p>
+              {notif.description && (
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.description}</p>
+              )}
+            </button>
+          ))
+        )}
+      </div>
+      {/* Drag handle */}
+      <div
+        onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
+        className="flex items-center justify-center h-4 cursor-ns-resize border-t border-border hover:bg-muted/50 transition-colors"
+      >
+        <div className="w-8 h-1 rounded-full bg-muted-foreground/30" />
+      </div>
+    </div>
+  );
+}
+
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
