@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, Users, ClipboardList, QrCode, Maximize2, Share2, X, Trash2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus, Users, ClipboardList, QrCode, Maximize2, Share2, Trash2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -41,6 +42,11 @@ interface KeenMember {
   user_id: string;
   email: string;
   role: string;
+}
+
+interface ProfileData {
+  user_id: string;
+  avatar_url: string | null;
 }
 
 function generateToken(): string {
@@ -79,6 +85,8 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
   const [members, setMembers] = useState<KeenMember[]>([]);
   const [assemblies, setAssemblies] = useState<Assembly[]>([]);
   const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([]);
+  const [profiles, setProfiles] = useState<ProfileData[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Individual dialog
   const [selectedMember, setSelectedMember] = useState<KeenMember | null>(null);
@@ -116,7 +124,6 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
           role: previewRole,
         });
       } else if (existing.role !== previewRole) {
-        // Keep DB role in sync with localStorage role
         await (supabase.from as any)("keen_members")
           .update({ role: previewRole })
           .eq("id", existing.id);
@@ -127,14 +134,23 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
 
   const fetchAll = async () => {
     if (!user) return;
-    const [membersRes, assembliesRes, attendanceRes] = await Promise.all([
+    setLoading(true);
+    const [membersRes, assembliesRes, attendanceRes, profilesRes] = await Promise.all([
       (supabase.from as any)("keen_members").select("*").eq("class_slug", classSlug),
       (supabase.from as any)("assemblies").select("*").eq("class_slug", classSlug).order("created_at", { ascending: true }),
       (supabase.from as any)("assembly_attendance").select("*"),
+      supabase.from("profiles").select("user_id, avatar_url"),
     ]);
     if (membersRes.data) setMembers(membersRes.data);
     if (assembliesRes.data) setAssemblies(assembliesRes.data);
     if (attendanceRes.data) setAllAttendance(attendanceRes.data);
+    if (profilesRes.data) setProfiles(profilesRes.data as ProfileData[]);
+    setLoading(false);
+  };
+
+  const getProfileAvatar = (userId: string) => {
+    const profile = profiles.find((p) => p.user_id === userId);
+    return profile?.avatar_url || null;
   };
 
   const handleCreateAssembly = async () => {
@@ -232,12 +248,23 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
       {/* ───── INDIVIDUALS TAB ───── */}
       {subTab === "individuals" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {visibleMembers.length === 0 ? (
+          {loading ? (
+            Array.from({ length: canEdit ? 6 : 1 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </div>
+            ))
+          ) : visibleMembers.length === 0 ? (
             <p className="text-sm text-muted-foreground italic col-span-full text-center py-8">No members yet.</p>
           ) : (
             visibleMembers.map((member) => {
               const name = member.email?.split("@")[0] || "User";
               const initials = name.slice(0, 2).toUpperCase();
+              const avatarUrl = getProfileAvatar(member.user_id);
               return (
                 <button
                   key={member.id}
@@ -245,6 +272,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
                   className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card hover:bg-muted/60 transition-all text-left"
                 >
                   <Avatar className="h-10 w-10">
+                    {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
                     <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">{initials}</AvatarFallback>
                   </Avatar>
                   <div>
@@ -265,7 +293,21 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
             <Plus className="h-3 w-3" /> Create Assembly
           </Button>
 
-          {assemblies.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="p-4 rounded-lg border border-border bg-card">
+                  <Skeleton className="h-4 w-40 mb-2" />
+                  <Skeleton className="h-3 w-20 mb-3" />
+                  <div className="flex gap-3">
+                    <Skeleton className="h-3 w-8" />
+                    <Skeleton className="h-3 w-8" />
+                    <Skeleton className="h-3 w-8" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : assemblies.length === 0 ? (
             <p className="text-sm text-muted-foreground italic text-center py-8">No assemblies yet. Create one to get started.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -308,25 +350,27 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
 
       {/* ───── INDIVIDUAL HISTORY DIALOG ───── */}
       <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
-        <DialogContent className="max-w-[95vw] max-h-[90vh] w-full h-[85vh] overflow-hidden flex flex-col sm:flex-row gap-0 p-0">
-          <button
-            onClick={() => setSelectedMember(null)}
-            className="absolute right-3 top-3 z-10 rounded-sm opacity-70 hover:opacity-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
-
+        <DialogContent className="max-w-[95vw] max-h-[90vh] w-full h-[85vh] overflow-hidden flex flex-col sm:flex-row gap-0 p-0 [&>button.absolute]:hidden">
           {selectedMember && (() => {
             const name = selectedMember.email?.split("@")[0] || "User";
             const initials = name.slice(0, 2).toUpperCase();
+            const avatarUrl = getProfileAvatar(selectedMember.user_id);
             const history = getMemberAttendance(selectedMember.user_id);
 
             return (
               <>
                 {/* Left side — account info + legend */}
-                <div className="w-full sm:w-64 shrink-0 border-b sm:border-b-0 sm:border-r border-border p-6 flex flex-col gap-6">
+                <div className="w-full sm:w-64 shrink-0 border-b sm:border-b-0 sm:border-r border-border p-6 flex flex-col gap-6 relative">
+                  <button
+                    onClick={() => setSelectedMember(null)}
+                    className="absolute right-3 top-3 z-10 rounded-sm opacity-70 hover:opacity-100 ring-offset-background transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    <span className="sr-only">Close</span>
+                  </button>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-14 w-14">
+                      {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
                       <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">{initials}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -383,14 +427,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
 
       {/* ───── ASSEMBLY DETAIL DIALOG ───── */}
       <Dialog open={!!selectedAssembly} onOpenChange={() => setSelectedAssembly(null)}>
-        <DialogContent className="max-w-[95vw] max-h-[90vh] w-full h-[85vh] overflow-hidden flex flex-col p-0">
-          <button
-            onClick={() => setSelectedAssembly(null)}
-            className="absolute right-3 top-3 z-10 rounded-sm opacity-70 hover:opacity-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
-
+        <DialogContent className="max-w-[95vw] max-h-[90vh] w-full h-[85vh] overflow-hidden flex flex-col p-0 [&>button.absolute]:hidden">
           {selectedAssembly && (() => {
             const attendees = getAssemblyAttendance(selectedAssembly.id);
             const isExpired = new Date() > new Date(selectedAssembly.absent_time);
@@ -406,7 +443,14 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
             return (
               <div className="flex flex-col sm:flex-row h-full">
                 {/* Left — QR + info */}
-                <div className="w-full sm:w-72 shrink-0 border-b sm:border-b-0 sm:border-r border-border p-6 flex flex-col gap-4 overflow-y-auto">
+                <div className="w-full sm:w-72 shrink-0 border-b sm:border-b-0 sm:border-r border-border p-6 flex flex-col gap-4 overflow-y-auto relative">
+                  <button
+                    onClick={() => setSelectedAssembly(null)}
+                    className="absolute right-3 top-3 z-10 rounded-sm opacity-70 hover:opacity-100 ring-offset-background transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    <span className="sr-only">Close</span>
+                  </button>
                   <div>
                     <h3 className="text-base font-semibold text-foreground mb-1">
                       Assembly #{idx + 1}: {selectedAssembly.title}
@@ -472,6 +516,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
                     {memberStatuses.map(({ member, status }) => {
                       const name = member.email?.split("@")[0] || "User";
                       const initials = name.slice(0, 2).toUpperCase();
+                      const avatarUrl = getProfileAvatar(member.user_id);
                       return (
                         <div
                           key={member.id}
@@ -479,6 +524,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
                           style={{ borderColor: statusConfig[status].border, background: statusConfig[status].bg }}
                         >
                           <Avatar className="h-8 w-8">
+                            {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
                             <AvatarFallback className="text-xs font-semibold" style={{ background: statusConfig[status].color + "33", color: statusConfig[status].color }}>
                               {initials}
                             </AvatarFallback>
@@ -531,12 +577,6 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
       {/* ───── QR FULLSCREEN ───── */}
       <Dialog open={!!qrFullscreen} onOpenChange={() => setQrFullscreen(null)}>
         <DialogContent className="max-w-[100vw] max-h-[100vh] w-screen h-screen flex items-center justify-center bg-background p-0 border-0 rounded-none">
-          <button
-            onClick={() => setQrFullscreen(null)}
-            className="absolute right-4 top-4 z-10 rounded-full bg-muted p-2 hover:bg-muted/80"
-          >
-            <X className="h-5 w-5" />
-          </button>
           {qrFullscreen && (
             <div className="flex flex-col items-center gap-6">
               <QRCodeSVG value={signInUrl(qrFullscreen)} size={Math.min(window.innerWidth * 0.7, window.innerHeight * 0.7, 500)} />
