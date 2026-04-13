@@ -133,6 +133,7 @@ function ResizableNotificationPanel({ notifications, onNotificationClick }: { no
   );
 }
 
+const Header = () => {
 
   const { user } = useAuth();
   const navigate = useNavigate();
