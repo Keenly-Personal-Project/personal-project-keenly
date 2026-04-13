@@ -42,6 +42,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [showVerifyMessage, setShowVerifyMessage] = useState(false);
   
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
@@ -84,6 +85,8 @@ const Auth = () => {
             title: "Login failed",
             description: error.message.includes('Invalid login credentials')
               ? "Invalid email or password. Please try again."
+              : error.message.includes('Email not confirmed')
+              ? "Please verify your email before signing in. Check your inbox."
               : error.message,
           });
         } else {
@@ -100,7 +103,7 @@ const Auth = () => {
               : error.message,
           });
         } else {
-          toast({ title: "Account created!", description: "Please check your email to confirm your account." });
+          setShowVerifyMessage(true);
         }
       }
     } finally {
