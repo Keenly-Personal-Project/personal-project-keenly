@@ -11,6 +11,9 @@ import { ArrowLeft, Loader2, Mail, KeyRound, Check, RefreshCw } from "lucide-rea
 
 type Step = "email" | "code" | "password";
 
+// DEMO MODE: Set to false to require real email verification
+const DEMO_MODE = true;
+
 const ForgotPasswordPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
