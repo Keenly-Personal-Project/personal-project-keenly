@@ -87,27 +87,6 @@ const SettingsPage = () => {
     }
   };
 
-  const handleChangePassword = async () => {
-    if (!newPassword || newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match.");
-      return;
-    }
-    setChangingPassword(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setChangingPassword(false);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Password updated successfully.");
-      setNewPassword("");
-      setConfirmPassword("");
-    }
-  };
-
   const handleDeleteAccount = async () => {
     toast.info("Please contact support to delete your account.");
   };
@@ -339,21 +318,13 @@ const SettingsPage = () => {
           {/* Security */}
           <TabsContent value="security" className="space-y-6">
             <div className="card-elevated p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4">Change Password</h2>
-              <div className="space-y-3 max-w-sm">
-                <div className="space-y-1.5">
-                  <Label>New Password</Label>
-                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter new password" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Confirm Password</Label>
-                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
-                </div>
-                <Button onClick={handleChangePassword} disabled={changingPassword} className="gap-2">
-                  {changingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                  Update Password
-                </Button>
-              </div>
+              <h2 className="text-lg font-semibold text-foreground mb-2">Change Password</h2>
+              <p className="text-xs text-muted-foreground mb-4">
+                You'll need to verify your current password before making changes.
+              </p>
+              <Button onClick={() => setPasswordDialogOpen(true)} className="gap-2">
+                <Shield className="h-4 w-4" /> Change Password
+              </Button>
             </div>
             <Separator />
             <div className="card-elevated p-6">
@@ -368,6 +339,7 @@ const SettingsPage = () => {
                 </Button>
               </div>
             </div>
+            <PasswordChangeDialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen} />
           </TabsContent>
         </Tabs>
 
