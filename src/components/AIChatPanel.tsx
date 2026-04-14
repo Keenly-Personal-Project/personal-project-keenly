@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Loader2, Trash2, X, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ImageViewer from "@/components/ImageViewer";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
