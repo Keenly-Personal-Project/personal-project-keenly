@@ -162,6 +162,7 @@ const ClassPage = () => {
   };
 
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [onlineMembers, setOnlineMembers] = useState<{ user_id: string; email: string; avatar_url?: string }[]>([]);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newBrief, setNewBrief] = useState("");
   const [newDescription, setNewDescription] = useState("");
@@ -194,9 +195,38 @@ const ClassPage = () => {
   useEffect(() => {
     setPreviewRole(getStoredRole());
   }, [roleKey]);
-
+  // Realtime Presence for online members
   useEffect(() => {
-    localStorage.setItem(roleKey, previewRole);
+    if (!user) return;
+    const channel = supabase.channel(`keen-presence-${slug}`);
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      const members: { user_id: string; email: string; avatar_url?: string }[] = [];
+      const seen = new Set<string>();
+      Object.values(state).forEach((presences: any[]) => {
+        presences.forEach((p: any) => {
+          if (!seen.has(p.user_id)) {
+            seen.add(p.user_id);
+            members.push({ user_id: p.user_id, email: p.email, avatar_url: p.avatar_url });
+          }
+        });
+      });
+      setOnlineMembers(members);
+    });
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({
+          user_id: user.id,
+          email: user.email || '',
+          avatar_url: profile?.avatar_url || null,
+          online_at: new Date().toISOString(),
+        });
+      }
+    });
+    return () => { supabase.removeChannel(channel); };
+  }, [slug, user, profile?.avatar_url]);
+
+
   }, [previewRole, roleKey]);
 
 
