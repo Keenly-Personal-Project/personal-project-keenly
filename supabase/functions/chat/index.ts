@@ -5,16 +5,42 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function isImageRequest(message: string): boolean {
-  const lower = message.toLowerCase();
+function isImageRequest(messages: { role: string; content: string }[]): boolean {
   const triggers = [
     'generate image', 'create image', 'draw ', 'draw me', 'make a picture',
     'make an image', 'generate a picture', 'create a picture', 'show me an image',
     'illustrate', 'paint ', 'paint me', 'sketch ', 'sketch me', 'design an image',
     'generate a photo', 'create a visual', 'make a visual', 'generate art',
     'create art', 'draw an image', 'make image', 'generate picture',
+    'generate an image', 'image of', 'picture of',
   ];
-  return triggers.some(t => lower.includes(t));
+
+  // Check last user message
+  const lastUser = [...messages].reverse().find(m => m.role === "user");
+  if (!lastUser) return false;
+  const lower = lastUser.content.toLowerCase();
+  if (triggers.some(t => lower.includes(t))) return true;
+
+  // Check if the conversation context is about image generation
+  // (e.g. assistant previously asked what to draw, user is now describing it)
+  const recentMessages = messages.slice(-4);
+  const assistantMentionedImage = recentMessages.some(
+    m => m.role === "assistant" && /generat|draw|image|picture|illustrat|paint|sketch/i.test(m.content)
+  );
+  const userMentionedImage = recentMessages.some(
+    m => m.role === "user" && triggers.some(t => m.content.toLowerCase().includes(t))
+  );
+
+  // If assistant recently talked about generating images and user is giving a description
+  if (assistantMentionedImage && userMentionedImage) return true;
+
+  // If the previous assistant message was asking what to draw/generate
+  const prevAssistant = [...messages].reverse().find(m => m.role === "assistant");
+  if (prevAssistant && /what.*(?:draw|generat|creat|image|picture)|tell me.*(?:draw|image)/i.test(prevAssistant.content)) {
+    return true;
+  }
+
+  return false;
 }
 
 serve(async (req) => {
@@ -25,11 +51,10 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user");
-    const shouldGenerateImage = lastUserMsg && isImageRequest(lastUserMsg.content);
+    const shouldGenerateImage = isImageRequest(messages);
 
     if (shouldGenerateImage) {
-      // Non-streaming image generation
+      const lastUser = [...messages].reverse().find((m: any) => m.role === "user");
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -43,7 +68,7 @@ serve(async (req) => {
               role: "system",
               content: "You are Ryu, a helpful AI study assistant. Generate images based on the user's description. Provide a brief, friendly description of what you created.",
             },
-            ...messages,
+            { role: "user", content: lastUser?.content || "Generate an image" },
           ],
           modalities: ["image", "text"],
         }),
@@ -83,7 +108,7 @@ serve(async (req) => {
           {
             role: "system",
             content:
-              "You are Ryu, a helpful AI study assistant. Help students with their questions about classes, assignments, notes, and general studying. Keep answers clear, concise, and encouraging. You can also generate images — if a user wants an image, tell them to say something like 'generate image of...' or 'draw me a...'.",
+              "You are Ryu, a helpful AI study assistant. Help students with their questions about classes, assignments, notes, and general studying. Keep answers clear, concise, and encouraging. You can also generate images — if a user wants an image, tell them to say something like 'generate image of...' or 'draw me a...'. IMPORTANT: Never output JSON actions, code blocks with dalle/image actions, or tool-use formatted responses. Just respond naturally in plain text.",
           },
           ...messages,
         ],
