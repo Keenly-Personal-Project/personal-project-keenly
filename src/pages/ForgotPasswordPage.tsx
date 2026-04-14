@@ -117,6 +117,11 @@ const ForgotPasswordPage = () => {
       toast.error("Passwords do not match.");
       return;
     }
+    if (DEMO_MODE) {
+      toast.success("Demo: Password updated! Redirecting to login.");
+      navigate("/auth");
+      return;
+    }
 
     setLoading(true);
     try {
