@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Loader2, Trash2, X, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ImageViewer from "@/components/ImageViewer";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
@@ -218,11 +219,11 @@ export default function AIChatPanel() {
                             <ImageIcon className="h-3 w-3" /> Image (not cached)
                           </div>
                         ) : (
-                          <img
+                          <ImageViewer
                             key={j}
                             src={img}
                             alt={`Generated image ${j + 1}`}
-                            className="rounded-md max-w-full border border-border"
+                            imgClassName="rounded-md max-w-full border border-border cursor-pointer hover:opacity-90 transition-opacity"
                           />
                         )
                       )}
