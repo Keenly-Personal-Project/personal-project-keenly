@@ -219,11 +219,11 @@ export default function AIChatPanel() {
                             <ImageIcon className="h-3 w-3" /> Image (not cached)
                           </div>
                         ) : (
-                          <img
+                          <ImageViewer
                             key={j}
                             src={img}
                             alt={`Generated image ${j + 1}`}
-                            className="rounded-md max-w-full border border-border"
+                            imgClassName="rounded-md max-w-full border border-border cursor-pointer hover:opacity-90 transition-opacity"
                           />
                         )
                       )}
