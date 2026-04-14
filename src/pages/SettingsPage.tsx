@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import PasswordChangeDialog from "@/components/PasswordChangeDialog";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -43,10 +44,9 @@ const SettingsPage = () => {
   const [notifAnnouncements, setNotifAnnouncements] = useState(true);
   const [notifReminders, setNotifReminders] = useState(true);
 
-  // Password change
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [changingPassword, setChangingPassword] = useState(false);
+  // Password change dialog
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  
 
   // Background
   const [bgUrl, setBgUrl] = useState<string | null>(() => localStorage.getItem(BG_STORAGE_KEY));
