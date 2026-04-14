@@ -216,17 +216,29 @@ const Auth = () => {
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isLogin ? 'Log in' : 'Sign up'}
                 </Button>
-                <p className="text-sm text-muted-foreground text-center">
-                  {isLogin ? "Don't have an account? " : 'Already have an account? '}
-                  <button
-                    type="button"
-                    onClick={() => setIsLogin(!isLogin)}
-                    className="text-primary hover:underline font-medium"
-                    disabled={isLoading}
-                  >
-                    {isLogin ? 'Sign up' : 'Log in'}
-                  </button>
-                </p>
+                <div className="flex flex-col items-center gap-2">
+                  {isLogin && (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/forgot-password')}
+                      className="text-sm text-primary hover:underline font-medium"
+                      disabled={isLoading}
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                  <p className="text-sm text-muted-foreground text-center">
+                    {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                    <button
+                      type="button"
+                      onClick={() => setIsLogin(!isLogin)}
+                      className="text-primary hover:underline font-medium"
+                      disabled={isLoading}
+                    >
+                      {isLogin ? 'Sign up' : 'Log in'}
+                    </button>
+                  </p>
+                </div>
               </CardFooter>
             </form>
           </Card>
