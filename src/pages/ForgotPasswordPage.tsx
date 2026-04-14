@@ -11,6 +11,9 @@ import { ArrowLeft, Loader2, Mail, KeyRound, Check, RefreshCw } from "lucide-rea
 
 type Step = "email" | "code" | "password";
 
+// DEMO MODE: Set to false to require real email verification
+const DEMO_MODE = true;
+
 const ForgotPasswordPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -33,6 +36,14 @@ const ForgotPasswordPage = () => {
   const sendCode = async (isResend = false) => {
     if (!email || !email.includes("@")) {
       toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    if (DEMO_MODE) {
+      toast.success(isResend ? "Demo: New code sent!" : "Demo: Verification skipped — enter any 6-char code.");
+      setStep("code");
+      setCode("");
+      setCooldown(30);
       return;
     }
 
@@ -63,6 +74,12 @@ const ForgotPasswordPage = () => {
   const verifyCode = async () => {
     if (!code || code.length < 6) {
       toast.error("Please enter the full 6-character code.");
+      return;
+    }
+
+    if (DEMO_MODE) {
+      toast.success("Demo: Code accepted! Set your new password.");
+      setStep("password");
       return;
     }
 
@@ -98,6 +115,11 @@ const ForgotPasswordPage = () => {
     }
     if (newPassword !== confirmPassword) {
       toast.error("Passwords do not match.");
+      return;
+    }
+    if (DEMO_MODE) {
+      toast.success("Demo: Password updated! Redirecting to login.");
+      navigate("/auth");
       return;
     }
 
