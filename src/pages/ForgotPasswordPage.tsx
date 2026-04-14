@@ -39,6 +39,14 @@ const ForgotPasswordPage = () => {
       return;
     }
 
+    if (DEMO_MODE) {
+      toast.success(isResend ? "Demo: New code sent!" : "Demo: Verification skipped — enter any 6-char code.");
+      setStep("code");
+      setCode("");
+      setCooldown(30);
+      return;
+    }
+
     if (isResend) setResending(true);
     else setLoading(true);
 
@@ -66,6 +74,12 @@ const ForgotPasswordPage = () => {
   const verifyCode = async () => {
     if (!code || code.length < 6) {
       toast.error("Please enter the full 6-character code.");
+      return;
+    }
+
+    if (DEMO_MODE) {
+      toast.success("Demo: Code accepted! Set your new password.");
+      setStep("password");
       return;
     }
 
