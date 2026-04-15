@@ -172,6 +172,11 @@ const ClassPage = () => {
   const [previewRole, setPreviewRole] = useState<KeenRole>(getStoredRole);
   const canEdit = previewRole === "owner" || previewRole === "admin";
 
+  // Role management state
+  const [keenMembers, setKeenMembers] = useState<{ id: string; user_id: string; email: string; role: KeenRole }[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [transferOwnerTarget, setTransferOwnerTarget] = useState<{ id: string; email: string } | null>(null);
+
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
