@@ -189,7 +189,7 @@ const Index = () => {
       <main className="container py-6 px-4">
         <div className="rounded-2xl border border-foreground/30 bg-card min-h-[calc(100vh-8rem)] overflow-hidden">
           {/* Banner */}
-          <div className="w-full bg-primary py-4 sm:py-6 px-8 flex flex-col items-center justify-center">
+          <div className="w-full bg-primary py-4 sm:py-6 px-8 relative flex flex-col items-center justify-center">
             <h1
               className="text-3xl sm:text-4xl md:text-5xl text-primary-foreground font-bold"
               style={{ fontFamily: "'Amatic SC', cursive", letterSpacing: '0.4em', paddingLeft: '0.4em' }}
@@ -197,8 +197,8 @@ const Index = () => {
               Keen's
             </h1>
 
-            {/* Join/Create Keen button - below title */}
-            <div className="mt-2">
+            {/* Join/Create Keen button - centered on mobile, top-right on desktop */}
+            <div className="mt-2 md:mt-0 md:absolute md:top-4 md:right-8">
             <Popover open={keenPopoverOpen} onOpenChange={setKeenPopoverOpen}>
               <PopoverTrigger asChild>
                 <button
