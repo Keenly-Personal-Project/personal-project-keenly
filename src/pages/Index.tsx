@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from "@/components/Header";
@@ -137,7 +138,7 @@ const Index = () => {
     navigate(`/class/${slug}`);
   };
 
-  const handleJoinKeen = () => {
+  const handleJoinKeen = useCallback(async () => {
     const trimmed = joinCode.trim().toUpperCase();
     if (!trimmed) return;
     const currentClasses: ClassInfo[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
@@ -154,23 +155,40 @@ const Index = () => {
       toast.error("No Keen found with that code.");
       return;
     }
-    // Add to pending requests instead of directly joining
     const pendingSlug = found.name!.toLowerCase().replace(/\s+/g, "-");
-    const pendingKey = `keen_pending_${pendingSlug}`;
-    const pending: { email: string; timestamp: string }[] = JSON.parse(localStorage.getItem(pendingKey) || "[]");
     const userEmail = user?.email || "unknown@user.com";
-    if (pending.find(p => p.email === userEmail)) {
+
+    // Check if already requested
+    const { data: existing } = await supabase
+      .from("keen_join_requests")
+      .select("id")
+      .eq("class_slug", pendingSlug)
+      .eq("user_id", user!.id)
+      .eq("status", "pending")
+      .maybeSingle();
+
+    if (existing) {
       toast.info("You've already requested to join this Keen. Waiting for approval.");
       setJoinCode("");
       setJoinDialogOpen(false);
       return;
     }
-    pending.push({ email: userEmail, timestamp: new Date().toISOString() });
-    localStorage.setItem(pendingKey, JSON.stringify(pending));
+
+    const { error } = await supabase.from("keen_join_requests").insert({
+      class_slug: pendingSlug,
+      user_id: user!.id,
+      email: userEmail,
+    });
+
+    if (error) {
+      toast.error("Failed to send join request.");
+      return;
+    }
+
     setJoinCode("");
     setJoinDialogOpen(false);
     toast.success(`Join request sent for "${found.name}"! Waiting for owner/admin approval.`);
-  };
+  }, [joinCode, user]);
 
   if (loading) {
     return (

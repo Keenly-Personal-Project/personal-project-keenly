@@ -64,6 +64,98 @@ interface EventItem {
   publisherAvatar?: string | null;
 }
 
+const PendingJoinRequests = ({ slug }: { slug: string }) => {
+  const [pendingRequests, setPendingRequests] = useState<{ id: string; user_id: string; email: string; created_at: string }[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(true);
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      const { data } = await supabase
+        .from("keen_join_requests")
+        .select("id, user_id, email, created_at")
+        .eq("class_slug", slug)
+        .eq("status", "pending")
+        .order("created_at", { ascending: true });
+      setPendingRequests(data || []);
+      setLoadingRequests(false);
+    };
+    fetchRequests();
+
+    const channel = supabase
+      .channel(`join-requests-${slug}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "keen_join_requests", filter: `class_slug=eq.${slug}` }, () => {
+        fetchRequests();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [slug]);
+
+  if (loadingRequests || pendingRequests.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border border-foreground/20 bg-card p-5 mt-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Users className="h-4 w-4 text-foreground" />
+        <h4 className="text-sm font-semibold text-foreground">Pending Join Requests ({pendingRequests.length})</h4>
+      </div>
+      <div className="space-y-3">
+        {pendingRequests.map((req) => (
+          <div key={req.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                  {req.email.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium text-foreground">{req.email.split("@")[0]} requests to join</p>
+                <p className="text-xs text-muted-foreground">{req.email}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="h-7 text-xs"
+                onClick={async () => {
+                  const { error: memberError } = await supabase.from("keen_members").insert({
+                    class_slug: slug,
+                    user_id: req.user_id,
+                    email: req.email,
+                    role: "member",
+                  });
+                  if (memberError) {
+                    toast.error("Failed to add member.");
+                    return;
+                  }
+                  await supabase.from("keen_join_requests").update({ status: "approved" }).eq("id", req.id);
+                  toast.success(`Approved ${req.email.split("@")[0]}!`);
+                  setPendingRequests(prev => prev.filter(r => r.id !== req.id));
+                  window.dispatchEvent(new Event("keen_classes_updated"));
+                }}
+              >
+                Allow
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={async () => {
+                  await supabase.from("keen_join_requests").update({ status: "rejected" }).eq("id", req.id);
+                  toast.info(`Declined ${req.email.split("@")[0]}'s request.`);
+                  setPendingRequests(prev => prev.filter(r => r.id !== req.id));
+                }}
+              >
+                Reject
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 function formatDate(d?: string) {
   if (!d) return "";
   const dt = new Date(d);
@@ -1020,75 +1112,7 @@ const ClassPage = () => {
             </div>
           )}
           {/* Pending Join Requests (Owner/Admin only) */}
-          {canEdit && (() => {
-            const pendingKey = `keen_pending_${slug}`;
-            const pending: { email: string; timestamp: string }[] = JSON.parse(localStorage.getItem(pendingKey) || "[]");
-            if (pending.length === 0) return null;
-            return (
-              <div className="rounded-lg border border-foreground/20 bg-card p-5 mt-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Users className="h-4 w-4 text-foreground" />
-                  <h4 className="text-sm font-semibold text-foreground">Pending Join Requests ({pending.length})</h4>
-                </div>
-                <div className="space-y-3">
-                  {pending.map((req, i) => (
-                    <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-                            {req.email.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{req.email.split("@")[0]}</p>
-                          <p className="text-xs text-muted-foreground">{req.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => {
-                            // Approve: add to their classes as member
-                            const userClasses: { name: string; icon: string; code?: string }[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
-                            const registry: { name: string; icon: string; code?: string }[] = JSON.parse(localStorage.getItem("keen_registry") || "[]");
-                            const found = registry.find(c => c.name.toLowerCase().replace(/\s+/g, "-") === slug);
-                            if (found && !userClasses.find(c => c.code === found.code)) {
-                              userClasses.push({ ...found });
-                              localStorage.setItem("keen_classes", JSON.stringify(userClasses));
-                              localStorage.setItem(`keen_preview_role_${slug}`, "member");
-                              window.dispatchEvent(new Event("keen_classes_updated"));
-                            }
-                            // Remove from pending
-                            const updated = pending.filter((_, idx) => idx !== i);
-                            localStorage.setItem(pendingKey, JSON.stringify(updated));
-                            toast.success(`Approved ${req.email.split("@")[0]}!`);
-                            // Force re-render
-                            window.dispatchEvent(new Event("keen_classes_updated"));
-                          }}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => {
-                            const updated = pending.filter((_, idx) => idx !== i);
-                            localStorage.setItem(pendingKey, JSON.stringify(updated));
-                            toast.info(`Declined ${req.email.split("@")[0]}'s request.`);
-                            window.dispatchEvent(new Event("keen_classes_updated"));
-                          }}
-                        >
-                          Decline
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
+          {canEdit && <PendingJoinRequests slug={slug} />}
         </div>
       );
     }

@@ -103,6 +103,33 @@ export type Database = {
         }
         Relationships: []
       }
+      keen_join_requests: {
+        Row: {
+          class_slug: string
+          created_at: string
+          email: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          class_slug: string
+          created_at?: string
+          email?: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          class_slug?: string
+          created_at?: string
+          email?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       keen_members: {
         Row: {
           class_slug: string
