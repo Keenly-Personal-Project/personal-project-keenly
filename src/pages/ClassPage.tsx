@@ -172,6 +172,11 @@ const ClassPage = () => {
   const [previewRole, setPreviewRole] = useState<KeenRole>(getStoredRole);
   const canEdit = previewRole === "owner" || previewRole === "admin";
 
+  // Role management state
+  const [keenMembers, setKeenMembers] = useState<{ id: string; user_id: string; email: string; role: KeenRole }[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [transferOwnerTarget, setTransferOwnerTarget] = useState<{ id: string; email: string } | null>(null);
+
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
@@ -230,6 +235,58 @@ const ClassPage = () => {
     localStorage.setItem(roleKey, previewRole);
   }, [previewRole, roleKey]);
 
+  // Fetch keen members for role management
+  const fetchKeenMembers = useCallback(async () => {
+    if (!user || previewRole !== "owner") return;
+    setLoadingMembers(true);
+    const { data, error } = await (supabase.from as any)("keen_members")
+      .select("id, user_id, email, role")
+      .eq("class_slug", slug);
+    if (!error && data) {
+      setKeenMembers(data.map((m: any) => ({ id: m.id, user_id: m.user_id, email: m.email, role: m.role as KeenRole })));
+    }
+    setLoadingMembers(false);
+  }, [user, slug, previewRole]);
+
+  useEffect(() => {
+    if (activeTab === "Details" && previewRole === "owner") {
+      fetchKeenMembers();
+    }
+  }, [activeTab, previewRole, fetchKeenMembers]);
+
+  const handleRoleChange = async (memberId: string, memberEmail: string, newRole: KeenRole) => {
+    if (newRole === "owner") {
+      setTransferOwnerTarget({ id: memberId, email: memberEmail });
+      return;
+    }
+    const { error } = await (supabase.from as any)("keen_members")
+      .update({ role: newRole })
+      .eq("id", memberId);
+    if (error) {
+      toast.error("Failed to update role");
+      return;
+    }
+    toast.success(`Role updated to ${roleConfig[newRole].label}`);
+    fetchKeenMembers();
+  };
+
+  const confirmTransferOwnership = async () => {
+    if (!transferOwnerTarget || !user) return;
+    const myMembership = keenMembers.find(m => m.user_id === user.id && m.role === "owner");
+    if (!myMembership) { toast.error("Could not find your membership"); return; }
+    const { error: e1 } = await (supabase.from as any)("keen_members")
+      .update({ role: "owner" })
+      .eq("id", transferOwnerTarget.id);
+    if (e1) { toast.error("Failed to transfer ownership"); return; }
+    const { error: e2 } = await (supabase.from as any)("keen_members")
+      .update({ role: "member" })
+      .eq("id", myMembership.id);
+    if (e2) { toast.error("Failed to update your role"); return; }
+    toast.success(`Ownership transferred to ${transferOwnerTarget.email.split("@")[0]}`);
+    setPreviewRole("member");
+    setTransferOwnerTarget(null);
+    fetchKeenMembers();
+  };
 
   interface Recording {
     id: string;
@@ -856,43 +913,103 @@ const ClassPage = () => {
                 As the owner, you can assign and change roles for members of this Keen.
               </p>
               
-              {/* Example members for demonstration */}
-              <div className="space-y-3">
-                {[
-                  { name: "You", email: user?.email || "you@example.com", role: "owner" as KeenRole, isSelf: true },
-                ].map((member, i) => {
-                  const mCfg = roleConfig[member.role];
-                  const MIcon = mCfg.icon;
-                  return (
-                    <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          {member.isSelf && profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
-                          <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-                            {member.name.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">{member.email}</p>
+              {loadingMembers ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : keenMembers.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">
+                  No members found. Invite members to manage their roles here.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {keenMembers
+                    .sort((a, b) => {
+                      const order: Record<string, number> = { owner: 0, admin: 1, member: 2 };
+                      return (order[a.role] ?? 3) - (order[b.role] ?? 3);
+                    })
+                    .map((member) => {
+                      const mCfg = roleConfig[member.role];
+                      const MIcon = mCfg.icon;
+                      const isSelf = member.user_id === user?.id;
+                      const memberName = member.email.split("@")[0];
+                      return (
+                        <div key={member.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              {isSelf && profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
+                              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                                {memberName.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-sm font-medium text-foreground">
+                                {memberName}{isSelf ? " (You)" : ""}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{member.email}</p>
+                            </div>
+                          </div>
+                          {isSelf ? (
+                            <Badge
+                              className="gap-1 px-2.5 py-0.5 text-[10px] font-semibold border-0"
+                              style={{ backgroundColor: mCfg.color, color: "#fff" }}
+                            >
+                              <MIcon className="h-2.5 w-2.5" />
+                              {mCfg.label}
+                            </Badge>
+                          ) : (
+                            <Select
+                              value={member.role}
+                              onValueChange={(val) => handleRoleChange(member.id, member.email, val as KeenRole)}
+                            >
+                              <SelectTrigger className="w-[120px] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="member">
+                                  <div className="flex items-center gap-1.5">
+                                    <Shield className="h-3 w-3" /> Member
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="admin">
+                                  <div className="flex items-center gap-1.5">
+                                    <ShieldCheck className="h-3 w-3" /> Admin
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="owner">
+                                  <div className="flex items-center gap-1.5">
+                                    <Crown className="h-3 w-3" /> Owner
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
                         </div>
-                      </div>
-                      <Badge
-                        className="gap-1 px-2.5 py-0.5 text-[10px] font-semibold border-0"
-                        style={{ backgroundColor: mCfg.color, color: "#fff" }}
-                      >
-                        <MIcon className="h-2.5 w-2.5" />
-                        {mCfg.label}
-                      </Badge>
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-muted-foreground mt-4 italic">
-                Invite members to this Keen to manage their roles here.
-              </p>
+                      );
+                    })}
+                </div>
+              )}
             </div>
           )}
+
+          {/* Transfer Ownership Confirmation */}
+          <AlertDialog open={!!transferOwnerTarget} onOpenChange={(open) => !open && setTransferOwnerTarget(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Transfer Ownership</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to transfer ownership to <strong>{transferOwnerTarget?.email.split("@")[0]}</strong>?
+                  You will become a regular member and lose owner privileges.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmTransferOwnership}>
+                  Transfer Ownership
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* Non-owner info */}
           {previewRole !== "owner" && (
