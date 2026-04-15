@@ -235,6 +235,58 @@ const ClassPage = () => {
     localStorage.setItem(roleKey, previewRole);
   }, [previewRole, roleKey]);
 
+  // Fetch keen members for role management
+  const fetchKeenMembers = useCallback(async () => {
+    if (!user || previewRole !== "owner") return;
+    setLoadingMembers(true);
+    const { data, error } = await (supabase.from as any)("keen_members")
+      .select("id, user_id, email, role")
+      .eq("class_slug", slug);
+    if (!error && data) {
+      setKeenMembers(data.map((m: any) => ({ id: m.id, user_id: m.user_id, email: m.email, role: m.role as KeenRole })));
+    }
+    setLoadingMembers(false);
+  }, [user, slug, previewRole]);
+
+  useEffect(() => {
+    if (activeTab === "Details" && previewRole === "owner") {
+      fetchKeenMembers();
+    }
+  }, [activeTab, previewRole, fetchKeenMembers]);
+
+  const handleRoleChange = async (memberId: string, memberEmail: string, newRole: KeenRole) => {
+    if (newRole === "owner") {
+      setTransferOwnerTarget({ id: memberId, email: memberEmail });
+      return;
+    }
+    const { error } = await (supabase.from as any)("keen_members")
+      .update({ role: newRole })
+      .eq("id", memberId);
+    if (error) {
+      toast.error("Failed to update role");
+      return;
+    }
+    toast.success(`Role updated to ${roleConfig[newRole].label}`);
+    fetchKeenMembers();
+  };
+
+  const confirmTransferOwnership = async () => {
+    if (!transferOwnerTarget || !user) return;
+    const myMembership = keenMembers.find(m => m.user_id === user.id && m.role === "owner");
+    if (!myMembership) { toast.error("Could not find your membership"); return; }
+    const { error: e1 } = await (supabase.from as any)("keen_members")
+      .update({ role: "owner" })
+      .eq("id", transferOwnerTarget.id);
+    if (e1) { toast.error("Failed to transfer ownership"); return; }
+    const { error: e2 } = await (supabase.from as any)("keen_members")
+      .update({ role: "member" })
+      .eq("id", myMembership.id);
+    if (e2) { toast.error("Failed to update your role"); return; }
+    toast.success(`Ownership transferred to ${transferOwnerTarget.email.split("@")[0]}`);
+    setPreviewRole("member");
+    setTransferOwnerTarget(null);
+    fetchKeenMembers();
+  };
 
   interface Recording {
     id: string;
