@@ -24,11 +24,9 @@ export default function AssemblySignInPage() {
     }
 
     const signIn = async () => {
-      // Look up assembly by token
-      const { data: assembly, error: aErr } = await (supabase.from as any)("assemblies")
-        .select("*")
-        .eq("qr_token", token)
-        .maybeSingle();
+      // Look up assembly by token using secure RPC
+      const { data: rows, error: aErr } = await supabase.rpc("lookup_assembly_by_token" as any, { _qr_token: token });
+      const assembly = Array.isArray(rows) ? rows[0] : rows;
 
       if (aErr || !assembly) {
         setStatus("error");
