@@ -269,6 +269,16 @@ export type Database = {
         Args: { _class_slug: string; _user_id: string }
         Returns: boolean
       }
+      lookup_assembly_by_token: {
+        Args: { _qr_token: string }
+        Returns: {
+          absent_time: string
+          class_slug: string
+          id: string
+          late_time: string
+          title: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
