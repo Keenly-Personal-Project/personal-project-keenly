@@ -110,8 +110,8 @@ const Auth = () => {
     }
   };
 
-  // Only show bypass in local development, never on deployed domains
-  const isPreviewMode = import.meta.env.DEV;
+  // Show bypass in preview and local dev, but not on published domain
+  const isPreviewMode = window.location.hostname.includes('preview') || import.meta.env.DEV;
 
   if (loading) {
     return (
