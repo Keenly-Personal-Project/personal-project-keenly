@@ -11,8 +11,8 @@ import { ArrowLeft, Loader2, Mail, KeyRound, Check, RefreshCw } from "lucide-rea
 
 type Step = "email" | "code" | "password";
 
-// DEMO MODE: Set to false to require real email verification
-const DEMO_MODE = true;
+// Use environment variable for demo mode; defaults to false in production
+const DEMO_MODE = import.meta.env.DEV;
 
 const ForgotPasswordPage = () => {
   const { user } = useAuth();

@@ -30,12 +30,6 @@ const helloWords = [
 const COLS = 8;
 const ROWS = 10;
 
-const gridHellos = Array.from({ length: ROWS * COLS }, (_, i) => ({
-  text: helloWords[i % helloWords.length],
-  row: Math.floor(i / COLS),
-  col: i % COLS,
-}));
-
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -44,7 +38,7 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [showVerifyMessage, setShowVerifyMessage] = useState(false);
   
-  const { signIn, signUp, user, loading, activateBypass } = useAuth();
+  const { signUp, signIn, user, loading, activateBypass } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -116,8 +110,8 @@ const Auth = () => {
     }
   };
 
-  // Check if running in preview mode
-  const isPreviewMode = window.location.hostname.includes('lovable.app') || import.meta.env.DEV;
+  // Only show bypass in local development, never on deployed domains
+  const isPreviewMode = import.meta.env.DEV;
 
   if (loading) {
     return (

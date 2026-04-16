@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.94.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,14 +16,11 @@ function isImageRequest(messages: { role: string; content: string }[]): boolean 
     'generate an image', 'image of', 'picture of',
   ];
 
-  // Check last user message
   const lastUser = [...messages].reverse().find(m => m.role === "user");
   if (!lastUser) return false;
   const lower = lastUser.content.toLowerCase();
   if (triggers.some(t => lower.includes(t))) return true;
 
-  // Check if the conversation context is about image generation
-  // (e.g. assistant previously asked what to draw, user is now describing it)
   const recentMessages = messages.slice(-4);
   const assistantMentionedImage = recentMessages.some(
     m => m.role === "assistant" && /generat|draw|image|picture|illustrat|paint|sketch/i.test(m.content)
@@ -31,10 +29,8 @@ function isImageRequest(messages: { role: string; content: string }[]): boolean 
     m => m.role === "user" && triggers.some(t => m.content.toLowerCase().includes(t))
   );
 
-  // If assistant recently talked about generating images and user is giving a description
   if (assistantMentionedImage && userMentionedImage) return true;
 
-  // If the previous assistant message was asking what to draw/generate
   const prevAssistant = [...messages].reverse().find(m => m.role === "assistant");
   if (prevAssistant && /what.*(?:draw|generat|creat|image|picture)|tell me.*(?:draw|image)/i.test(prevAssistant.content)) {
     return true;
@@ -47,6 +43,30 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Authenticate the user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { messages } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
