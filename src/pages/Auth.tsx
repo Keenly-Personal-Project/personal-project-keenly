@@ -44,7 +44,7 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [showVerifyMessage, setShowVerifyMessage] = useState(false);
   
-  const { signIn, signUp, user, loading } = useAuth();
+  const { signIn, signUp, user, loading, activateBypass } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -73,7 +73,7 @@ const Auth = () => {
   };
 
   const handleBypass = () => {
-    // Bypass for preview/demo mode - navigate directly to home
+    activateBypass();
     navigate('/');
   };
 

@@ -2,13 +2,26 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+// Demo bypass user for preview mode
+const BYPASS_USER: User = {
+  id: 'demo-bypass-user-0000',
+  aud: 'authenticated',
+  role: 'authenticated',
+  email: 'demo@keenly.preview',
+  app_metadata: {},
+  user_metadata: { full_name: 'Preview Editor' },
+  created_at: new Date().toISOString(),
+} as User;
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isBypass: boolean;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  activateBypass: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,8 +30,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isBypass, setIsBypass] = useState(() => localStorage.getItem('keen_bypass_mode') === 'true');
 
   useEffect(() => {
+    if (isBypass) {
+      setUser(BYPASS_USER);
+      setLoading(false);
+      return;
+    }
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -36,7 +56,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isBypass]);
+
+  const activateBypass = () => {
+    localStorage.setItem('keen_bypass_mode', 'true');
+    setIsBypass(true);
+    setUser(BYPASS_USER);
+    setLoading(false);
+  };
 
   const signUp = async (email: string, password: string) => {
     const redirectUrl = `${window.location.origin}/`;
@@ -60,11 +87,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    if (isBypass) {
+      localStorage.removeItem('keen_bypass_mode');
+      setIsBypass(false);
+      setUser(null);
+      setSession(null);
+      return;
+    }
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isBypass, signUp, signIn, signOut, activateBypass }}>
       {children}
     </AuthContext.Provider>
   );
