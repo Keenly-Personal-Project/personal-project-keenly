@@ -72,6 +72,11 @@ const Auth = () => {
     }
   };
 
+  const handleBypass = () => {
+    // Bypass for preview/demo mode - navigate directly to home
+    navigate('/');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -110,6 +115,9 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
+
+  // Check if running in preview mode
+  const isPreviewMode = window.location.hostname.includes('lovable.app') || import.meta.env.DEV;
 
   if (loading) {
     return (
@@ -216,6 +224,16 @@ const Auth = () => {
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isLogin ? 'Log in' : 'Sign up'}
                 </Button>
+                {isPreviewMode && (
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    className="w-full h-12 text-base border-2 border-dashed border-muted-foreground/30 hover:border-primary hover:bg-primary/5" 
+                    onClick={handleBypass}
+                  >
+                    Bypass (Preview Mode)
+                  </Button>
+                )}
                 <div className="flex flex-col items-center gap-2">
                   {isLogin && (
                     <button
