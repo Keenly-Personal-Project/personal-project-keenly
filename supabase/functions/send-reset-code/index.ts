@@ -76,7 +76,7 @@ serve(async (req) => {
       // Transactional email not set up - use built-in recovery as fallback
       // The admin generateLink doesn't send email, so we use resetPasswordForEmail
       // This sends a recovery link email (not our hex code) as a fallback
-      console.log("Transactional email not available, code stored in DB only. Code:", code);
+      console.log("Transactional email not configured — reset code stored in DB; no email sent.");
       // In production with email configured, the transactional email would send the hex code
     }
 
