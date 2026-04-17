@@ -239,7 +239,36 @@ const SettingsPage = () => {
                 </div>
               </div>
               <Separator className="my-4" />
-              <div className="space-y-3">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs">Username</Label>
+                  {editingUsername ? (
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        value={usernameInput}
+                        onChange={(e) => setUsernameInput(e.target.value)}
+                        placeholder="your-username"
+                        maxLength={30}
+                        disabled={savingUsername}
+                        autoFocus
+                      />
+                      <Button size="sm" onClick={saveUsername} disabled={savingUsername} className="gap-1">
+                        {savingUsername ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                        Save
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingUsername(false)} disabled={savingUsername}>
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-sm text-foreground">{username}</p>
+                      <Button size="sm" variant="ghost" onClick={startEditUsername} className="gap-1 h-7">
+                        <Pencil className="h-3 w-3" /> Edit
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 <div>
                   <Label className="text-muted-foreground text-xs">Email</Label>
                   <p className="text-sm text-foreground">{email}</p>
