@@ -11,8 +11,9 @@ import PasswordChangeDialog from "@/components/PasswordChangeDialog";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useProfile } from "@/hooks/useProfile";
 import {
-  ArrowLeft, User, Palette, Bell, Shield, Info, Loader2, Check, Moon, Sun, Upload, X,
+  ArrowLeft, User, Palette, Bell, Shield, Info, Loader2, Check, Moon, Sun, Upload, X, Pencil, Save,
 } from "lucide-react";
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
@@ -35,7 +36,13 @@ export function getCustomBackground(): { url: string | null; blur: number; posX:
 
 const SettingsPage = () => {
   const { user, loading, signOut } = useAuth();
+  const { profile, updateProfile } = useProfile();
   const navigate = useNavigate();
+
+  // Username editing
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+  const [savingUsername, setSavingUsername] = useState(false);
 
   // Theme
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
@@ -73,8 +80,41 @@ const SettingsPage = () => {
   if (!user) return null;
 
   const email = user.email || "Unknown";
-  const username = email.split("@")[0];
+  const username = profile?.username || email.split("@")[0];
   const initials = username.slice(0, 2).toUpperCase();
+
+  const startEditUsername = () => {
+    setUsernameInput(profile?.username || email.split("@")[0]);
+    setEditingUsername(true);
+  };
+
+  const saveUsername = async () => {
+    const trimmed = usernameInput.trim();
+    if (!trimmed) {
+      toast.error("Username cannot be empty.");
+      return;
+    }
+    if (trimmed.length < 2 || trimmed.length > 30) {
+      toast.error("Username must be 2-30 characters.");
+      return;
+    }
+    if (!/^[a-zA-Z0-9_.-]+$/.test(trimmed)) {
+      toast.error("Only letters, numbers, '.', '_' and '-' allowed.");
+      return;
+    }
+    setSavingUsername(true);
+    const result = await updateProfile({ username: trimmed });
+    setSavingUsername(false);
+    if (result?.error) {
+      const msg = (result.error as any)?.message?.includes("duplicate") || (result.error as any)?.code === "23505"
+        ? "That username is already taken."
+        : "Could not save username.";
+      toast.error(msg);
+      return;
+    }
+    setEditingUsername(false);
+    toast.success("Username updated!");
+  };
 
   const toggleDarkMode = (enabled: boolean) => {
     setDarkMode(enabled);
@@ -199,7 +239,36 @@ const SettingsPage = () => {
                 </div>
               </div>
               <Separator className="my-4" />
-              <div className="space-y-3">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs">Username</Label>
+                  {editingUsername ? (
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        value={usernameInput}
+                        onChange={(e) => setUsernameInput(e.target.value)}
+                        placeholder="your-username"
+                        maxLength={30}
+                        disabled={savingUsername}
+                        autoFocus
+                      />
+                      <Button size="sm" onClick={saveUsername} disabled={savingUsername} className="gap-1">
+                        {savingUsername ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                        Save
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingUsername(false)} disabled={savingUsername}>
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-sm text-foreground">{username}</p>
+                      <Button size="sm" variant="ghost" onClick={startEditUsername} className="gap-1 h-7">
+                        <Pencil className="h-3 w-3" /> Edit
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 <div>
                   <Label className="text-muted-foreground text-xs">Email</Label>
                   <p className="text-sm text-foreground">{email}</p>

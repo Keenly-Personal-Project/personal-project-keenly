@@ -19,6 +19,7 @@ import EventDetailPage from "./pages/EventDetailPage";
 import MeetingRecordingPage from "./pages/MeetingRecordingPage";
 import AssemblySignInPage from "./pages/AssemblySignInPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import Unsubscribe from "./pages/Unsubscribe";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ function AppLayout() {
             <Route path="/class/:className/event/:eventId/edit" element={<EventCreatePage />} />
             <Route path="/class/:className/recording/new" element={<MeetingRecordingPage />} />
             <Route path="/assembly/sign-in/:token" element={<AssemblySignInPage />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BackgroundWrapper>

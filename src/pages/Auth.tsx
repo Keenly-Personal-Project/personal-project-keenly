@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const authSchema = z.object({
@@ -27,26 +28,38 @@ const helloWords = [
   "Shalom!", "Hej!", "Merhaba!", "Sawubona!", "Aloha!", "Ciao!", "Olá!", "Hallo!",
 ];
 
-const COLS = 8;
-const ROWS = 10;
-
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  const [showVerifyMessage, setShowVerifyMessage] = useState(false);
-  
+
   const { signUp, signIn, user, loading, activateBypass } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!loading && user) {
-      navigate('/');
-    }
+    if (!loading && user) navigate('/');
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const t = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [cooldown]);
+
+  // Reset code state when toggling between login/signup
+  useEffect(() => {
+    setCodeSent(false);
+    setCode('');
+    setCooldown(0);
+  }, [isLogin]);
 
   const validateForm = () => {
     try {
@@ -71,46 +84,94 @@ const Auth = () => {
     navigate('/');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const sendLoginCode = async (isResend = false) => {
     if (!validateForm()) return;
+    if (isResend) setResending(true); else setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-login-code', {
+        body: { email: email.trim().toLowerCase(), password },
+      });
+      if (error || data?.error) {
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: data?.error || "Invalid email or password.",
+        });
+        return;
+      }
+      setCodeSent(true);
+      setCode('');
+      setCooldown(60);
+      toast({
+        title: isResend ? "New code sent" : "Verification code sent",
+        description: `Check ${email} for your 6-character code.`,
+      });
+    } catch {
+      toast({ variant: "destructive", title: "Error", description: "Could not send code. Try again." });
+    } finally {
+      setIsLoading(false);
+      setResending(false);
+    }
+  };
+
+  const verifyCodeAndLogin = async () => {
+    if (code.length < 6) {
+      toast({ variant: "destructive", title: "Invalid code", description: "Enter the full 6-character code." });
+      return;
+    }
     setIsLoading(true);
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          toast({
-            variant: "destructive",
-            title: "Login failed",
-            description: error.message.includes('Invalid login credentials')
-              ? "Invalid email or password. Please try again."
-              : error.message.includes('Email not confirmed')
-              ? "Please verify your email before signing in. Check your inbox."
-              : error.message,
-          });
-        } else {
-          toast({ title: "Welcome back!", description: "You have successfully logged in." });
-        }
+      const { data, error } = await supabase.functions.invoke('verify-login-code', {
+        body: { email: email.trim().toLowerCase(), code: code.trim().toUpperCase() },
+      });
+      if (error || data?.error || !data?.valid) {
+        toast({ variant: "destructive", title: "Invalid code", description: "The code is incorrect or expired." });
+        return;
+      }
+      // Code valid — perform real sign-in to establish session
+      const { error: signInErr } = await signIn(email, password);
+      if (signInErr) {
+        toast({ variant: "destructive", title: "Login failed", description: signInErr.message });
+        return;
+      }
+      toast({ title: "Welcome back!", description: "You have successfully logged in." });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isLogin) {
+      if (codeSent) {
+        await verifyCodeAndLogin();
       } else {
+        await sendLoginCode(false);
+      }
+    } else {
+      if (!validateForm()) return;
+      setIsLoading(true);
+      try {
         const { error } = await signUp(email, password);
         if (error) {
           toast({
             variant: "destructive",
             title: "Sign up failed",
             description: error.message.includes('already registered')
-              ? "This email is already registered. Please sign in instead."
+              ? "This email is already registered. Please log in instead."
               : error.message,
           });
         } else {
-          setShowVerifyMessage(true);
+          toast({ title: "Account created!", description: "You can now log in." });
+          setIsLogin(true);
+          setPassword('');
         }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Show bypass in preview and local dev, but not on published domain
   const isPreviewMode = window.location.hostname.includes('preview') || import.meta.env.DEV;
 
   if (loading) {
@@ -162,99 +223,124 @@ const Auth = () => {
           </p>
         </div>
 
-        {showVerifyMessage ? (
-          <Card className="w-full max-w-lg">
-            <CardContent className="pt-8 pb-8 px-8 text-center space-y-4">
-              <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        <Card className="w-full max-w-lg">
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-5 pt-8 pb-4 px-8">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading || codeSent}
+                  className="h-12"
+                />
+                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
               </div>
-              <h2 className="text-xl font-semibold text-foreground">Check your email</h2>
-              <p className="text-sm text-muted-foreground">
-                We've sent a verification link to <span className="font-medium text-foreground">{email}</span>. 
-                Please click the link in your email to verify your account before signing in.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => { setShowVerifyMessage(false); setIsLogin(true); }}
-                className="mt-4"
-              >
-                Back to login
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="w-full max-w-lg">
-            <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-5 pt-8 pb-4 px-8">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
-                    className="h-12"
-                  />
-                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading}
-                    className="h-12"
-                  />
-                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-4 px-8 pb-8">
-                <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isLogin ? 'Log in' : 'Sign up'}
-                </Button>
-                {isPreviewMode && (
-                  <Button 
-                    type="button"
-                    variant="outline" 
-                    className="w-full h-12 text-base border-2 border-dashed border-muted-foreground/30 hover:border-primary hover:bg-primary/5" 
-                    onClick={handleBypass}
-                  >
-                    Bypass (Preview Mode)
-                  </Button>
-                )}
-                <div className="flex flex-col items-center gap-2">
-                  {isLogin && (
-                    <button
-                      type="button"
-                      onClick={() => navigate('/forgot-password')}
-                      className="text-sm text-primary hover:underline font-medium"
-                      disabled={isLoading}
-                    >
-                      Forgot password?
-                    </button>
-                  )}
-                  <p className="text-sm text-muted-foreground text-center">
-                    {isLogin ? "Don't have an account? " : 'Already have an account? '}
-                    <button
-                      type="button"
-                      onClick={() => setIsLogin(!isLogin)}
-                      className="text-primary hover:underline font-medium"
-                      disabled={isLoading}
-                    >
-                      {isLogin ? 'Sign up' : 'Log in'}
-                    </button>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading || codeSent}
+                  className="h-12"
+                />
+                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+              </div>
+
+              {/* Code input — appears after sending the code on login */}
+              {isLogin && codeSent && (
+                <div className="space-y-2 animate-fade-in">
+                  <Label htmlFor="code">Input Code</Label>
+                  <p className="text-xs text-muted-foreground">
+                    A 6-character code was sent to <span className="font-medium text-foreground">{email}</span>.
                   </p>
+                  <Input
+                    id="code"
+                    type="text"
+                    placeholder="e.g., A4F2B1"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^0-9A-F]/gi, "").slice(0, 6))}
+                    disabled={isLoading}
+                    className="h-12 text-center text-lg font-mono tracking-[0.3em] uppercase"
+                    maxLength={6}
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => sendLoginCode(true)}
+                      disabled={resending || cooldown > 0}
+                      className="gap-1 text-xs h-7"
+                    >
+                      <RefreshCw className={`h-3 w-3 ${resending ? "animate-spin" : ""}`} />
+                      {cooldown > 0 ? `Resend (${cooldown}s)` : "Resend code"}
+                    </Button>
+                  </div>
                 </div>
-              </CardFooter>
-            </form>
-          </Card>
-        )}
+              )}
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4 px-8 pb-8">
+              <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLogin
+                  ? (codeSent ? 'Verify & Log in' : 'Log in')
+                  : 'Sign up'}
+              </Button>
+              {isLogin && codeSent && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setCodeSent(false); setCode(''); }}
+                  disabled={isLoading}
+                  className="text-xs"
+                >
+                  Use a different email
+                </Button>
+              )}
+              {isPreviewMode && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-12 text-base border-2 border-dashed border-muted-foreground/30 hover:border-primary hover:bg-primary/5"
+                  onClick={handleBypass}
+                >
+                  Bypass (Preview Mode)
+                </Button>
+              )}
+              <div className="flex flex-col items-center gap-2">
+                {isLogin && !codeSent && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-sm text-primary hover:underline font-medium"
+                    disabled={isLoading}
+                  >
+                    Forgot password?
+                  </button>
+                )}
+                <p className="text-sm text-muted-foreground text-center">
+                  {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                  <button
+                    type="button"
+                    onClick={() => setIsLogin(!isLogin)}
+                    className="text-primary hover:underline font-medium"
+                    disabled={isLoading}
+                  >
+                    {isLogin ? 'Sign up' : 'Log in'}
+                  </button>
+                </p>
+              </div>
+            </CardFooter>
+          </form>
+        </Card>
       </div>
     </div>
   );
