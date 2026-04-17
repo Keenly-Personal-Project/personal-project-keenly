@@ -10,6 +10,7 @@ export interface Profile {
   avatar_url: string | null;
   text_status: string;
   availability_mode: AvailabilityMode;
+  username: string | null;
 }
 
 export const useProfile = () => {
@@ -49,7 +50,7 @@ export const useProfile = () => {
 
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
-  const updateProfile = async (updates: Partial<Pick<Profile, "avatar_url" | "text_status" | "availability_mode">>) => {
+  const updateProfile = async (updates: Partial<Pick<Profile, "avatar_url" | "text_status" | "availability_mode" | "username">>) => {
     if (!user) return;
     const { data, error } = await supabase
       .from("profiles")
