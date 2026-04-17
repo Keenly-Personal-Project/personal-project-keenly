@@ -244,6 +244,33 @@ export type Database = {
         }
         Relationships: []
       }
+      login_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          used: boolean | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          used?: boolean | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          used?: boolean | null
+        }
+        Relationships: []
+      }
       meeting_recordings: {
         Row: {
           class_name: string
@@ -322,6 +349,7 @@ export type Database = {
           text_status: string | null
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           availability_mode?: string
@@ -331,6 +359,7 @@ export type Database = {
           text_status?: string | null
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           availability_mode?: string
@@ -340,6 +369,7 @@ export type Database = {
           text_status?: string | null
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }
