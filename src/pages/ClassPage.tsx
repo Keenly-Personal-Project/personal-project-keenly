@@ -911,32 +911,6 @@ const ClassPage = () => {
             </div>
           )}
 
-          {/* Role Preview Switcher */}
-          <div className="mb-6 p-4 rounded-lg border border-dashed border-primary/40 bg-primary/5">
-            <p className="text-xs font-medium text-primary mb-2">🔀 Preview Mode — Switch role to test UI visibility</p>
-            <div className="flex gap-2">
-              {(["owner", "admin", "member"] as KeenRole[]).map((role) => {
-                const cfg = roleConfig[role];
-                const Icon = cfg.icon;
-                const isActive = previewRole === role;
-                return (
-                  <button
-                    key={role}
-                    onClick={() => setPreviewRole(role)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                      isActive
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {cfg.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Online Members */}
           {onlineMembers.length > 0 && (
             <div className="mb-6 p-4 rounded-lg border border-border bg-card">
