@@ -10,7 +10,9 @@ export interface TemplateEntry {
 }
 
 import { template as loginVerificationCode } from './login-verification-code.tsx'
+import { template as passwordResetCode } from './password-reset-code.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'login-verification-code': loginVerificationCode,
+  'password-reset-code': passwordResetCode,
 }

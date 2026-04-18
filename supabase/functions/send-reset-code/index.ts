@@ -58,26 +58,21 @@ serve(async (req) => {
       });
     }
 
-    // Send email via Supabase Auth recovery (as a trigger for the email)
-    // We use the admin API to send a password recovery email, which will
-    // go through Supabase's built-in email system
-    // The user will receive this AND can use our hex code
-    try {
-      // Attempt to send transactional email if available
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "password-reset-code",
-          recipientEmail: email.toLowerCase(),
-          idempotencyKey: `reset-code-${code}`,
-          templateData: { code },
-        },
+    // Send the hex code via transactional email
+    const { error: emailErr } = await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "password-reset-code",
+        recipientEmail: email.toLowerCase(),
+        idempotencyKey: `reset-code-${code}`,
+        templateData: { code },
+      },
+    });
+
+    if (emailErr) {
+      console.error("Failed to send reset email:", emailErr);
+      return new Response(JSON.stringify({ error: "Failed to send email" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    } catch {
-      // Transactional email not set up - use built-in recovery as fallback
-      // The admin generateLink doesn't send email, so we use resetPasswordForEmail
-      // This sends a recovery link email (not our hex code) as a fallback
-      console.log("Transactional email not configured — reset code stored in DB; no email sent.");
-      // In production with email configured, the transactional email would send the hex code
     }
 
     return new Response(JSON.stringify({ success: true }), {
