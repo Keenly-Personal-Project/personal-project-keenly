@@ -244,6 +244,45 @@ export type Database = {
         }
         Relationships: []
       }
+      keens: {
+        Row: {
+          code: string
+          color: string | null
+          created_at: string
+          created_by: string
+          icon: string
+          id: string
+          image: string | null
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          color?: string | null
+          created_at?: string
+          created_by: string
+          icon?: string
+          id?: string
+          image?: string | null
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          icon?: string
+          id?: string
+          image?: string | null
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       login_codes: {
         Row: {
           code: string
