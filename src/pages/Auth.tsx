@@ -85,18 +85,19 @@ const Auth = () => {
     navigate('/');
   };
 
-  const sendLoginCode = async (isResend = false) => {
+  const sendCode = async (mode: 'login' | 'signup', isResend = false) => {
     if (!validateForm()) return;
     if (isResend) setResending(true); else setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-login-code', {
+      const fnName = mode === 'login' ? 'send-login-code' : 'send-signup-code';
+      const { data, error } = await supabase.functions.invoke(fnName, {
         body: { email: email.trim().toLowerCase(), password },
       });
       if (error || data?.error) {
         toast({
           variant: "destructive",
-          title: "Login failed",
-          description: data?.error || "Invalid email or password.",
+          title: mode === 'login' ? "Login failed" : "Sign up failed",
+          description: data?.error || (mode === 'login' ? "Invalid email or password." : "Could not create account."),
         });
         return;
       }
@@ -115,7 +116,7 @@ const Auth = () => {
     }
   };
 
-  const verifyCodeAndLogin = async () => {
+  const verifyCodeAndEnter = async () => {
     if (code.length < 6) {
       toast({ variant: "destructive", title: "Invalid code", description: "Enter the full 6-character code." });
       return;
@@ -129,13 +130,16 @@ const Auth = () => {
         toast({ variant: "destructive", title: "Invalid code", description: "The code is incorrect or expired." });
         return;
       }
-      // Code valid — perform real sign-in to establish session
+      // Code valid — sign in to establish a persistent session
       const { error: signInErr } = await signIn(email, password);
       if (signInErr) {
-        toast({ variant: "destructive", title: "Login failed", description: signInErr.message });
+        toast({ variant: "destructive", title: "Sign-in failed", description: signInErr.message });
         return;
       }
-      toast({ title: "Welcome back!", description: "You have successfully logged in." });
+      toast({
+        title: isLogin ? "Welcome back!" : "Account created!",
+        description: isLogin ? "You have successfully logged in." : "You're now signed in.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -143,33 +147,10 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
-      if (codeSent) {
-        await verifyCodeAndLogin();
-      } else {
-        await sendLoginCode(false);
-      }
+    if (codeSent) {
+      await verifyCodeAndEnter();
     } else {
-      if (!validateForm()) return;
-      setIsLoading(true);
-      try {
-        const { error } = await signUp(email, password);
-        if (error) {
-          toast({
-            variant: "destructive",
-            title: "Sign up failed",
-            description: error.message.includes('already registered')
-              ? "This email is already registered. Please log in instead."
-              : error.message,
-          });
-        } else {
-          toast({ title: "Account created!", description: "You can now log in." });
-          setIsLogin(true);
-          setPassword('');
-        }
-      } finally {
-        setIsLoading(false);
-      }
+      await sendCode(isLogin ? 'login' : 'signup', false);
     }
   };
 
