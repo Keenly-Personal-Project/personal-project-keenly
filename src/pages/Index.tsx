@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from "@/components/Header";
-import { generateHexCode, ClassInfo } from "@/components/Header";
+import { generateHexCode } from "@/components/Header";
 import { Loader2, BookOpen, FlaskConical, X, Pencil, Image, Palette, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
@@ -18,34 +18,37 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { toast } from 'sonner';
 
 interface ClassItem {
+  id: string;
   name: string;
+  slug: string;
   icon: string;
-  image?: string;
-  color?: string;
-  code?: string;
+  image?: string | null;
+  color?: string | null;
+  code: string;
+  created_by: string;
+  role?: string;
 }
-
-const defaultClasses: ClassItem[] = [];
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   BookOpen,
   FlaskConical,
 };
 
+const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [classes, setClasses] = useState<ClassItem[]>(() => {
-    const saved = localStorage.getItem('keen_classes');
-    return saved ? JSON.parse(saved) : defaultClasses;
-  });
-  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [loadingClasses, setLoadingClasses] = useState(true);
+
+  const [editId, setEditId] = useState<string | null>(null);
   const [editColor, setEditColor] = useState('');
   const [editImage, setEditImage] = useState('');
   const [editName, setEditName] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
-  const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Join/Create state
   const [keenPopoverOpen, setKeenPopoverOpen] = useState(false);
@@ -53,62 +56,104 @@ const Index = () => {
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [newClassName, setNewClassName] = useState("");
   const [joinCode, setJoinCode] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  // Sync classes to localStorage and global registry
-  useEffect(() => {
-    localStorage.setItem('keen_classes', JSON.stringify(classes));
-    const registry: ClassItem[] = JSON.parse(localStorage.getItem('keen_registry') || '[]');
-    const registryCodes = new Set(registry.map(r => r.code));
-    let updated = false;
-    classes.forEach(cls => {
-      if (cls.code && !registryCodes.has(cls.code)) {
-        registry.push({ name: cls.name, icon: cls.icon, code: cls.code });
-        updated = true;
-      }
-    });
-    if (updated) localStorage.setItem('keen_registry', JSON.stringify(registry));
-  }, [classes]);
-
-  // Listen for class updates
-  useEffect(() => {
-    const handleUpdate = () => {
-      const saved = localStorage.getItem('keen_classes');
-      if (saved) setClasses(JSON.parse(saved));
-    };
-    window.addEventListener('keen_classes_updated', handleUpdate);
-    return () => window.removeEventListener('keen_classes_updated', handleUpdate);
-  }, []);
+  const fetchClasses = useCallback(async () => {
+    if (!user) return;
+    setLoadingClasses(true);
+    // Get keens this user is a member of (via keen_members → keens)
+    const { data: memberships, error: memberErr } = await (supabase.from as any)("keen_members")
+      .select("class_slug, role")
+      .eq("user_id", user.id);
+    if (memberErr) {
+      console.error(memberErr);
+      setLoadingClasses(false);
+      return;
+    }
+    const slugs = (memberships || []).map((m: any) => m.class_slug);
+    if (slugs.length === 0) {
+      setClasses([]);
+      setLoadingClasses(false);
+      return;
+    }
+    const { data: keens, error: keensErr } = await (supabase.from as any)("keens")
+      .select("*")
+      .in("slug", slugs);
+    if (keensErr) {
+      console.error(keensErr);
+      setLoadingClasses(false);
+      return;
+    }
+    const roleBySlug = new Map((memberships || []).map((m: any) => [m.class_slug, m.role]));
+    setClasses((keens || []).map((k: any) => ({ ...k, role: roleBySlug.get(k.slug) })));
+    setLoadingClasses(false);
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
+      return;
     }
-  }, [user, loading, navigate]);
+    if (user) fetchClasses();
+  }, [user, loading, navigate, fetchClasses]);
 
-  const handleRemoveClass = (index: number) => {
-    setDeletingIndex(index);
-    setTimeout(() => {
-      setClasses(prev => prev.filter((_, i) => i !== index));
-      setDeletingIndex(null);
-      setDeleteIndex(null);
+  // Refresh when other parts of the app indicate a change (e.g. join request approved)
+  useEffect(() => {
+    const handler = () => fetchClasses();
+    window.addEventListener("keen_classes_updated", handler);
+    return () => window.removeEventListener("keen_classes_updated", handler);
+  }, [fetchClasses]);
+
+  const handleRemoveClass = async (id: string) => {
+    setDeletingId(id);
+    const target = classes.find(c => c.id === id);
+    setTimeout(async () => {
+      if (target) {
+        if (target.created_by === user?.id) {
+          // Owner: delete the keen entirely
+          await (supabase.from as any)("keens").delete().eq("id", id);
+        } else {
+          // Member: just leave
+          await (supabase.from as any)("keen_members")
+            .delete()
+            .eq("class_slug", target.slug)
+            .eq("user_id", user!.id);
+        }
+      }
+      setClasses(prev => prev.filter(c => c.id !== id));
+      setDeletingId(null);
+      setDeleteId(null);
     }, 300);
   };
 
-  const openEditDialog = (index: number) => {
-    setEditIndex(index);
-    setEditColor(classes[index].color || '');
-    setEditImage(classes[index].image || '');
-    setEditName(classes[index].name);
+  const openEditDialog = (cls: ClassItem) => {
+    if (cls.role !== "owner" && cls.role !== "admin") {
+      toast.info("Only owners and admins can customize this Keen.");
+      return;
+    }
+    setEditId(cls.id);
+    setEditColor(cls.color || '');
+    setEditImage(cls.image || '');
+    setEditName(cls.name);
     setEditDialogOpen(true);
   };
 
-  const handleSaveEdit = () => {
-    if (editIndex === null) return;
-    setClasses(prev => prev.map((cls, i) =>
-      i === editIndex ? { ...cls, name: editName.trim() || cls.name, color: editColor || undefined, image: editImage || undefined } : cls
-    ));
+  const handleSaveEdit = async () => {
+    if (!editId) return;
+    const { error } = await (supabase.from as any)("keens")
+      .update({
+        name: editName.trim() || undefined,
+        color: editColor || null,
+        image: editImage || null,
+      })
+      .eq("id", editId);
+    if (error) {
+      toast.error("Failed to save changes.");
+      return;
+    }
     setEditDialogOpen(false);
-    setEditIndex(null);
+    setEditId(null);
+    fetchClasses();
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,72 +164,108 @@ const Index = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleCreateKeen = () => {
-    if (!newClassName.trim()) return;
-    const allClasses = JSON.parse(localStorage.getItem("keen_classes") || "[]");
-    const code = generateHexCode();
-    const newClass = { name: newClassName.trim(), icon: "BookOpen", code };
-    allClasses.push(newClass);
-    localStorage.setItem("keen_classes", JSON.stringify(allClasses));
-    setNewClassName("");
-    setCreateDialogOpen(false);
-    const slug = newClass.name.toLowerCase().replace(/\s+/g, "-");
-    localStorage.setItem(`keen_preview_role_${slug}`, "owner");
-    toast.success(`Keen created! Code: ${code}`);
-    window.dispatchEvent(new Event("keen_classes_updated"));
-    navigate(`/class/${slug}`);
+  const handleCreateKeen = async () => {
+    if (!newClassName.trim() || !user) return;
+    setSubmitting(true);
+    const name = newClassName.trim();
+    const baseSlug = slugify(name);
+    if (!baseSlug) {
+      toast.error("Invalid Keen name.");
+      setSubmitting(false);
+      return;
+    }
+
+    // Try a few times in case of slug or code collision
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const slug = attempt === 0 ? baseSlug : `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
+      const code = generateHexCode();
+      const { data, error } = await (supabase.from as any)("keens")
+        .insert({ name, slug, code, icon: "BookOpen", created_by: user.id })
+        .select()
+        .single();
+      if (!error && data) {
+        toast.success(`Keen created! Code: ${code}`);
+        setNewClassName("");
+        setCreateDialogOpen(false);
+        setSubmitting(false);
+        await fetchClasses();
+        navigate(`/class/${slug}`);
+        return;
+      }
+      // Unique violation → retry; other errors → bail
+      if (error && (error as any).code !== "23505") {
+        console.error(error);
+        toast.error("Failed to create Keen.");
+        setSubmitting(false);
+        return;
+      }
+    }
+    toast.error("Could not create Keen, please try a different name.");
+    setSubmitting(false);
   };
 
   const handleJoinKeen = useCallback(async () => {
     const trimmed = joinCode.trim().toUpperCase();
-    if (!trimmed) return;
-    const currentClasses: ClassInfo[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
-    const alreadyJoined = currentClasses.find(c => c.code === trimmed);
-    if (alreadyJoined) {
+    if (!trimmed || !user) return;
+    setSubmitting(true);
+
+    // Look up the Keen by its shared code
+    const { data: keen, error: lookupErr } = await (supabase.from as any)("keens")
+      .select("id, name, slug, created_by")
+      .eq("code", trimmed)
+      .maybeSingle();
+
+    if (lookupErr || !keen) {
+      toast.error("No Keen found with that code.");
+      setSubmitting(false);
+      return;
+    }
+
+    // Already a member?
+    const { data: existingMember } = await (supabase.from as any)("keen_members")
+      .select("id")
+      .eq("class_slug", keen.slug)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (existingMember) {
       toast.info("You're already in this Keen!");
       setJoinCode("");
       setJoinDialogOpen(false);
+      setSubmitting(false);
       return;
     }
-    const registry: ClassInfo[] = JSON.parse(localStorage.getItem("keen_registry") || "[]");
-    const found = registry.find(c => c.code === trimmed);
-    if (!found) {
-      toast.error("No Keen found with that code.");
-      return;
-    }
-    const pendingSlug = found.name!.toLowerCase().replace(/\s+/g, "-");
-    const userEmail = user?.email || "unknown@user.com";
 
-    // Check if already requested
-    const { data: existing } = await supabase
+    // Already requested?
+    const { data: existingReq } = await supabase
       .from("keen_join_requests")
       .select("id")
-      .eq("class_slug", pendingSlug)
-      .eq("user_id", user!.id)
+      .eq("class_slug", keen.slug)
+      .eq("user_id", user.id)
       .eq("status", "pending")
       .maybeSingle();
-
-    if (existing) {
+    if (existingReq) {
       toast.info("You've already requested to join this Keen. Waiting for approval.");
       setJoinCode("");
       setJoinDialogOpen(false);
+      setSubmitting(false);
       return;
     }
 
     const { error } = await supabase.from("keen_join_requests").insert({
-      class_slug: pendingSlug,
-      user_id: user!.id,
-      email: userEmail,
+      class_slug: keen.slug,
+      user_id: user.id,
+      email: user.email || "unknown@user.com",
     });
-
     if (error) {
       toast.error("Failed to send join request.");
+      setSubmitting(false);
       return;
     }
 
     setJoinCode("");
     setJoinDialogOpen(false);
-    toast.success(`Join request sent for "${found.name}"! Waiting for owner/admin approval.`);
+    setSubmitting(false);
+    toast.success(`Join request sent for "${keen.name}"! Waiting for owner/admin approval.`);
   }, [joinCode, user]);
 
   if (loading) {
@@ -248,50 +329,63 @@ const Index = () => {
 
           {/* Class cards grid */}
           <div className="p-6 md:p-10">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {classes.map((cls, index) => {
-                const Icon = iconMap[cls.icon] || BookOpen;
-                const slug = cls.name.toLowerCase().replace(/\s+/g, "-");
-                const labelColor = cls.color || undefined;
-                return (
-                  <div
-                    key={`${cls.name}-${index}`}
-                    className={`relative group transition-all duration-300 ${deletingIndex === index ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
-                  >
-                    <button
-                      onClick={() => navigate(`/class/${slug}`)}
-                      className="w-full flex flex-col rounded-xl border border-foreground/30 overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer bg-card"
+            {loadingClasses ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : classes.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <p className="text-sm">You haven't joined any Keens yet.</p>
+                <p className="text-xs mt-1">Use the button above to create one or join with a code.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {classes.map((cls) => {
+                  const Icon = iconMap[cls.icon] || BookOpen;
+                  const labelColor = cls.color || undefined;
+                  const canEdit = cls.role === "owner" || cls.role === "admin";
+                  return (
+                    <div
+                      key={cls.id}
+                      className={`relative group transition-all duration-300 ${deletingId === cls.id ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
                     >
-                      <div className="flex items-center justify-center aspect-[3/4] bg-muted/50 overflow-hidden">
-                        {cls.image ? (
-                          <img src={cls.image} alt={cls.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <Icon className="h-16 w-16 text-muted-foreground group-hover:text-primary transition-colors" />
-                        )}
-                      </div>
-                      <div
-                        className="w-full py-3 text-center"
-                        style={{ background: labelColor || 'hsl(var(--primary))' }}
+                      <button
+                        onClick={() => navigate(`/class/${cls.slug}`)}
+                        className="w-full flex flex-col rounded-xl border border-foreground/30 overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer bg-card"
                       >
-                        <span className="text-sm font-semibold text-primary-foreground">{cls.name}</span>
-                      </div>
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openEditDialog(index); }}
-                      className="absolute -top-1.5 right-5 h-5 w-5 rounded-full bg-card border border-border text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Pencil className="h-2.5 w-2.5" />
-                    </button>
-                    <button
-                      onClick={() => setDeleteIndex(index)}
-                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                        <div className="flex items-center justify-center aspect-[3/4] bg-muted/50 overflow-hidden">
+                          {cls.image ? (
+                            <img src={cls.image} alt={cls.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Icon className="h-16 w-16 text-muted-foreground group-hover:text-primary transition-colors" />
+                          )}
+                        </div>
+                        <div
+                          className="w-full py-3 text-center"
+                          style={{ background: labelColor || 'hsl(var(--primary))' }}
+                        >
+                          <span className="text-sm font-semibold text-primary-foreground">{cls.name}</span>
+                        </div>
+                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openEditDialog(cls); }}
+                          className="absolute -top-1.5 right-5 h-5 w-5 rounded-full bg-card border border-border text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Pencil className="h-2.5 w-2.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setDeleteId(cls.id)}
+                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </main>
@@ -300,7 +394,7 @@ const Index = () => {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Customize {editIndex !== null ? classes[editIndex]?.name : ''}</DialogTitle>
+            <DialogTitle>Customize {editId ? classes.find(c => c.id === editId)?.name : ''}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -335,18 +429,20 @@ const Index = () => {
       </Dialog>
 
       {/* Delete keen confirmation */}
-      <AlertDialog open={deleteIndex !== null} onOpenChange={(open) => { if (!open) setDeleteIndex(null); }}>
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{deleteIndex !== null ? classes[deleteIndex]?.name : ''}" and all its data. This action cannot be undone.
+              {deleteId && classes.find(c => c.id === deleteId)?.created_by === user?.id
+                ? `This will permanently delete "${classes.find(c => c.id === deleteId)?.name}" for everyone. This action cannot be undone.`
+                : `You'll leave "${classes.find(c => c.id === deleteId)?.name}". You can rejoin later with the Keen code.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteIndex !== null && handleRemoveClass(deleteIndex)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+            <AlertDialogAction onClick={() => deleteId && handleRemoveClass(deleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleteId && classes.find(c => c.id === deleteId)?.created_by === user?.id ? "Delete" : "Leave"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -362,11 +458,14 @@ const Index = () => {
             placeholder="Keen name"
             value={newClassName}
             onChange={(e) => setNewClassName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCreateKeen()}
+            onKeyDown={(e) => e.key === "Enter" && !submitting && handleCreateKeen()}
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateKeen}>Create</Button>
+            <Button onClick={handleCreateKeen} disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -381,12 +480,15 @@ const Index = () => {
             placeholder="Insert Keen code"
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleJoinKeen()}
+            onKeyDown={(e) => e.key === "Enter" && !submitting && handleJoinKeen()}
             className="uppercase tracking-widest text-center font-mono"
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setJoinDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleJoinKeen}>Join</Button>
+            <Button onClick={handleJoinKeen} disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Join
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
