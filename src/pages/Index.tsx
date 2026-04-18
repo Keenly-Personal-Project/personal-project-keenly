@@ -25,10 +25,7 @@ interface ClassItem {
   code?: string;
 }
 
-const defaultClasses: ClassItem[] = [
-  { name: "English", icon: "BookOpen" },
-  { name: "Science", icon: "FlaskConical" },
-];
+const defaultClasses: ClassItem[] = [];
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   BookOpen,
