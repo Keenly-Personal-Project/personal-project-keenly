@@ -878,25 +878,7 @@ const ClassPage = () => {
     if (activeTab === "Details") {
       const currentRole = roleConfig[previewRole];
       const RoleIcon = currentRole.icon;
-      // Find Keen code — auto-generate if missing
-      const allClasses: { name: string; code?: string; icon?: string }[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
-      const currentClass = allClasses.find(c => c.name.toLowerCase().replace(/\s+/g, "-") === slug);
-      let keenCode = currentClass?.code;
-      if (currentClass && !keenCode) {
-        keenCode = generateHexCode();
-        currentClass.code = keenCode;
-        localStorage.setItem("keen_classes", JSON.stringify(allClasses));
-        // Also update the global registry so the code persists
-        const registry: { name: string; code?: string; icon?: string }[] = JSON.parse(localStorage.getItem("keen_registry") || "[]");
-        const regEntry = registry.find(c => c.name.toLowerCase().replace(/\s+/g, "-") === slug);
-        if (regEntry) {
-          regEntry.code = keenCode;
-        } else {
-          registry.push({ name: currentClass.name, code: keenCode, icon: currentClass.icon });
-        }
-        localStorage.setItem("keen_registry", JSON.stringify(registry));
-      }
-      
+
       return (
         <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 min-h-[38rem]">
           <div className="flex items-center justify-between mb-6">
