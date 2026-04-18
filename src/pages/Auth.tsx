@@ -59,6 +59,7 @@ const Auth = () => {
     setCodeSent(false);
     setCode('');
     setCooldown(0);
+    setErrors({});
   }, [isLogin]);
 
   const validateForm = () => {
