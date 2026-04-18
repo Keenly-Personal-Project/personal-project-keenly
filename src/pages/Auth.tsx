@@ -235,8 +235,8 @@ const Auth = () => {
                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
               </div>
 
-              {/* Code input — appears after sending the code on login */}
-              {isLogin && codeSent && (
+              {/* Code input — appears after sending the code (login or signup) */}
+              {codeSent && (
                 <div className="space-y-2 animate-fade-in">
                   <Label htmlFor="code">Input Code</Label>
                   <p className="text-xs text-muted-foreground">
@@ -257,7 +257,7 @@ const Auth = () => {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => sendLoginCode(true)}
+                      onClick={() => sendCode(isLogin ? 'login' : 'signup', true)}
                       disabled={resending || cooldown > 0}
                       className="gap-1 text-xs h-7"
                     >
@@ -271,11 +271,11 @@ const Auth = () => {
             <CardFooter className="flex flex-col gap-4 px-8 pb-8">
               <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLogin
-                  ? (codeSent ? 'Verify & Log in' : 'Log in')
-                  : 'Sign up'}
+                {codeSent
+                  ? (isLogin ? 'Verify & Log in' : 'Verify & Sign up')
+                  : (isLogin ? 'Log in' : 'Sign up')}
               </Button>
-              {isLogin && codeSent && (
+              {codeSent && (
                 <Button
                   type="button"
                   variant="ghost"
