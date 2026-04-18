@@ -268,6 +268,20 @@ const ClassPage = () => {
   const [keenMembers, setKeenMembers] = useState<{ id: string; user_id: string; email: string; role: KeenRole }[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [transferOwnerTarget, setTransferOwnerTarget] = useState<{ id: string; email: string } | null>(null);
+  const [keenCode, setKeenCode] = useState<string>("");
+
+  // Fetch the shared Keen code from the database
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await (supabase.from as any)("keens")
+        .select("code")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!cancelled && data?.code) setKeenCode(data.code);
+    })();
+    return () => { cancelled = true; };
+  }, [slug]);
 
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem(storageKey);
