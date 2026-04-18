@@ -268,6 +268,20 @@ const ClassPage = () => {
   const [keenMembers, setKeenMembers] = useState<{ id: string; user_id: string; email: string; role: KeenRole }[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [transferOwnerTarget, setTransferOwnerTarget] = useState<{ id: string; email: string } | null>(null);
+  const [keenCode, setKeenCode] = useState<string>("");
+
+  // Fetch the shared Keen code from the database
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await (supabase.from as any)("keens")
+        .select("code")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!cancelled && data?.code) setKeenCode(data.code);
+    })();
+    return () => { cancelled = true; };
+  }, [slug]);
 
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem(storageKey);
@@ -864,25 +878,7 @@ const ClassPage = () => {
     if (activeTab === "Details") {
       const currentRole = roleConfig[previewRole];
       const RoleIcon = currentRole.icon;
-      // Find Keen code — auto-generate if missing
-      const allClasses: { name: string; code?: string; icon?: string }[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
-      const currentClass = allClasses.find(c => c.name.toLowerCase().replace(/\s+/g, "-") === slug);
-      let keenCode = currentClass?.code;
-      if (currentClass && !keenCode) {
-        keenCode = generateHexCode();
-        currentClass.code = keenCode;
-        localStorage.setItem("keen_classes", JSON.stringify(allClasses));
-        // Also update the global registry so the code persists
-        const registry: { name: string; code?: string; icon?: string }[] = JSON.parse(localStorage.getItem("keen_registry") || "[]");
-        const regEntry = registry.find(c => c.name.toLowerCase().replace(/\s+/g, "-") === slug);
-        if (regEntry) {
-          regEntry.code = keenCode;
-        } else {
-          registry.push({ name: currentClass.name, code: keenCode, icon: currentClass.icon });
-        }
-        localStorage.setItem("keen_registry", JSON.stringify(registry));
-      }
-      
+
       return (
         <div className="rounded-xl border border-foreground/30 bg-muted/30 p-6 min-h-[38rem]">
           <div className="flex items-center justify-between mb-6">
