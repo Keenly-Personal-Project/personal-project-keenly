@@ -44,7 +44,9 @@ serve(async (req) => {
     await anonClient.auth.signOut();
 
     // 2. Generate & store login code
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const supabase = createClient(supabaseUrl, serviceKey, {
+      global: { headers: { Authorization: `Bearer ${serviceKey}` } },
+    });
     const normalizedEmail = email.trim().toLowerCase();
 
     // Invalidate old codes
