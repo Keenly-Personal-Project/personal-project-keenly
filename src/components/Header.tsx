@@ -15,17 +15,9 @@ export interface ClassInfo {
 }
 
 export function generateHexCode(): string {
-  const classes: ClassInfo[] = JSON.parse(localStorage.getItem("keen_classes") || "[]");
-  const registry: ClassInfo[] = JSON.parse(localStorage.getItem("keen_registry") || "[]");
-  const existingCodes = new Set([
-    ...classes.map(c => c.code).filter(Boolean),
-    ...registry.map(c => c.code).filter(Boolean),
-  ]);
-  let code: string;
-  do {
-    code = Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase().padStart(6, "0");
-  } while (existingCodes.has(code));
-  return code;
+  // Random 6-char hex. Server has a UNIQUE constraint on keens.code,
+  // so the rare collision will surface as an insert error and we can retry.
+  return Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase().padStart(6, "0");
 }
 
 interface Announcement {
