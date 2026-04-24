@@ -99,18 +99,47 @@ const MeetingRecordingPage = () => {
   };
 
   const handleSummarize = async () => {
-    if (!audioBlob && !uploadedFile) {
+    const source: Blob | File | null = audioBlob ?? uploadedFile;
+    if (!source) {
       toast.error("No recording or upload to summarize.");
       return;
     }
+    // Gemini accepts up to ~20MB inline. Cap at 20MB to avoid 413s.
+    const MAX_INLINE_BYTES = 20 * 1024 * 1024;
+    if (source.size > MAX_INLINE_BYTES) {
+      toast.error("File too large to summarize (max 20MB). Try a shorter recording.");
+      return;
+    }
     setIsSummarizing(true);
-    // Simulate AI summary for now
-    await new Promise((r) => setTimeout(r, 2000));
-    const summaryText =
-      "This meeting covered the following key points:\n\n• Project timeline was discussed and deadlines were confirmed\n• Action items were assigned to team members\n• Next meeting scheduled for follow-up\n\n(AI summary will be powered by Lovable AI once fully integrated.)";
-    setDescription((prev) => prev.trim() ? `${prev}\n\n${summaryText}` : summaryText);
-    setIsSummarizing(false);
-    toast.success("Summary generated!");
+    try {
+      // Convert blob → base64 (chunked to avoid call-stack overflow on large files)
+      const buf = new Uint8Array(await source.arrayBuffer());
+      let binary = "";
+      const CHUNK = 0x8000;
+      for (let i = 0; i < buf.length; i += CHUNK) {
+        binary += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + CHUNK)));
+      }
+      const audioBase64 = btoa(binary);
+      const mimeType = (source as File).type || "audio/webm";
+
+      const { data, error } = await supabase.functions.invoke("summarize-recording", {
+        body: { audioBase64, mimeType, title, className: displayName },
+      });
+      if (error) throw error;
+      const summary = (data as { summary?: string; error?: string })?.summary;
+      if (!summary) {
+        const errMsg = (data as { error?: string })?.error || "No summary returned.";
+        throw new Error(errMsg);
+      }
+      setDescription((prev) => (prev.trim() ? `${prev}\n\n${summary}` : summary));
+      toast.success("Summary generated!");
+    } catch (e) {
+      console.error(e);
+      const msg = e instanceof Error ? e.message : "Failed to generate summary.";
+      toast.error(msg);
+    } finally {
+      setIsSummarizing(false);
+    }
   };
 
   const handlePost = async () => {
