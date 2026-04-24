@@ -104,26 +104,28 @@ const MeetingRecordingPage = () => {
       toast.error("No recording or upload to summarize.");
       return;
     }
-    // Gemini accepts up to ~20MB inline. Cap at 20MB to avoid 413s.
-    const MAX_INLINE_BYTES = 20 * 1024 * 1024;
-    if (source.size > MAX_INLINE_BYTES) {
-      toast.error("File too large to summarize (max 20MB). Try a shorter recording.");
+    const MAX_BYTES = 50 * 1024 * 1024;
+    if (source.size > MAX_BYTES) {
+      toast.error("File too large to summarize (max 50MB). Try a shorter recording.");
+      return;
+    }
+    if (!user) {
+      toast.error("You must be logged in to summarize.");
       return;
     }
     setIsSummarizing(true);
     try {
-      // Convert blob → base64 (chunked to avoid call-stack overflow on large files)
-      const buf = new Uint8Array(await source.arrayBuffer());
-      let binary = "";
-      const CHUNK = 0x8000;
-      for (let i = 0; i < buf.length; i += CHUNK) {
-        binary += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + CHUNK)));
-      }
-      const audioBase64 = btoa(binary);
       const mimeType = (source as File).type || "audio/webm";
+      const ext = mimeType.split("/")[1]?.split(";")[0] || "webm";
+      const tempPath = `${user.id}/_summary_tmp/${crypto.randomUUID()}.${ext}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("meeting-recordings")
+        .upload(tempPath, source, { contentType: mimeType, upsert: false });
+      if (upErr) throw upErr;
 
       const { data, error } = await supabase.functions.invoke("summarize-recording", {
-        body: { audioBase64, mimeType, title, className: displayName },
+        body: { storagePath: tempPath, mimeType, title, className: displayName },
       });
       if (error) throw error;
       const summary = (data as { summary?: string; error?: string })?.summary;
