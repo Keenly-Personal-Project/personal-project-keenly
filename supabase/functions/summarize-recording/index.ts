@@ -18,32 +18,72 @@ serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
+    const userClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
     const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
+    const { data: claims, error: claimsErr } = await userClient.auth.getClaims(token);
     if (claimsErr || !claims?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claims.claims.sub as string;
 
-    const { audioBase64, mimeType, title, className } = await req.json();
-    if (!audioBase64 || !mimeType) {
-      return new Response(JSON.stringify({ error: "audioBase64 and mimeType required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const body = await req.json();
+    const { storagePath, mimeType, title, className, audioBase64: legacyB64 } = body ?? {};
+    if (!mimeType) {
+      return new Response(JSON.stringify({ error: "mimeType required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let audioBase64: string | undefined = legacyB64;
+
+    // New path: download from storage server-side using service role.
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    if (!audioBase64 && storagePath) {
+      // Enforce that the path starts with the caller's user id (matches storage RLS folder convention).
+      if (!storagePath.startsWith(`${userId}/`)) {
+        return new Response(JSON.stringify({ error: "Forbidden path" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: fileData, error: dlErr } = await adminClient.storage
+        .from("meeting-recordings")
+        .download(storagePath);
+      if (dlErr || !fileData) {
+        return new Response(JSON.stringify({ error: `Download failed: ${dlErr?.message}` }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const buf = new Uint8Array(await fileData.arrayBuffer());
+      let binary = "";
+      const CHUNK = 0x8000;
+      for (let i = 0; i < buf.length; i += CHUNK) {
+        binary += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + CHUNK)));
+      }
+      audioBase64 = btoa(binary);
+    }
+
+    if (!audioBase64) {
+      return new Response(JSON.stringify({ error: "storagePath or audioBase64 required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    // Use Gemini's multimodal capability — it accepts audio inline as base64 data URLs.
     const dataUrl = `data:${mimeType};base64,${audioBase64}`;
 
     const prompt = `You are summarizing a class recording${className ? ` for the class "${className}"` : ""}${title ? ` titled "${title}"` : ""}. Listen to the audio and produce a clear, well-structured summary for students. Use this format:
@@ -78,6 +118,11 @@ Keep it concise, accurate, and faithful to what was actually said. Do not invent
         ],
       }),
     });
+
+    // Best-effort cleanup of the temp file.
+    if (storagePath && storagePath.includes("/_summary_tmp/")) {
+      adminClient.storage.from("meeting-recordings").remove([storagePath]).catch(() => {});
+    }
 
     if (!resp.ok) {
       const t = await resp.text();
