@@ -1050,31 +1050,42 @@ const ClassPage = () => {
                               {mCfg.label}
                             </Badge>
                           ) : (
-                            <Select
-                              value={member.role}
-                              onValueChange={(val) => handleRoleChange(member.id, member.email, val as KeenRole)}
-                            >
-                              <SelectTrigger className="w-[120px] h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="member">
-                                  <div className="flex items-center gap-1.5">
-                                    <Shield className="h-3 w-3" /> Member
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="admin">
-                                  <div className="flex items-center gap-1.5">
-                                    <ShieldCheck className="h-3 w-3" /> Admin
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="owner">
-                                  <div className="flex items-center gap-1.5">
-                                    <Crown className="h-3 w-3" /> Owner
-                                  </div>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={member.role}
+                                onValueChange={(val) => handleRoleChange(member.id, member.email, val as KeenRole)}
+                              >
+                                <SelectTrigger className="w-[120px] h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="member">
+                                    <div className="flex items-center gap-1.5">
+                                      <Shield className="h-3 w-3" /> Member
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="admin">
+                                    <div className="flex items-center gap-1.5">
+                                      <ShieldCheck className="h-3 w-3" /> Admin
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="owner">
+                                    <div className="flex items-center gap-1.5">
+                                      <Crown className="h-3 w-3" /> Owner
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => setRemoveMemberTarget({ id: member.id, email: member.email })}
+                                title="Remove from Keen"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           )}
                         </div>
                       );
