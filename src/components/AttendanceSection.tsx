@@ -106,12 +106,13 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
   // Delete assembly
   const [deleteAssemblyId, setDeleteAssemblyId] = useState<string | null>(null);
 
-  // Ensure current user is a keen member
+  // Ensure current user has a membership row (as 'member' by default).
+  // Role is managed by owners only — never overwritten from the client preview.
   useEffect(() => {
     if (!user) return;
     const ensureMembership = async () => {
       const { data: existing } = await (supabase.from as any)("keen_members")
-        .select("id, role")
+        .select("id")
         .eq("class_slug", classSlug)
         .eq("user_id", user.id)
         .maybeSingle();
@@ -121,16 +122,12 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
           class_slug: classSlug,
           user_id: user.id,
           email: user.email || "",
-          role: previewRole,
+          role: "member",
         });
-      } else if (existing.role !== previewRole) {
-        await (supabase.from as any)("keen_members")
-          .update({ role: previewRole })
-          .eq("id", existing.id);
       }
     };
     ensureMembership().then(() => fetchAll());
-  }, [user, classSlug, previewRole]);
+  }, [user, classSlug]);
 
   const fetchAll = async () => {
     if (!user) return;

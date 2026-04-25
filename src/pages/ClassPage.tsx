@@ -247,12 +247,6 @@ const ClassPage = () => {
   const eventsKey = `keen_events_${slug}`;
   const favKey = `keen_event_favs_${slug}`;
   const recordingsKey = `keen_recordings_${slug}`;
-  const roleKey = `keen_preview_role_${slug}`;
-  const getStoredRole = (): KeenRole => {
-    const savedRole = localStorage.getItem(roleKey);
-    return savedRole === "owner" || savedRole === "admin" || savedRole === "member" ? savedRole : "owner";
-  };
-
   const [activeTab, setActiveTab] = useState(initialTab);
   const [onlineMembers, setOnlineMembers] = useState<{ user_id: string; email: string; avatar_url?: string }[]>([]);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -261,8 +255,11 @@ const ClassPage = () => {
   const [newImages, setNewImages] = useState<string[]>([]);
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
   const [imageUploading, setImageUploading] = useState(false);
-  const [previewRole, setPreviewRole] = useState<KeenRole>(getStoredRole);
+  // Source-of-truth role: read from DB (keen_members). Defaults to "member" for safety.
+  const [previewRole, setPreviewRole] = useState<KeenRole>("member");
+  const [roleLoading, setRoleLoading] = useState(true);
   const canEdit = previewRole === "owner" || previewRole === "admin";
+  const canManage = previewRole === "owner";
 
   // Role management state
   const [keenMembers, setKeenMembers] = useState<{ id: string; user_id: string; email: string; role: KeenRole }[]>([]);
@@ -303,9 +300,33 @@ const ClassPage = () => {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
+  // Fetch the current user's role from the database (source of truth).
+  const fetchMyRole = useCallback(async () => {
+    if (!user) return;
+    setRoleLoading(true);
+    const { data } = await (supabase.from as any)("keen_members")
+      .select("role")
+      .eq("class_slug", slug)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const r = data?.role;
+    setPreviewRole(r === "owner" || r === "admin" || r === "member" ? r : "member");
+    setRoleLoading(false);
+  }, [user, slug]);
+
+  useEffect(() => { fetchMyRole(); }, [fetchMyRole]);
+
+  // Listen for role changes (e.g., owner promotes/demotes you, removes you)
   useEffect(() => {
-    setPreviewRole(getStoredRole());
-  }, [roleKey]);
+    if (!user) return;
+    const ch = supabase
+      .channel(`my-role-${slug}-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'keen_members', filter: `user_id=eq.${user.id}` }, () => {
+        fetchMyRole();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [slug, user, fetchMyRole]);
   // Realtime Presence for online members
   useEffect(() => {
     if (!user) return;
@@ -337,9 +358,6 @@ const ClassPage = () => {
     return () => { supabase.removeChannel(channel); };
   }, [slug, user, profile?.avatar_url]);
 
-  useEffect(() => {
-    localStorage.setItem(roleKey, previewRole);
-  }, [previewRole, roleKey]);
 
   // Fetch keen members for role management
   const fetchKeenMembers = useCallback(async () => {
@@ -391,6 +409,18 @@ const ClassPage = () => {
     toast.success(`Ownership transferred to ${transferOwnerTarget.email.split("@")[0]}`);
     setPreviewRole("member");
     setTransferOwnerTarget(null);
+    fetchKeenMembers();
+  };
+
+  const [removeMemberTarget, setRemoveMemberTarget] = useState<{ id: string; email: string } | null>(null);
+  const confirmRemoveMember = async () => {
+    if (!removeMemberTarget) return;
+    const { error } = await (supabase.from as any)("keen_members")
+      .delete()
+      .eq("id", removeMemberTarget.id);
+    if (error) { toast.error("Failed to remove member"); return; }
+    toast.success(`${removeMemberTarget.email.split("@")[0]} removed from the Keen`);
+    setRemoveMemberTarget(null);
     fetchKeenMembers();
   };
 
@@ -1020,31 +1050,42 @@ const ClassPage = () => {
                               {mCfg.label}
                             </Badge>
                           ) : (
-                            <Select
-                              value={member.role}
-                              onValueChange={(val) => handleRoleChange(member.id, member.email, val as KeenRole)}
-                            >
-                              <SelectTrigger className="w-[120px] h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="member">
-                                  <div className="flex items-center gap-1.5">
-                                    <Shield className="h-3 w-3" /> Member
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="admin">
-                                  <div className="flex items-center gap-1.5">
-                                    <ShieldCheck className="h-3 w-3" /> Admin
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="owner">
-                                  <div className="flex items-center gap-1.5">
-                                    <Crown className="h-3 w-3" /> Owner
-                                  </div>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={member.role}
+                                onValueChange={(val) => handleRoleChange(member.id, member.email, val as KeenRole)}
+                              >
+                                <SelectTrigger className="w-[120px] h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="member">
+                                    <div className="flex items-center gap-1.5">
+                                      <Shield className="h-3 w-3" /> Member
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="admin">
+                                    <div className="flex items-center gap-1.5">
+                                      <ShieldCheck className="h-3 w-3" /> Admin
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="owner">
+                                    <div className="flex items-center gap-1.5">
+                                      <Crown className="h-3 w-3" /> Owner
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => setRemoveMemberTarget({ id: member.id, email: member.email })}
+                                title="Remove from Keen"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           )}
                         </div>
                       );
@@ -1073,6 +1114,25 @@ const ClassPage = () => {
             </AlertDialogContent>
           </AlertDialog>
 
+          {/* Remove Member Confirmation */}
+          <AlertDialog open={!!removeMemberTarget} onOpenChange={(open) => !open && setRemoveMemberTarget(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remove member?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to remove <strong>{removeMemberTarget?.email.split("@")[0]}</strong> from this Keen?
+                  They will lose access immediately and would need to request to join again.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmRemoveMember} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Remove
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* Non-owner info */}
           {previewRole !== "owner" && (
             <div className="rounded-lg border border-foreground/20 bg-card p-5">
@@ -1081,8 +1141,8 @@ const ClassPage = () => {
               </p>
             </div>
           )}
-          {/* Pending Join Requests (Owner/Admin only) */}
-          {canEdit && <PendingJoinRequests slug={slug} />}
+          {/* Pending Join Requests (Owner only — admins cannot approve) */}
+          {canManage && <PendingJoinRequests slug={slug} />}
         </div>
       );
     }
