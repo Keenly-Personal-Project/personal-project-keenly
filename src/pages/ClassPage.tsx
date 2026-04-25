@@ -247,12 +247,6 @@ const ClassPage = () => {
   const eventsKey = `keen_events_${slug}`;
   const favKey = `keen_event_favs_${slug}`;
   const recordingsKey = `keen_recordings_${slug}`;
-  const roleKey = `keen_preview_role_${slug}`;
-  const getStoredRole = (): KeenRole => {
-    const savedRole = localStorage.getItem(roleKey);
-    return savedRole === "owner" || savedRole === "admin" || savedRole === "member" ? savedRole : "owner";
-  };
-
   const [activeTab, setActiveTab] = useState(initialTab);
   const [onlineMembers, setOnlineMembers] = useState<{ user_id: string; email: string; avatar_url?: string }[]>([]);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -261,8 +255,11 @@ const ClassPage = () => {
   const [newImages, setNewImages] = useState<string[]>([]);
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
   const [imageUploading, setImageUploading] = useState(false);
-  const [previewRole, setPreviewRole] = useState<KeenRole>(getStoredRole);
+  // Source-of-truth role: read from DB (keen_members). Defaults to "member" for safety.
+  const [previewRole, setPreviewRole] = useState<KeenRole>("member");
+  const [roleLoading, setRoleLoading] = useState(true);
   const canEdit = previewRole === "owner" || previewRole === "admin";
+  const canManage = previewRole === "owner";
 
   // Role management state
   const [keenMembers, setKeenMembers] = useState<{ id: string; user_id: string; email: string; role: KeenRole }[]>([]);
