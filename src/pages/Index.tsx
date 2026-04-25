@@ -104,6 +104,22 @@ const Index = () => {
     return () => window.removeEventListener("keen_classes_updated", handler);
   }, [fetchClasses]);
 
+  // Realtime: when this user is added to (or removed from) a Keen, refresh dashboard
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`keen_members_${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "keen_members", filter: `user_id=eq.${user.id}` },
+        () => fetchClasses()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchClasses]);
+
   const handleRemoveClass = async (id: string) => {
     setDeletingId(id);
     const target = classes.find(c => c.id === id);
