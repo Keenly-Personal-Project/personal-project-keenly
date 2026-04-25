@@ -422,6 +422,9 @@ const ClassPage = () => {
     toast.success(`${removeMemberTarget.email.split("@")[0]} removed from the Keen`);
     setRemoveMemberTarget(null);
     fetchKeenMembers();
+  };
+
+  interface Recording {
     id: string;
     title: string;
     description: string;
