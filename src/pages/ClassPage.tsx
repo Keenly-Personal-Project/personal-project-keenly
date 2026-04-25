@@ -1114,6 +1114,25 @@ const ClassPage = () => {
             </AlertDialogContent>
           </AlertDialog>
 
+          {/* Remove Member Confirmation */}
+          <AlertDialog open={!!removeMemberTarget} onOpenChange={(open) => !open && setRemoveMemberTarget(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remove member?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to remove <strong>{removeMemberTarget?.email.split("@")[0]}</strong> from this Keen?
+                  They will lose access immediately and would need to request to join again.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmRemoveMember} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Remove
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* Non-owner info */}
           {previewRole !== "owner" && (
             <div className="rounded-lg border border-foreground/20 bg-card p-5">
@@ -1122,8 +1141,11 @@ const ClassPage = () => {
               </p>
             </div>
           )}
-          {/* Pending Join Requests (Owner/Admin only) */}
-          {canEdit && <PendingJoinRequests slug={slug} />}
+          {/* Pending Join Requests (Owner only — admins cannot approve) */}
+          {canManage && <PendingJoinRequests slug={slug} />}
+        </div>
+      );
+    }
         </div>
       );
     }
