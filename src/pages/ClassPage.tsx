@@ -300,9 +300,33 @@ const ClassPage = () => {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
+  // Fetch the current user's role from the database (source of truth).
+  const fetchMyRole = useCallback(async () => {
+    if (!user) return;
+    setRoleLoading(true);
+    const { data } = await (supabase.from as any)("keen_members")
+      .select("role")
+      .eq("class_slug", slug)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const r = data?.role;
+    setPreviewRole(r === "owner" || r === "admin" || r === "member" ? r : "member");
+    setRoleLoading(false);
+  }, [user, slug]);
+
+  useEffect(() => { fetchMyRole(); }, [fetchMyRole]);
+
+  // Listen for role changes (e.g., owner promotes/demotes you, removes you)
   useEffect(() => {
-    setPreviewRole(getStoredRole());
-  }, [roleKey]);
+    if (!user) return;
+    const ch = supabase
+      .channel(`my-role-${slug}-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'keen_members', filter: `user_id=eq.${user.id}` }, () => {
+        fetchMyRole();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [slug, user, fetchMyRole]);
   // Realtime Presence for online members
   useEffect(() => {
     if (!user) return;
