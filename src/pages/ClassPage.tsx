@@ -412,7 +412,16 @@ const ClassPage = () => {
     fetchKeenMembers();
   };
 
-  interface Recording {
+  const [removeMemberTarget, setRemoveMemberTarget] = useState<{ id: string; email: string } | null>(null);
+  const confirmRemoveMember = async () => {
+    if (!removeMemberTarget) return;
+    const { error } = await (supabase.from as any)("keen_members")
+      .delete()
+      .eq("id", removeMemberTarget.id);
+    if (error) { toast.error("Failed to remove member"); return; }
+    toast.success(`${removeMemberTarget.email.split("@")[0]} removed from the Keen`);
+    setRemoveMemberTarget(null);
+    fetchKeenMembers();
     id: string;
     title: string;
     description: string;
