@@ -358,9 +358,6 @@ const ClassPage = () => {
     return () => { supabase.removeChannel(channel); };
   }, [slug, user, profile?.avatar_url]);
 
-  useEffect(() => {
-    localStorage.setItem(roleKey, previewRole);
-  }, [previewRole, roleKey]);
 
   // Fetch keen members for role management
   const fetchKeenMembers = useCallback(async () => {
