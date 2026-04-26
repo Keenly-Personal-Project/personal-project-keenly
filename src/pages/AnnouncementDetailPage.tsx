@@ -18,16 +18,17 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 interface Announcement {
   id: string;
   brief: string;
   description: string;
-  image?: string;
   images?: string[];
   date?: string;
   publisherEmail?: string;
   publisherAvatar?: string | null;
+  classSlug: string;
 }
 
 function formatDate(d?: string) {
@@ -35,12 +36,6 @@ function formatDate(d?: string) {
   const dt = new Date(d);
   if (isNaN(dt.getTime())) return "";
   return `${String(dt.getMonth() + 1).padStart(2, "0")}/${String(dt.getDate()).padStart(2, "0")}/${dt.getFullYear()}`;
-}
-
-function getImages(ann: Announcement): string[] {
-  if (ann.images && ann.images.length > 0) return ann.images;
-  if (ann.image) return [ann.image];
-  return [];
 }
 
 const AnnouncementDetailPage = () => {
@@ -55,14 +50,46 @@ const AnnouncementDetailPage = () => {
   const [editImages, setEditImages] = useState<string[]>([]);
   const [editDate, setEditDate] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
+  const [announcement, setAnnouncement] = useState<Announcement | null>(null);
+  const [loadingAnn, setLoadingAnn] = useState(true);
 
   const slug = decodeURIComponent(className || "");
-  const storageKey = `keen_announcements_${slug}`;
 
-  const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
-    const saved = localStorage.getItem(storageKey);
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Load + realtime subscribe
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!announcementId) return;
+      setLoadingAnn(true);
+      const { data } = await (supabase.from as any)("announcements")
+        .select("*")
+        .eq("id", announcementId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data) {
+        setAnnouncement({
+          id: data.id,
+          brief: data.brief,
+          description: data.description || "",
+          images: Array.isArray(data.images) ? data.images : undefined,
+          date: data.date || data.created_at,
+          publisherEmail: data.publisher_email || "",
+          publisherAvatar: data.publisher_avatar || null,
+          classSlug: data.class_slug,
+        });
+      } else {
+        setAnnouncement(null);
+      }
+      setLoadingAnn(false);
+    };
+    load();
+
+    const ch = supabase
+      .channel(`ann-${announcementId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "announcements", filter: `id=eq.${announcementId}` }, () => load())
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [announcementId]);
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth');
@@ -70,7 +97,7 @@ const AnnouncementDetailPage = () => {
 
   useEscapeBack(`/class/${className}`, [showDeleteConfirm, editOpen]);
 
-  if (loading) {
+  if (loading || loadingAnn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -79,62 +106,50 @@ const AnnouncementDetailPage = () => {
   }
   if (!user) return null;
 
-  const announcement = announcements.find(a => a.id === announcementId);
+  const displayName = slug.replace(/-/g, " ");
 
-  const savedClasses = JSON.parse(localStorage.getItem('keen_classes') || '[]');
-  const matchedClass = savedClasses.find(
-    (cls: { name: string }) => cls.name.toLowerCase().replace(/\s+/g, "-") === slug
-  );
-  const displayName = matchedClass?.name || slug.replace(/-/g, " ");
-
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    if (!announcement) return;
     setIsDeleting(true);
-    setTimeout(() => {
-      const updated = announcements.filter(a => a.id !== announcementId);
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(updated));
-      } catch { /* ignore */ }
-      navigate(`/class/${className}`);
-    }, 400);
+    const { error } = await (supabase.from as any)("announcements").delete().eq("id", announcement.id);
+    if (error) {
+      toast.error(error.message || "Failed to delete");
+      setIsDeleting(false);
+      return;
+    }
+    setTimeout(() => navigate(`/class/${className}`), 300);
   };
 
-  const handleDeleteImage = (imgIndex: number) => {
+  const handleDeleteImage = async (imgIndex: number) => {
     if (!announcement) return;
-    const currentImgs = getImages(announcement);
+    const currentImgs = announcement.images || [];
     const newImgs = currentImgs.filter((_, i) => i !== imgIndex);
-    const updated = announcements.map(a =>
-      a.id === announcementId
-        ? { ...a, image: undefined, images: newImgs.length > 0 ? newImgs : undefined }
-        : a
-    );
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-    } catch { /* ignore */ }
-    setAnnouncements(updated);
+    const { error } = await (supabase.from as any)("announcements")
+      .update({ images: newImgs.length > 0 ? newImgs : null })
+      .eq("id", announcement.id);
+    if (error) toast.error("Failed to update images");
   };
 
   const openEdit = () => {
     if (!announcement) return;
     setEditBrief(announcement.brief);
     setEditDescription(announcement.description);
-    setEditImages(getImages(announcement));
+    setEditImages(announcement.images || []);
     setEditDate(announcement.date ? new Date(announcement.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
     setEditOpen(true);
   };
 
-  const handleEditSave = () => {
-    const updated = announcements.map(a =>
-      a.id === announcementId
-        ? { ...a, brief: editBrief.trim(), description: editDescription.trim(), image: undefined, images: editImages.length > 0 ? editImages : undefined, date: editDate ? new Date(editDate).toISOString() : a.date }
-        : a
-    );
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-    } catch {
-      const withoutImages = updated.map(a => ({ ...a, image: undefined, images: undefined }));
-      try { localStorage.setItem(storageKey, JSON.stringify(withoutImages)); } catch { /* ignore */ }
-    }
-    setAnnouncements(updated);
+  const handleEditSave = async () => {
+    if (!announcement) return;
+    const { error } = await (supabase.from as any)("announcements")
+      .update({
+        brief: editBrief.trim(),
+        description: editDescription.trim(),
+        images: editImages.length > 0 ? editImages : null,
+        date: editDate ? new Date(editDate).toISOString() : announcement.date,
+      })
+      .eq("id", announcement.id);
+    if (error) { toast.error(error.message || "Failed to save"); return; }
     setEditOpen(false);
   };
 
@@ -181,7 +196,7 @@ const AnnouncementDetailPage = () => {
     );
   }
 
-  const imgs = getImages(announcement);
+  const imgs = announcement.images || [];
 
   return (
     <div className="min-h-screen">
@@ -192,7 +207,6 @@ const AnnouncementDetailPage = () => {
         </Button>
 
         <div className={`rounded-xl border border-primary/40 bg-muted/40 p-6 space-y-4 transition-all duration-400 ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
-          {/* Publisher info */}
           <div className="flex items-center gap-2 mb-2">
             <Avatar className="h-7 w-7">
               {announcement.publisherAvatar && <AvatarImage src={announcement.publisherAvatar} alt={publisherName} />}
@@ -264,7 +278,6 @@ const AnnouncementDetailPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
