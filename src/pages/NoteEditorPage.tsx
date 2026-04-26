@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEscapeBack } from "@/hooks/useEscapeBack";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import Header from "@/components/Header";
 import NoteBlockEditor, {
   NoteBlock,
@@ -121,43 +121,70 @@ const NoteEditorPage = () => {
   const editorRef = useRef<NoteBlockEditorHandle>(null);
   const [textFormat, setTextFormat] = useState<TextFormat>(defaultTextFormat);
 
-  const slug = decodeURIComponent(className || "");
-  const notesKey = `keen_notes_${slug}`;
+  // (slug computed only when needed elsewhere)
 
-  const [notes, setNotes] = useState<Note[]>(() => {
-    const saved = localStorage.getItem(notesKey);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [currentNote, setCurrentNote] = useState<Note | null>(null);
+  const [noteLoading, setNoteLoading] = useState(true);
+  const [title, setTitle] = useState("Untitled");
+  const [noteColor, setNoteColor] = useState("hsl(175, 70%, 40%)");
+  const [blocks, setBlocks] = useState<NoteBlock[]>([]);
+  const hydratedRef = useRef(false);
 
-  const currentNote = notes.find((n) => n.id === noteId);
-  const [title, setTitle] = useState(currentNote?.title || "Untitled");
-  const [noteColor, setNoteColor] = useState(currentNote?.color || "hsl(175, 70%, 40%)");
-  const [blocks, setBlocks] = useState<NoteBlock[]>(() =>
-    contentToBlocks(currentNote?.content || "")
-  );
-
-  const saveNotes = useCallback(
-    (updatedNotes: Note[]) => {
-      localStorage.setItem(notesKey, JSON.stringify(updatedNotes));
-      setNotes(updatedNotes);
-    },
-    [notesKey]
-  );
-
+  // Load note from DB
   useEffect(() => {
-    setSaved(false);
-    const timeout = setTimeout(() => {
-      const content = blocksToContent(blocks);
-      const updated = notes.map((n) =>
-        n.id === noteId ? { ...n, title, content, color: noteColor } : n
-      );
-      if (notes.some((n) => n.id === noteId)) {
-        localStorage.setItem(notesKey, JSON.stringify(updated));
-        setSaved(true);
+    let cancelled = false;
+    const load = async () => {
+      if (!noteId) return;
+      setNoteLoading(true);
+      const { data } = await (supabase.from as any)("notes")
+        .select("id, title, content, color")
+        .eq("id", noteId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data) {
+        const n: Note = { id: data.id, title: data.title || "Untitled", content: data.content || "", color: data.color || undefined };
+        setCurrentNote(n);
+        setTitle(n.title);
+        setNoteColor(n.color || "hsl(175, 70%, 40%)");
+        setBlocks(contentToBlocks(n.content || ""));
+        hydratedRef.current = true;
+      } else {
+        setCurrentNote(null);
       }
+      setNoteLoading(false);
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [noteId]);
+
+  // Realtime: pick up changes from other users
+  useEffect(() => {
+    if (!noteId) return;
+    const ch = supabase
+      .channel(`note-${noteId}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notes", filter: `id=eq.${noteId}` }, (payload: any) => {
+        const r = payload.new;
+        if (!r) return;
+        // Avoid clobbering local edits while typing — only refresh title/color if changed
+        if (r.color && r.color !== noteColor) setNoteColor(r.color);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [noteId, noteColor]);
+
+  // Autosave to DB
+  useEffect(() => {
+    if (!hydratedRef.current || !noteId || !currentNote) return;
+    setSaved(false);
+    const timeout = setTimeout(async () => {
+      const content = blocksToContent(blocks);
+      const { error } = await (supabase.from as any)("notes")
+        .update({ title, content, color: noteColor })
+        .eq("id", noteId);
+      if (!error) setSaved(true);
     }, 500);
     return () => clearTimeout(timeout);
-  }, [title, blocks, noteId, notesKey, notes, noteColor]);
+  }, [title, blocks, noteId, noteColor, currentNote]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -165,7 +192,7 @@ const NoteEditorPage = () => {
 
   useEscapeBack(`/class/${className}?tab=Notes%2FGuides`, [deleteDialogOpen, imageDialogOpen, tableDialogOpen, chartDialogOpen, videoDialogOpen, colorDialogOpen]);
 
-  if (loading) {
+  if (loading || noteLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -196,9 +223,10 @@ const NoteEditorPage = () => {
 
   const handleDelete = () => {
     setIsDeleting(true);
-    setTimeout(() => {
-      const updated = notes.filter((n) => n.id !== noteId);
-      saveNotes(updated);
+    setTimeout(async () => {
+      if (noteId) {
+        await (supabase.from as any)("notes").delete().eq("id", noteId);
+      }
       navigate(`/class/${className}?tab=Notes%2FGuides`, { replace: true });
     }, 300);
   };
@@ -332,13 +360,11 @@ const NoteEditorPage = () => {
     setChartDialogOpen(false);
   };
 
-  const handleSaveColor = (color: string) => {
+  const handleSaveColor = async (color: string) => {
     setNoteColor(color);
-    const updated = notes.map((n) =>
-      n.id === noteId ? { ...n, color } : n
-    );
-    localStorage.setItem(notesKey, JSON.stringify(updated));
-    setNotes(updated);
+    if (noteId) {
+      await (supabase.from as any)("notes").update({ color }).eq("id", noteId);
+    }
   };
 
   return (

@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useEscapeBack } from "@/hooks/useEscapeBack";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
@@ -119,10 +120,9 @@ const EventDetailPage = () => {
   const { className, eventId } = useParams<{ className: string; eventId: string }>();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const slug = decodeURIComponent(className || "");
-  const eventsKey = `keen_events_${slug}`;
 
   const [event, setEvent] = useState<EventItem | null>(null);
+  const [loadingEvent, setLoadingEvent] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -132,15 +132,38 @@ const EventDetailPage = () => {
   useEscapeBack(`/class/${className}?tab=Events%20List`, [deleteDialogOpen]);
 
   useEffect(() => {
-    const saved = localStorage.getItem(eventsKey);
-    if (saved) {
-      const events: EventItem[] = JSON.parse(saved);
-      const found = events.find((e) => e.id === eventId);
-      if (found) setEvent(found);
-    }
-  }, [eventsKey, eventId]);
+    let cancelled = false;
+    const load = async () => {
+      if (!eventId) return;
+      setLoadingEvent(true);
+      const { data } = await (supabase.from as any)("events")
+        .select("*")
+        .eq("id", eventId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data) {
+        setEvent({
+          id: data.id,
+          title: data.title,
+          description: data.description || "",
+          images: Array.isArray(data.images) ? data.images : undefined,
+          color: data.color || undefined,
+          date: data.date || data.created_at,
+          publisherEmail: data.publisher_email || "",
+          publisherAvatar: data.publisher_avatar || null,
+        });
+      } else setEvent(null);
+      setLoadingEvent(false);
+    };
+    load();
+    const ch = supabase
+      .channel(`event-${eventId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "events", filter: `id=eq.${eventId}` }, () => load())
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [eventId]);
 
-  if (loading) {
+  if (loading || loadingEvent) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -165,6 +188,13 @@ const EventDetailPage = () => {
 
   const isOwner = event.publisherEmail === user?.email;
 
+  const handleDelete = async () => {
+    const { error } = await (supabase.from as any)("events").delete().eq("id", eventId);
+    if (error) { toast.error(error.message || "Failed to delete"); return; }
+    toast("Event deleted");
+    navigate(`/class/${className}?tab=Events%20List`);
+  };
+
   return (
     <div className="min-h-screen animate-fade-in">
       <Header />
@@ -185,17 +215,14 @@ const EventDetailPage = () => {
           )}
         </div>
 
-        {/* Title */}
         <h1 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-6 break-words" style={{ overflowWrap: "anywhere" }}>
           {event.title}
         </h1>
 
-        {/* Images */}
         {event.images && event.images.length > 0 && (
           <EventImageCarousel images={event.images} />
         )}
 
-        {/* Description */}
         {event.description && (
           <div className="rounded-xl border border-border bg-card/60 backdrop-blur-md p-6 shadow-sm">
             <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap break-words" style={{ overflowWrap: "anywhere" }}>
@@ -217,16 +244,7 @@ const EventDetailPage = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                const saved = localStorage.getItem(eventsKey);
-                if (saved) {
-                  const events: EventItem[] = JSON.parse(saved);
-                  const updated = events.filter((e) => e.id !== eventId);
-                  localStorage.setItem(eventsKey, JSON.stringify(updated));
-                }
-                toast("Event deleted");
-                navigate(`/class/${className}?tab=Events%20List`);
-              }}
+              onClick={handleDelete}
             >
               Delete
             </AlertDialogAction>

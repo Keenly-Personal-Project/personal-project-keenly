@@ -152,12 +152,27 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
 
   const handleCreateAssembly = async () => {
     if (!user || !newTitle.trim() || !newLateTime || !newAbsentTime) return;
+    const lateDate = new Date(newLateTime);
+    const absentDate = new Date(newAbsentTime);
+    const now = new Date();
+    if (isNaN(lateDate.getTime()) || isNaN(absentDate.getTime())) {
+      toast.error("Please pick valid dates and times.");
+      return;
+    }
+    if (absentDate <= now) {
+      toast.error("Absent time must be in the future.");
+      return;
+    }
+    if (absentDate <= lateDate) {
+      toast.error("Absent time must be after the late time.");
+      return;
+    }
     const token = generateToken();
     const { error } = await (supabase.from as any)("assemblies").insert({
       class_slug: classSlug,
       title: newTitle.trim(),
-      late_time: new Date(newLateTime).toISOString(),
-      absent_time: new Date(newAbsentTime).toISOString(),
+      late_time: lateDate.toISOString(),
+      absent_time: absentDate.toISOString(),
       qr_token: token,
       created_by: user.id,
     });

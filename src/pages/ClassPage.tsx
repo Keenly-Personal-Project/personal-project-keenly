@@ -242,9 +242,7 @@ const ClassPage = () => {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "Announcements";
   const slug = decodeURIComponent(className || "");
-  const storageKey = `keen_announcements_${slug}`;
-  const notesKey = `keen_notes_${slug}`;
-  const eventsKey = `keen_events_${slug}`;
+  // (announcement/note/event storage is now in the cloud DB; only favorites remain local per-user)
   const favKey = `keen_event_favs_${slug}`;
   const recordingsKey = `keen_recordings_${slug}`;
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -280,25 +278,91 @@ const ClassPage = () => {
     return () => { cancelled = true; };
   }, [slug]);
 
-  const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
-    const saved = localStorage.getItem(storageKey);
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [notes, setNotes] = useState<Note[]>(() => {
-    const saved = localStorage.getItem(notesKey);
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [events, setEvents] = useState<EventItem[]>(() => {
-    const saved = localStorage.getItem(eventsKey);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
 
   const [favoritedEvents, setFavoritedEvents] = useState<Set<string>>(() => {
     const saved = localStorage.getItem(favKey);
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
+
+  // Map DB rows -> UI shape
+  const mapAnnouncement = (r: any): Announcement => ({
+    id: r.id,
+    brief: r.brief,
+    description: r.description || "",
+    images: Array.isArray(r.images) ? r.images : undefined,
+    date: r.date || r.created_at,
+    publisherEmail: r.publisher_email || "",
+    publisherAvatar: r.publisher_avatar || null,
+  });
+  const mapNote = (r: any): Note => ({
+    id: r.id,
+    title: r.title || "Untitled",
+    content: r.content || "",
+    color: r.color || undefined,
+    publisherEmail: r.publisher_email || "",
+    publisherAvatar: r.publisher_avatar || null,
+  });
+  const mapEvent = (r: any): EventItem => ({
+    id: r.id,
+    title: r.title,
+    description: r.description || "",
+    images: Array.isArray(r.images) ? r.images : undefined,
+    color: r.color || undefined,
+    textColor: r.text_color || undefined,
+    date: r.date || r.created_at,
+    publisherEmail: r.publisher_email || "",
+    publisherAvatar: r.publisher_avatar || null,
+  });
+
+  // Fetch + realtime sync for announcements / notes / events
+  useEffect(() => {
+    let cancelled = false;
+    const fetchAll = async () => {
+      const [aRes, nRes, eRes] = await Promise.all([
+        (supabase.from as any)("announcements").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
+        (supabase.from as any)("notes").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
+        (supabase.from as any)("events").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
+      ]);
+      if (cancelled) return;
+      if (aRes.data) setAnnouncements(aRes.data.map(mapAnnouncement));
+      if (nRes.data) setNotes(nRes.data.map(mapNote));
+      if (eRes.data) setEvents(eRes.data.map(mapEvent));
+    };
+    fetchAll();
+
+    const channel = supabase
+      .channel(`keen-content-${slug}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "announcements", filter: `class_slug=eq.${slug}` }, fetchAll)
+      .on("postgres_changes", { event: "*", schema: "public", table: "notes", filter: `class_slug=eq.${slug}` }, fetchAll)
+      .on("postgres_changes", { event: "*", schema: "public", table: "events", filter: `class_slug=eq.${slug}` }, fetchAll)
+      .on("postgres_changes", { event: "*", schema: "public", table: "meeting_recordings", filter: `class_name=eq.${slug}` }, () => {
+        // also refresh recordings
+        (supabase.from as any)("meeting_recordings")
+          .select("*")
+          .eq("class_name", slug)
+          .order("created_at", { ascending: false })
+          .then(({ data }: any) => {
+            if (!cancelled && data) {
+              setRecordings(data.map((r: any) => ({
+                id: r.id,
+                title: r.title,
+                description: r.description || "",
+                mediaUrl: r.media_url,
+                mediaType: r.media_type,
+                mediaName: r.media_name,
+                duration: r.duration || 0,
+                date: r.created_at,
+                userId: r.user_id,
+              })));
+            }
+          });
+      })
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(channel); };
+  }, [slug]);
 
   // Fetch the current user's role from the database (source of truth).
   const fetchMyRole = useCallback(async () => {
@@ -494,29 +558,8 @@ const ClassPage = () => {
     });
   };
 
-  useEffect(() => {
-    const saved = localStorage.getItem(notesKey);
-    if (saved) setNotes(JSON.parse(saved));
-  }, [activeTab, notesKey]);
+  // (announcements, notes, events are now synced via DB realtime above — no localStorage)
 
-  useEffect(() => {
-    const saved = localStorage.getItem(eventsKey);
-    if (saved) setEvents(JSON.parse(saved));
-  }, [activeTab, eventsKey]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(announcements));
-    } catch (e) {
-      console.warn("LocalStorage quota exceeded for announcements. Clearing images from stored data.");
-      const withoutImages = announcements.map((a) => ({ ...a, image: undefined, images: undefined }));
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(withoutImages));
-      } catch {
-        console.error("Still cannot save announcements to localStorage");
-      }
-    }
-  }, [announcements, storageKey]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -562,18 +605,22 @@ const ClassPage = () => {
     }
   };
 
-  const handleAddAnnouncement = () => {
-    if (!newBrief.trim()) return;
-    const newAnn: Announcement = {
-      id: Date.now().toString(),
+  const handleAddAnnouncement = async () => {
+    if (!newBrief.trim() || !user) return;
+    const { error } = await (supabase.from as any)("announcements").insert({
+      class_slug: slug,
+      user_id: user.id,
+      publisher_email: user.email || "Unknown",
+      publisher_avatar: profile?.avatar_url || null,
       brief: newBrief.trim(),
       description: newDescription.trim(),
-      images: newImages.length > 0 ? newImages : undefined,
+      images: newImages.length > 0 ? newImages : null,
       date: newDate ? new Date(newDate).toISOString() : new Date().toISOString(),
-      publisherEmail: user?.email || "Unknown",
-      publisherAvatar: profile?.avatar_url || null,
-    };
-    setAnnouncements((prev) => [newAnn, ...prev]);
+    });
+    if (error) {
+      toast.error(error.message || "Failed to add announcement");
+      return;
+    }
     setNewBrief("");
     setNewDescription("");
     setNewImages([]);
@@ -1285,11 +1332,10 @@ const ClassPage = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
+              onClick={async () => {
                 if (!deleteEventId) return;
-                const updated = events.filter((ev) => ev.id !== deleteEventId);
-                setEvents(updated);
-                localStorage.setItem(eventsKey, JSON.stringify(updated));
+                const { error } = await (supabase.from as any)("events").delete().eq("id", deleteEventId);
+                if (error) { toast.error("Failed to delete event"); return; }
                 setDeleteEventId(null);
                 toast("Event deleted");
               }}

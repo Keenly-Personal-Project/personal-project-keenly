@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          brief: string
+          class_slug: string
+          created_at: string
+          date: string | null
+          description: string
+          id: string
+          images: Json | null
+          publisher_avatar: string | null
+          publisher_email: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brief: string
+          class_slug: string
+          created_at?: string
+          date?: string | null
+          description?: string
+          id?: string
+          images?: Json | null
+          publisher_avatar?: string | null
+          publisher_email?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brief?: string
+          class_slug?: string
+          created_at?: string
+          date?: string | null
+          description?: string
+          id?: string
+          images?: Json | null
+          publisher_avatar?: string | null
+          publisher_email?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       assemblies: {
         Row: {
           absent_time: string
@@ -190,6 +232,54 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          class_slug: string
+          color: string | null
+          created_at: string
+          date: string | null
+          description: string
+          id: string
+          images: Json | null
+          publisher_avatar: string | null
+          publisher_email: string
+          text_color: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_slug: string
+          color?: string | null
+          created_at?: string
+          date?: string | null
+          description?: string
+          id?: string
+          images?: Json | null
+          publisher_avatar?: string | null
+          publisher_email?: string
+          text_color?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_slug?: string
+          color?: string | null
+          created_at?: string
+          date?: string | null
+          description?: string
+          id?: string
+          images?: Json | null
+          publisher_avatar?: string | null
+          publisher_email?: string
+          text_color?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       keen_join_requests: {
         Row: {
           class_slug: string
@@ -346,6 +436,45 @@ export type Database = {
           media_name?: string
           media_type?: string
           media_url?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          class_slug: string
+          color: string | null
+          content: string
+          created_at: string
+          id: string
+          publisher_avatar: string | null
+          publisher_email: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_slug: string
+          color?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          publisher_avatar?: string | null
+          publisher_email?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_slug?: string
+          color?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          publisher_avatar?: string | null
+          publisher_email?: string
           title?: string
           updated_at?: string
           user_id?: string
