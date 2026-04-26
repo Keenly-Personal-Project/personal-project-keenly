@@ -242,9 +242,7 @@ const ClassPage = () => {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "Announcements";
   const slug = decodeURIComponent(className || "");
-  const storageKey = `keen_announcements_${slug}`;
-  const notesKey = `keen_notes_${slug}`;
-  const eventsKey = `keen_events_${slug}`;
+  // (announcement/note/event storage is now in the cloud DB; only favorites remain local per-user)
   const favKey = `keen_event_favs_${slug}`;
   const recordingsKey = `keen_recordings_${slug}`;
   const [activeTab, setActiveTab] = useState(initialTab);
