@@ -360,13 +360,11 @@ const NoteEditorPage = () => {
     setChartDialogOpen(false);
   };
 
-  const handleSaveColor = (color: string) => {
+  const handleSaveColor = async (color: string) => {
     setNoteColor(color);
-    const updated = notes.map((n) =>
-      n.id === noteId ? { ...n, color } : n
-    );
-    localStorage.setItem(notesKey, JSON.stringify(updated));
-    setNotes(updated);
+    if (noteId) {
+      await (supabase.from as any)("notes").update({ color }).eq("id", noteId);
+    }
   };
 
   return (
