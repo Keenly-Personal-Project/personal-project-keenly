@@ -280,25 +280,91 @@ const ClassPage = () => {
     return () => { cancelled = true; };
   }, [slug]);
 
-  const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
-    const saved = localStorage.getItem(storageKey);
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [notes, setNotes] = useState<Note[]>(() => {
-    const saved = localStorage.getItem(notesKey);
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [events, setEvents] = useState<EventItem[]>(() => {
-    const saved = localStorage.getItem(eventsKey);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
 
   const [favoritedEvents, setFavoritedEvents] = useState<Set<string>>(() => {
     const saved = localStorage.getItem(favKey);
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
+
+  // Map DB rows -> UI shape
+  const mapAnnouncement = (r: any): Announcement => ({
+    id: r.id,
+    brief: r.brief,
+    description: r.description || "",
+    images: Array.isArray(r.images) ? r.images : undefined,
+    date: r.date || r.created_at,
+    publisherEmail: r.publisher_email || "",
+    publisherAvatar: r.publisher_avatar || null,
+  });
+  const mapNote = (r: any): Note => ({
+    id: r.id,
+    title: r.title || "Untitled",
+    content: r.content || "",
+    color: r.color || undefined,
+    publisherEmail: r.publisher_email || "",
+    publisherAvatar: r.publisher_avatar || null,
+  });
+  const mapEvent = (r: any): EventItem => ({
+    id: r.id,
+    title: r.title,
+    description: r.description || "",
+    images: Array.isArray(r.images) ? r.images : undefined,
+    color: r.color || undefined,
+    textColor: r.text_color || undefined,
+    date: r.date || r.created_at,
+    publisherEmail: r.publisher_email || "",
+    publisherAvatar: r.publisher_avatar || null,
+  });
+
+  // Fetch + realtime sync for announcements / notes / events
+  useEffect(() => {
+    let cancelled = false;
+    const fetchAll = async () => {
+      const [aRes, nRes, eRes] = await Promise.all([
+        (supabase.from as any)("announcements").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
+        (supabase.from as any)("notes").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
+        (supabase.from as any)("events").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
+      ]);
+      if (cancelled) return;
+      if (aRes.data) setAnnouncements(aRes.data.map(mapAnnouncement));
+      if (nRes.data) setNotes(nRes.data.map(mapNote));
+      if (eRes.data) setEvents(eRes.data.map(mapEvent));
+    };
+    fetchAll();
+
+    const channel = supabase
+      .channel(`keen-content-${slug}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "announcements", filter: `class_slug=eq.${slug}` }, fetchAll)
+      .on("postgres_changes", { event: "*", schema: "public", table: "notes", filter: `class_slug=eq.${slug}` }, fetchAll)
+      .on("postgres_changes", { event: "*", schema: "public", table: "events", filter: `class_slug=eq.${slug}` }, fetchAll)
+      .on("postgres_changes", { event: "*", schema: "public", table: "meeting_recordings", filter: `class_name=eq.${slug}` }, () => {
+        // also refresh recordings
+        (supabase.from as any)("meeting_recordings")
+          .select("*")
+          .eq("class_name", slug)
+          .order("created_at", { ascending: false })
+          .then(({ data }: any) => {
+            if (!cancelled && data) {
+              setRecordings(data.map((r: any) => ({
+                id: r.id,
+                title: r.title,
+                description: r.description || "",
+                mediaUrl: r.media_url,
+                mediaType: r.media_type,
+                mediaName: r.media_name,
+                duration: r.duration || 0,
+                date: r.created_at,
+                userId: r.user_id,
+              })));
+            }
+          });
+      })
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(channel); };
+  }, [slug]);
 
   // Fetch the current user's role from the database (source of truth).
   const fetchMyRole = useCallback(async () => {
