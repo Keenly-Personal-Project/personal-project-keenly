@@ -1334,11 +1334,10 @@ const ClassPage = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
+              onClick={async () => {
                 if (!deleteEventId) return;
-                const updated = events.filter((ev) => ev.id !== deleteEventId);
-                setEvents(updated);
-                localStorage.setItem(eventsKey, JSON.stringify(updated));
+                const { error } = await (supabase.from as any)("events").delete().eq("id", deleteEventId);
+                if (error) { toast.error("Failed to delete event"); return; }
                 setDeleteEventId(null);
                 toast("Event deleted");
               }}
