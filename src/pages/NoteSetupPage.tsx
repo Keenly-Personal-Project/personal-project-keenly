@@ -8,15 +8,8 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import NoteColorPicker from "@/components/NoteColorPicker";
 import { useProfile } from "@/hooks/useProfile";
-
-interface Note {
-  id: string;
-  title: string;
-  content: string;
-  color?: string;
-  publisherEmail?: string;
-  publisherAvatar?: string | null;
-}
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const NoteSetupPage = () => {
   const { className } = useParams<{ className: string }>();
@@ -25,9 +18,9 @@ const NoteSetupPage = () => {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [selectedColor, setSelectedColor] = useState("hsl(175, 70%, 40%)");
+  const [creating, setCreating] = useState(false);
 
   const slug = decodeURIComponent(className || "");
-  const notesKey = `keen_notes_${slug}`;
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -44,21 +37,27 @@ const NoteSetupPage = () => {
   }
   if (!user) return null;
 
-  const handleCreate = () => {
-    if (!title.trim()) return;
-    const saved = localStorage.getItem(notesKey);
-    const notes: Note[] = saved ? JSON.parse(saved) : [];
-    const newNote: Note = {
-      id: Date.now().toString(),
-      title: title.trim(),
-      content: "",
-      color: selectedColor,
-      publisherEmail: user?.email || "Unknown",
-      publisherAvatar: profile?.avatar_url || null,
-    };
-    const updated = [newNote, ...notes];
-    localStorage.setItem(notesKey, JSON.stringify(updated));
-    navigate(`/class/${className}/note/${newNote.id}`, { replace: true });
+  const handleCreate = async () => {
+    if (!title.trim() || !user) return;
+    setCreating(true);
+    const { data, error } = await (supabase.from as any)("notes")
+      .insert({
+        class_slug: slug,
+        user_id: user.id,
+        publisher_email: user.email || "Unknown",
+        publisher_avatar: profile?.avatar_url || null,
+        title: title.trim(),
+        content: "",
+        color: selectedColor,
+      })
+      .select("id")
+      .single();
+    setCreating(false);
+    if (error || !data) {
+      toast.error(error?.message || "Failed to create note");
+      return;
+    }
+    navigate(`/class/${className}/note/${data.id}`, { replace: true });
   };
 
   const isGradient = selectedColor.startsWith("linear-gradient");
@@ -102,8 +101,8 @@ const NoteSetupPage = () => {
             </div>
           </div>
 
-          <Button onClick={handleCreate} disabled={!title.trim()} className="w-full h-12 text-base font-semibold">
-            Create Note
+          <Button onClick={handleCreate} disabled={!title.trim() || creating} className="w-full h-12 text-base font-semibold">
+            {creating ? "Creating..." : "Create Note"}
           </Button>
         </div>
       </main>
