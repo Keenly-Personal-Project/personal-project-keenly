@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEscapeBack } from "@/hooks/useEscapeBack";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import Header from "@/components/Header";
 import NoteBlockEditor, {
   NoteBlock,
@@ -121,7 +121,7 @@ const NoteEditorPage = () => {
   const editorRef = useRef<NoteBlockEditorHandle>(null);
   const [textFormat, setTextFormat] = useState<TextFormat>(defaultTextFormat);
 
-  const slug = decodeURIComponent(className || "");
+  // (slug computed only when needed elsewhere)
 
   const [currentNote, setCurrentNote] = useState<Note | null>(null);
   const [noteLoading, setNoteLoading] = useState(true);
