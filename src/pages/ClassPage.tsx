@@ -560,29 +560,8 @@ const ClassPage = () => {
     });
   };
 
-  useEffect(() => {
-    const saved = localStorage.getItem(notesKey);
-    if (saved) setNotes(JSON.parse(saved));
-  }, [activeTab, notesKey]);
+  // (announcements, notes, events are now synced via DB realtime above — no localStorage)
 
-  useEffect(() => {
-    const saved = localStorage.getItem(eventsKey);
-    if (saved) setEvents(JSON.parse(saved));
-  }, [activeTab, eventsKey]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(announcements));
-    } catch (e) {
-      console.warn("LocalStorage quota exceeded for announcements. Clearing images from stored data.");
-      const withoutImages = announcements.map((a) => ({ ...a, image: undefined, images: undefined }));
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(withoutImages));
-      } catch {
-        console.error("Still cannot save announcements to localStorage");
-      }
-    }
-  }, [announcements, storageKey]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -628,18 +607,22 @@ const ClassPage = () => {
     }
   };
 
-  const handleAddAnnouncement = () => {
-    if (!newBrief.trim()) return;
-    const newAnn: Announcement = {
-      id: Date.now().toString(),
+  const handleAddAnnouncement = async () => {
+    if (!newBrief.trim() || !user) return;
+    const { error } = await (supabase.from as any)("announcements").insert({
+      class_slug: slug,
+      user_id: user.id,
+      publisher_email: user.email || "Unknown",
+      publisher_avatar: profile?.avatar_url || null,
       brief: newBrief.trim(),
       description: newDescription.trim(),
-      images: newImages.length > 0 ? newImages : undefined,
+      images: newImages.length > 0 ? newImages : null,
       date: newDate ? new Date(newDate).toISOString() : new Date().toISOString(),
-      publisherEmail: user?.email || "Unknown",
-      publisherAvatar: profile?.avatar_url || null,
-    };
-    setAnnouncements((prev) => [newAnn, ...prev]);
+    });
+    if (error) {
+      toast.error(error.message || "Failed to add announcement");
+      return;
+    }
     setNewBrief("");
     setNewDescription("");
     setNewImages([]);
