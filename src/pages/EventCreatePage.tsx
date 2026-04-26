@@ -13,18 +13,6 @@ import { ArrowLeft, Loader2, Image as ImageIcon, X } from "lucide-react";
 import NoteColorPicker from "@/components/NoteColorPicker";
 import { toast } from "sonner";
 
-interface EventItem {
-  id: string;
-  title: string;
-  description: string;
-  images?: string[];
-  color?: string;
-  textColor?: string;
-  date?: string;
-  publisherEmail?: string;
-  publisherAvatar?: string | null;
-}
-
 const EventCreatePage = () => {
   const { className, eventId } = useParams<{ className: string; eventId?: string }>();
   const { user, loading } = useAuth();
@@ -38,9 +26,10 @@ const EventCreatePage = () => {
   const [color, setColor] = useState("hsl(175, 70%, 40%)");
   const [textColor, setTextColor] = useState("#ffffff");
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loadingExisting, setLoadingExisting] = useState(isEdit);
 
   const slug = decodeURIComponent(className || "");
-  const eventsKey = `keen_events_${slug}`;
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -50,23 +39,25 @@ const EventCreatePage = () => {
 
   // Load existing event for editing
   useEffect(() => {
-    if (isEdit) {
-      const saved = localStorage.getItem(eventsKey);
-      if (saved) {
-        const events: EventItem[] = JSON.parse(saved);
-        const found = events.find((e) => e.id === eventId);
-        if (found) {
-          setTitle(found.title);
-          setDescription(found.description);
-          setImages(found.images || []);
-          setColor(found.color || "hsl(175, 70%, 40%)");
-          setTextColor(found.textColor || "#ffffff");
-        }
-      }
-    }
-  }, [isEdit, eventId, eventsKey]);
+    if (!isEdit || !eventId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await (supabase.from as any)("events")
+        .select("*")
+        .eq("id", eventId)
+        .maybeSingle();
+      if (cancelled || !data) { setLoadingExisting(false); return; }
+      setTitle(data.title || "");
+      setDescription(data.description || "");
+      setImages(Array.isArray(data.images) ? data.images : []);
+      setColor(data.color || "hsl(175, 70%, 40%)");
+      setTextColor(data.text_color || "#ffffff");
+      setLoadingExisting(false);
+    })();
+    return () => { cancelled = true; };
+  }, [isEdit, eventId]);
 
-  if (loading) {
+  if (loading || loadingExisting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -100,33 +91,42 @@ const EventCreatePage = () => {
     }
   };
 
-  const handlePublish = () => {
-    if (!title.trim()) return;
-    const saved = localStorage.getItem(eventsKey);
-    const events: EventItem[] = saved ? JSON.parse(saved) : [];
+  const handlePublish = async () => {
+    if (!title.trim() || !user) return;
+    setSaving(true);
 
-    if (isEdit) {
-      const updated = events.map((ev) =>
-        ev.id === eventId
-          ? { ...ev, title: title.trim(), description: description.trim(), images: images.length > 0 ? images : undefined, color, textColor }
-          : ev
-      );
-      localStorage.setItem(eventsKey, JSON.stringify(updated));
+    if (isEdit && eventId) {
+      const { error } = await (supabase.from as any)("events")
+        .update({
+          title: title.trim(),
+          description: description.trim(),
+          images: images.length > 0 ? images : null,
+          color,
+          text_color: textColor,
+        })
+        .eq("id", eventId);
+      setSaving(false);
+      if (error) { toast.error(error.message || "Failed to save"); return; }
       toast("Published");
       navigate(`/class/${className}/event/${eventId}`);
     } else {
-      const newEvent: EventItem = {
-        id: Date.now().toString(),
-        title: title.trim(),
-        description: description.trim(),
-        images: images.length > 0 ? images : undefined,
-        color,
-        textColor,
-        date: new Date().toISOString(),
-        publisherEmail: user?.email || "Unknown",
-        publisherAvatar: profile?.avatar_url || null,
-      };
-      localStorage.setItem(eventsKey, JSON.stringify([newEvent, ...events]));
+      const { data, error } = await (supabase.from as any)("events")
+        .insert({
+          class_slug: slug,
+          user_id: user.id,
+          publisher_email: user.email || "Unknown",
+          publisher_avatar: profile?.avatar_url || null,
+          title: title.trim(),
+          description: description.trim(),
+          images: images.length > 0 ? images : null,
+          color,
+          text_color: textColor,
+          date: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+      setSaving(false);
+      if (error || !data) { toast.error(error?.message || "Failed to publish"); return; }
       toast("Published");
       navigate(`/class/${className}?tab=Events%20List`);
     }
@@ -201,8 +201,8 @@ const EventCreatePage = () => {
             </div>
           </div>
 
-          <Button onClick={handlePublish} disabled={!title.trim()} className="w-full h-12 text-base font-semibold">
-            {isEdit ? "Save Changes" : "Publish Event"}
+          <Button onClick={handlePublish} disabled={!title.trim() || saving} className="w-full h-12 text-base font-semibold">
+            {saving ? "Publishing..." : isEdit ? "Save Changes" : "Publish Event"}
           </Button>
         </div>
       </main>
