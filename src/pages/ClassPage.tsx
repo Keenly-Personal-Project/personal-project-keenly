@@ -732,63 +732,14 @@ const ClassPage = () => {
       );
     }
     if (activeTab === "Notes/Guides") {
-      const handleAddNote = () => {
-        navigate(`/class/${className}/note/new`);
-      };
-
       return contentWrapper(
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {notes.map((note) => {
-            const noteEmail = note.publisherEmail || user?.email || "";
-            return (
-              <button
-                key={note.id}
-                onClick={() => navigate(`/class/${className}/note/${note.id}`)}
-                className="aspect-square p-5 text-left hover:opacity-80 transition-all cursor-pointer flex flex-col"
-                style={{
-                  borderRadius: "0.75rem",
-                  WebkitBorderRadius: "0.75rem",
-                  background: note.color?.includes("gradient")
-                    ? `linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, ${note.color} border-box`
-                    : "hsl(var(--card))",
-                  border: note.color?.includes("gradient")
-                    ? "3px solid transparent"
-                    : `3px solid ${note.color || "hsl(var(--border))"}`,
-                  overflow: "hidden",
-                }}
-              >
-                <PublisherBadge email={noteEmail} avatarUrl={note.publisherAvatar} />
-                <p
-                  className="text-sm font-bold underline underline-offset-2 mb-2 shrink-0"
-                  style={{ color: note.color || "hsl(var(--foreground))" }}
-                >
-                  {note.title || "Untitled"}
-                </p>
-                <p className="text-muted-foreground text-xs leading-relaxed line-clamp-[8] flex-1 overflow-hidden">
-                  {(() => {
-                    try {
-                      const parsed = JSON.parse(note.content);
-                      if (Array.isArray(parsed)) {
-                        const textBlock = parsed.find((b: any) => b.type === "text" && b.data?.content?.trim());
-                        return textBlock ? textBlock.data.content.trim().substring(0, 200) : "Empty note...";
-                      }
-                    } catch {}
-                    return note.content || "Empty note...";
-                  })()}
-                </p>
-              </button>
-            );
-          })}
-          {canEdit && (
-            <button
-              onClick={handleAddNote}
-              className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
-            >
-              <Plus className="h-8 w-8 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground font-medium">Add notes</span>
-            </button>
-          )}
-        </div>,
+        <NotesGuidesGrid
+          classSlug={slug}
+          className={className || ""}
+          notes={notes as any}
+          folders={folders}
+          canEdit={canEdit}
+        />,
         "Notes/Guides",
       );
     }
