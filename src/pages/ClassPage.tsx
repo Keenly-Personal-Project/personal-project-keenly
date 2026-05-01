@@ -289,6 +289,8 @@ const ClassPage = () => {
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [folders, setFolders] = useState<NoteFolder[]>([]);
+  const [openFolderIds, setOpenFolderIds] = useState<Set<string>>(new Set());
   const [events, setEvents] = useState<EventItem[]>([]);
 
   const [favoritedEvents, setFavoritedEvents] = useState<Set<string>>(() => {
