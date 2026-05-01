@@ -442,12 +442,43 @@ export type Database = {
         }
         Relationships: []
       }
+      note_folders: {
+        Row: {
+          class_slug: string
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_slug: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_slug?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           class_slug: string
           color: string | null
           content: string
           created_at: string
+          folder_id: string | null
           id: string
           publisher_avatar: string | null
           publisher_email: string
@@ -460,6 +491,7 @@ export type Database = {
           color?: string | null
           content?: string
           created_at?: string
+          folder_id?: string | null
           id?: string
           publisher_avatar?: string | null
           publisher_email?: string
@@ -472,6 +504,7 @@ export type Database = {
           color?: string | null
           content?: string
           created_at?: string
+          folder_id?: string | null
           id?: string
           publisher_avatar?: string | null
           publisher_email?: string
@@ -479,7 +512,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notes_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "note_folders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       password_reset_codes: {
         Row: {
