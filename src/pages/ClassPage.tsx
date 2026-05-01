@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 import AttendanceSection from "@/components/AttendanceSection";
 import NotesGuidesGrid from "@/components/NotesGuidesGrid";
+import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const sidebarTabs = ["Announcements", "Attendance", "Recordings", "Events", "Notes/Guides", "Details"];
