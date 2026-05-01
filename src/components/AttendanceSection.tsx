@@ -314,6 +314,53 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
 
   return (
     <div>
+      {/* ───── SIGN-IN PANEL (visible to everyone) ───── */}
+      <div className="mb-4 p-3 rounded-lg border border-border bg-card/50">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Sign in to an assembly</p>
+            <p className="text-xs text-muted-foreground">Scan the QR code, or use the one-tap button below.</p>
+          </div>
+          <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => setScannerOpen(true)}>
+            <ScanLine className="h-3.5 w-3.5" /> Scan QR
+          </Button>
+        </div>
+
+        {activeAssemblies.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic">No active assemblies right now.</p>
+        ) : (
+          <div className="space-y-1.5 mt-2">
+            {activeAssemblies.map((a) => {
+              const mine = myAttendance(a.id);
+              const alreadyIn = mine && mine.status !== "pending";
+              const isLateNow = new Date() > new Date(a.late_time);
+              return (
+                <div key={a.id} className="flex items-center justify-between gap-2 p-2 rounded-md border border-border/60 bg-background">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-foreground truncate">{a.title}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {alreadyIn ? `You're ${mine!.status}` : isLateNow ? "Sign-in is now LATE" : "Sign in on time"}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant={alreadyIn ? "ghost" : "default"}
+                    className="h-7 text-xs gap-1 shrink-0"
+                    disabled={alreadyIn || signingInId === a.id}
+                    onClick={() => handleClickHereSignIn(a)}
+                  >
+                    <MousePointerClick className="h-3 w-3" />
+                    {alreadyIn ? "Signed in" : signingInId === a.id ? "Signing in…" : "Click HERE"}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <QrScannerDialog open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScannedUrl} />
+
       {/* Sub-tabs */}
       <div className="flex gap-2 mb-4">
         <button
