@@ -108,6 +108,87 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
   // Delete assembly
   const [deleteAssemblyId, setDeleteAssemblyId] = useState<string | null>(null);
 
+  // Scanner & one-click sign-in
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [signingInId, setSigningInId] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const activeAssemblies = assemblies.filter((a) => new Date() < new Date(a.absent_time));
+  const myAttendance = (assemblyId: string) =>
+    allAttendance.find((a) => a.assembly_id === assemblyId && a.user_id === user?.id);
+
+  const handleScannedUrl = (text: string) => {
+    setScannerOpen(false);
+    try {
+      // Accept either full URL or just the token
+      const url = new URL(text, window.location.origin);
+      const parts = url.pathname.split("/").filter(Boolean);
+      const tokenIdx = parts.indexOf("sign-in");
+      const token = tokenIdx >= 0 ? parts[tokenIdx + 1] : parts[parts.length - 1];
+      if (!token) throw new Error("no token");
+      navigate(`/assembly/sign-in/${token}`);
+    } catch {
+      // Maybe it's just a raw token
+      if (/^[A-Za-z0-9]{8,}$/.test(text.trim())) {
+        navigate(`/assembly/sign-in/${text.trim()}`);
+      } else {
+        toast.error("That QR code isn't a valid assembly link.");
+      }
+    }
+  };
+
+  const handleClickHereSignIn = async (assembly: Assembly) => {
+    if (!user) return;
+    setSigningInId(assembly.id);
+    const now = new Date();
+    const lateTime = new Date(assembly.late_time);
+    const absentTime = new Date(assembly.absent_time);
+
+    if (now > absentTime) {
+      toast.error("This assembly has already ended.");
+      setSigningInId(null);
+      return;
+    }
+
+    const existing = myAttendance(assembly.id);
+    if (existing && existing.status !== "pending") {
+      toast.info("You're already signed in for this assembly.");
+      setSigningInId(null);
+      return;
+    }
+
+    const isLate = now > lateTime;
+    const status = isLate ? "late" : "present";
+
+    if (existing) {
+      const { error } = await (supabase.from as any)("assembly_attendance")
+        .update({ signed_in_at: now.toISOString(), status })
+        .eq("id", existing.id);
+      if (error) {
+        toast.error("Failed to sign in.");
+        setSigningInId(null);
+        return;
+      }
+    } else {
+      const { error } = await (supabase.from as any)("assembly_attendance").insert({
+        assembly_id: assembly.id,
+        user_id: user.id,
+        signed_in_at: now.toISOString(),
+        status,
+      });
+      if (error) {
+        toast.error("Failed to sign in.");
+        setSigningInId(null);
+        return;
+      }
+    }
+
+    toast.success(isLate ? "Signed in (Late)" : "Signed in — see you there!");
+    setSigningInId(null);
+    fetchAll();
+  };
+
+
   // Ensure current user has a membership row (as 'member' by default).
   // Role is managed by owners only — never overwritten from the client preview.
   useEffect(() => {
