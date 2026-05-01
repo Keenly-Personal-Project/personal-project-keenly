@@ -818,7 +818,9 @@ const ClassPage = () => {
                 </div>
 
                 {rec.description && (
-                  <p className="px-4 pt-2 text-sm text-muted-foreground whitespace-pre-wrap">{rec.description}</p>
+                  <div className="px-4 pt-2 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-headings:font-semibold prose-h2:text-base prose-h2:mt-3 prose-h2:mb-1 prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{rec.description.replace(/\*\*/g, "")}</ReactMarkdown>
+                  </div>
                 )}
 
                 <div className="flex items-center justify-between px-4 py-3">
