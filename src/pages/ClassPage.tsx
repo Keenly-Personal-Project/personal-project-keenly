@@ -333,15 +333,17 @@ const ClassPage = () => {
   useEffect(() => {
     let cancelled = false;
     const fetchAll = async () => {
-      const [aRes, nRes, eRes] = await Promise.all([
+      const [aRes, nRes, eRes, fRes] = await Promise.all([
         (supabase.from as any)("announcements").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
         (supabase.from as any)("notes").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
         (supabase.from as any)("events").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
+        (supabase.from as any)("note_folders").select("*").eq("class_slug", slug).order("created_at", { ascending: true }),
       ]);
       if (cancelled) return;
       if (aRes.data) setAnnouncements(aRes.data.map(mapAnnouncement));
       if (nRes.data) setNotes(nRes.data.map(mapNote));
       if (eRes.data) setEvents(eRes.data.map(mapEvent));
+      if (fRes.data) setFolders(fRes.data.map((f: any) => ({ id: f.id, name: f.name, color: f.color })));
     };
     fetchAll();
 
@@ -350,6 +352,7 @@ const ClassPage = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "announcements", filter: `class_slug=eq.${slug}` }, fetchAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "notes", filter: `class_slug=eq.${slug}` }, fetchAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "events", filter: `class_slug=eq.${slug}` }, fetchAll)
+      .on("postgres_changes", { event: "*", schema: "public", table: "note_folders", filter: `class_slug=eq.${slug}` }, fetchAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "meeting_recordings", filter: `class_name=eq.${slug}` }, () => {
         // also refresh recordings
         (supabase.from as any)("meeting_recordings")
