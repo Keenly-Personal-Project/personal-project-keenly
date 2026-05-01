@@ -52,6 +52,13 @@ interface Note {
   color?: string;
   publisherEmail?: string;
   publisherAvatar?: string | null;
+  folderId?: string | null;
+}
+
+interface NoteFolder {
+  id: string;
+  name: string;
+  color?: string | null;
 }
 
 interface EventItem {
