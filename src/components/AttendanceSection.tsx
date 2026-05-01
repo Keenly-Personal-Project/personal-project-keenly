@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Users, ClipboardList, QrCode, Maximize2, Share2, Trash2 } from "lucide-react";
+import { Plus, Users, ClipboardList, QrCode, Maximize2, Share2, Trash2, ScanLine, MousePointerClick } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import QrScannerDialog from "@/components/QrScannerDialog";
+import { useNavigate } from "react-router-dom";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
