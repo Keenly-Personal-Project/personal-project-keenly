@@ -313,6 +313,7 @@ const ClassPage = () => {
     color: r.color || undefined,
     publisherEmail: r.publisher_email || "",
     publisherAvatar: r.publisher_avatar || null,
+    folderId: r.folder_id || null,
   });
   const mapEvent = (r: any): EventItem => ({
     id: r.id,
