@@ -21,6 +21,9 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 import AttendanceSection from "@/components/AttendanceSection";
+import NotesGuidesGrid from "@/components/NotesGuidesGrid";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const sidebarTabs = ["Announcements", "Attendance", "Recordings", "Events", "Notes/Guides", "Details"];
 
@@ -50,6 +53,13 @@ interface Note {
   color?: string;
   publisherEmail?: string;
   publisherAvatar?: string | null;
+  folderId?: string | null;
+}
+
+interface NoteFolder {
+  id: string;
+  name: string;
+  color?: string | null;
 }
 
 interface EventItem {
@@ -280,6 +290,8 @@ const ClassPage = () => {
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [folders, setFolders] = useState<NoteFolder[]>([]);
+  const [openFolderIds, setOpenFolderIds] = useState<Set<string>>(new Set());
   const [events, setEvents] = useState<EventItem[]>([]);
 
   const [favoritedEvents, setFavoritedEvents] = useState<Set<string>>(() => {
@@ -304,6 +316,7 @@ const ClassPage = () => {
     color: r.color || undefined,
     publisherEmail: r.publisher_email || "",
     publisherAvatar: r.publisher_avatar || null,
+    folderId: r.folder_id || null,
   });
   const mapEvent = (r: any): EventItem => ({
     id: r.id,
@@ -321,15 +334,17 @@ const ClassPage = () => {
   useEffect(() => {
     let cancelled = false;
     const fetchAll = async () => {
-      const [aRes, nRes, eRes] = await Promise.all([
+      const [aRes, nRes, eRes, fRes] = await Promise.all([
         (supabase.from as any)("announcements").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
         (supabase.from as any)("notes").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
         (supabase.from as any)("events").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
+        (supabase.from as any)("note_folders").select("*").eq("class_slug", slug).order("created_at", { ascending: true }),
       ]);
       if (cancelled) return;
       if (aRes.data) setAnnouncements(aRes.data.map(mapAnnouncement));
       if (nRes.data) setNotes(nRes.data.map(mapNote));
       if (eRes.data) setEvents(eRes.data.map(mapEvent));
+      if (fRes.data) setFolders(fRes.data.map((f: any) => ({ id: f.id, name: f.name, color: f.color })));
     };
     fetchAll();
 
@@ -338,6 +353,7 @@ const ClassPage = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "announcements", filter: `class_slug=eq.${slug}` }, fetchAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "notes", filter: `class_slug=eq.${slug}` }, fetchAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "events", filter: `class_slug=eq.${slug}` }, fetchAll)
+      .on("postgres_changes", { event: "*", schema: "public", table: "note_folders", filter: `class_slug=eq.${slug}` }, fetchAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "meeting_recordings", filter: `class_name=eq.${slug}` }, () => {
         // also refresh recordings
         (supabase.from as any)("meeting_recordings")
@@ -716,63 +732,14 @@ const ClassPage = () => {
       );
     }
     if (activeTab === "Notes/Guides") {
-      const handleAddNote = () => {
-        navigate(`/class/${className}/note/new`);
-      };
-
       return contentWrapper(
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {notes.map((note) => {
-            const noteEmail = note.publisherEmail || user?.email || "";
-            return (
-              <button
-                key={note.id}
-                onClick={() => navigate(`/class/${className}/note/${note.id}`)}
-                className="aspect-square p-5 text-left hover:opacity-80 transition-all cursor-pointer flex flex-col"
-                style={{
-                  borderRadius: "0.75rem",
-                  WebkitBorderRadius: "0.75rem",
-                  background: note.color?.includes("gradient")
-                    ? `linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, ${note.color} border-box`
-                    : "hsl(var(--card))",
-                  border: note.color?.includes("gradient")
-                    ? "3px solid transparent"
-                    : `3px solid ${note.color || "hsl(var(--border))"}`,
-                  overflow: "hidden",
-                }}
-              >
-                <PublisherBadge email={noteEmail} avatarUrl={note.publisherAvatar} />
-                <p
-                  className="text-sm font-bold underline underline-offset-2 mb-2 shrink-0"
-                  style={{ color: note.color || "hsl(var(--foreground))" }}
-                >
-                  {note.title || "Untitled"}
-                </p>
-                <p className="text-muted-foreground text-xs leading-relaxed line-clamp-[8] flex-1 overflow-hidden">
-                  {(() => {
-                    try {
-                      const parsed = JSON.parse(note.content);
-                      if (Array.isArray(parsed)) {
-                        const textBlock = parsed.find((b: any) => b.type === "text" && b.data?.content?.trim());
-                        return textBlock ? textBlock.data.content.trim().substring(0, 200) : "Empty note...";
-                      }
-                    } catch {}
-                    return note.content || "Empty note...";
-                  })()}
-                </p>
-              </button>
-            );
-          })}
-          {canEdit && (
-            <button
-              onClick={handleAddNote}
-              className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors cursor-pointer"
-            >
-              <Plus className="h-8 w-8 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground font-medium">Add notes</span>
-            </button>
-          )}
-        </div>,
+        <NotesGuidesGrid
+          classSlug={slug}
+          className={className || ""}
+          notes={notes as any}
+          folders={folders}
+          canEdit={canEdit}
+        />,
         "Notes/Guides",
       );
     }
@@ -818,7 +785,9 @@ const ClassPage = () => {
                 </div>
 
                 {rec.description && (
-                  <p className="px-4 pt-2 text-sm text-muted-foreground whitespace-pre-wrap">{rec.description}</p>
+                  <div className="px-4 pt-2 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-headings:font-semibold prose-h2:text-base prose-h2:mt-3 prose-h2:mb-1 prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{rec.description.replace(/\*\*/g, "")}</ReactMarkdown>
+                  </div>
                 )}
 
                 <div className="flex items-center justify-between px-4 py-3">

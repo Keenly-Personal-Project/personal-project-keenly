@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Users, ClipboardList, QrCode, Maximize2, Share2, Trash2 } from "lucide-react";
+import { Plus, Users, ClipboardList, QrCode, Maximize2, Share2, Trash2, ScanLine, MousePointerClick } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import QrScannerDialog from "@/components/QrScannerDialog";
+import { useNavigate } from "react-router-dom";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -105,6 +107,87 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
 
   // Delete assembly
   const [deleteAssemblyId, setDeleteAssemblyId] = useState<string | null>(null);
+
+  // Scanner & one-click sign-in
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [signingInId, setSigningInId] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const activeAssemblies = assemblies.filter((a) => new Date() < new Date(a.absent_time));
+  const myAttendance = (assemblyId: string) =>
+    allAttendance.find((a) => a.assembly_id === assemblyId && a.user_id === user?.id);
+
+  const handleScannedUrl = (text: string) => {
+    setScannerOpen(false);
+    try {
+      // Accept either full URL or just the token
+      const url = new URL(text, window.location.origin);
+      const parts = url.pathname.split("/").filter(Boolean);
+      const tokenIdx = parts.indexOf("sign-in");
+      const token = tokenIdx >= 0 ? parts[tokenIdx + 1] : parts[parts.length - 1];
+      if (!token) throw new Error("no token");
+      navigate(`/assembly/sign-in/${token}`);
+    } catch {
+      // Maybe it's just a raw token
+      if (/^[A-Za-z0-9]{8,}$/.test(text.trim())) {
+        navigate(`/assembly/sign-in/${text.trim()}`);
+      } else {
+        toast.error("That QR code isn't a valid assembly link.");
+      }
+    }
+  };
+
+  const handleClickHereSignIn = async (assembly: Assembly) => {
+    if (!user) return;
+    setSigningInId(assembly.id);
+    const now = new Date();
+    const lateTime = new Date(assembly.late_time);
+    const absentTime = new Date(assembly.absent_time);
+
+    if (now > absentTime) {
+      toast.error("This assembly has already ended.");
+      setSigningInId(null);
+      return;
+    }
+
+    const existing = myAttendance(assembly.id);
+    if (existing && existing.status !== "pending") {
+      toast.info("You're already signed in for this assembly.");
+      setSigningInId(null);
+      return;
+    }
+
+    const isLate = now > lateTime;
+    const status = isLate ? "late" : "present";
+
+    if (existing) {
+      const { error } = await (supabase.from as any)("assembly_attendance")
+        .update({ signed_in_at: now.toISOString(), status })
+        .eq("id", existing.id);
+      if (error) {
+        toast.error("Failed to sign in.");
+        setSigningInId(null);
+        return;
+      }
+    } else {
+      const { error } = await (supabase.from as any)("assembly_attendance").insert({
+        assembly_id: assembly.id,
+        user_id: user.id,
+        signed_in_at: now.toISOString(),
+        status,
+      });
+      if (error) {
+        toast.error("Failed to sign in.");
+        setSigningInId(null);
+        return;
+      }
+    }
+
+    toast.success(isLate ? "Signed in (Late)" : "Signed in — see you there!");
+    setSigningInId(null);
+    fetchAll();
+  };
+
 
   // Ensure current user has a membership row (as 'member' by default).
   // Role is managed by owners only — never overwritten from the client preview.
@@ -231,6 +314,53 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
 
   return (
     <div>
+      {/* ───── SIGN-IN PANEL (visible to everyone) ───── */}
+      <div className="mb-4 p-3 rounded-lg border border-border bg-card/50">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Sign in to an assembly</p>
+            <p className="text-xs text-muted-foreground">Scan the QR code, or use the one-tap button below.</p>
+          </div>
+          <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => setScannerOpen(true)}>
+            <ScanLine className="h-3.5 w-3.5" /> Scan QR
+          </Button>
+        </div>
+
+        {activeAssemblies.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic">No active assemblies right now.</p>
+        ) : (
+          <div className="space-y-1.5 mt-2">
+            {activeAssemblies.map((a) => {
+              const mine = myAttendance(a.id);
+              const alreadyIn = mine && mine.status !== "pending";
+              const isLateNow = new Date() > new Date(a.late_time);
+              return (
+                <div key={a.id} className="flex items-center justify-between gap-2 p-2 rounded-md border border-border/60 bg-background">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-foreground truncate">{a.title}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {alreadyIn ? `You're ${mine!.status}` : isLateNow ? "Sign-in is now LATE" : "Sign in on time"}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant={alreadyIn ? "ghost" : "default"}
+                    className="h-7 text-xs gap-1 shrink-0"
+                    disabled={alreadyIn || signingInId === a.id}
+                    onClick={() => handleClickHereSignIn(a)}
+                  >
+                    <MousePointerClick className="h-3 w-3" />
+                    {alreadyIn ? "Signed in" : signingInId === a.id ? "Signing in…" : "Click HERE"}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <QrScannerDialog open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScannedUrl} />
+
       {/* Sub-tabs */}
       <div className="flex gap-2 mb-4">
         <button

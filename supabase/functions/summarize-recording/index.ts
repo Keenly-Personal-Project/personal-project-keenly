@@ -86,18 +86,24 @@ serve(async (req) => {
 
     const dataUrl = `data:${mimeType};base64,${audioBase64}`;
 
-    const prompt = `You are summarizing a class recording${className ? ` for the class "${className}"` : ""}${title ? ` titled "${title}"` : ""}. Listen to the audio and produce a clear, well-structured summary for students. Use this format:
+    const prompt = `You are summarizing a class recording${className ? ` for the class "${className}"` : ""}${title ? ` titled "${title}"` : ""}. Listen to the audio and produce a clear, well-structured summary for students.
 
-**Overview**
-A 2-3 sentence summary of what the recording covers.
+Format your response in clean Markdown using these section headings (use "##" — never bold/asterisks):
 
-**Key Points**
-• Bullet points of the most important ideas, concepts, or announcements.
+## Overview
+A 2-3 sentence paragraph summarizing what the recording covers.
 
-**Action Items / Homework** (only if mentioned)
-• Anything students need to do.
+## Key Points
+- Bullet points of the most important ideas, concepts, or announcements.
 
-Keep it concise, accurate, and faithful to what was actually said. Do not invent content.`;
+## Action Items
+- Only include this section if homework or follow-ups were actually mentioned.
+
+Strict rules:
+- Do NOT use bold (**), italics (*), or any asterisk-based emphasis. Use plain text and headings only.
+- Use "-" for bullets.
+- Write in a natural, readable tone — like a real study summary, not a transcript dump.
+- Be concise, accurate, and faithful to what was actually said. Do not invent content.`;
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
