@@ -92,8 +92,11 @@ export default function AssemblySignInPage() {
         <div className="text-center max-w-sm space-y-4">
           <XCircle className="h-16 w-16 text-destructive mx-auto" />
           <h1 className="text-xl font-bold text-foreground">Sign In Required</h1>
-          <p className="text-muted-foreground">You need to be logged in to sign in for this assembly.</p>
-          <Button onClick={() => window.location.href = "/auth"}>Go to Login</Button>
+          <p className="text-muted-foreground">You need to be logged in to sign in for this assembly. After logging in once, future scans will sign you in instantly.</p>
+          <Button onClick={() => {
+            const redirect = encodeURIComponent(window.location.pathname);
+            window.location.href = `/auth?redirect=${redirect}`;
+          }}>Go to Login</Button>
         </div>
       </div>
     );

@@ -44,7 +44,11 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!loading && user) navigate('/');
+    if (!loading && user) {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect');
+      navigate(redirect && redirect.startsWith('/') ? redirect : '/');
+    }
   }, [user, loading, navigate]);
 
   useEffect(() => {
