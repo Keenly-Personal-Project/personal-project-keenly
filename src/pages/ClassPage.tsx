@@ -250,7 +250,8 @@ const ClassPage = () => {
   const { profile } = useProfile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get("tab") || "Announcements";
+  const rawTab = searchParams.get("tab") || "Announcements";
+  const initialTab = sidebarTabs.includes(rawTab) ? rawTab : "Announcements";
   const slug = decodeURIComponent(className || "");
   // (announcement/note/event storage is now in the cloud DB; only favorites remain local per-user)
   const favKey = `keen_event_favs_${slug}`;
