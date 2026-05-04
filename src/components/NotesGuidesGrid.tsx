@@ -543,6 +543,18 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Folder color */}
+      <Dialog open={!!colorFolder} onOpenChange={(o) => !o && setColorFolder(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Folder color</DialogTitle></DialogHeader>
+          <NoteColorPicker value={colorValue} onChange={setColorValue} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setColorFolder(null)}>Cancel</Button>
+            <Button onClick={saveFolderColor}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
