@@ -440,6 +440,31 @@ const ClassPage = () => {
     return () => { supabase.removeChannel(channel); };
   }, [slug, user, profile?.avatar_url]);
 
+// Convert a stored media_url (could be a public URL from older uploads, or a path) into a playable signed URL
+async function toPlayableUrl(stored: string | null | undefined): Promise<string> {
+  if (!stored) return "";
+  // External or data URLs — return as-is
+  if (stored.startsWith("data:") || stored.startsWith("blob:")) return stored;
+  // Extract storage object path
+  const marker = "/meeting-recordings/";
+  let path = stored;
+  const idx = stored.indexOf(marker);
+  if (idx !== -1) {
+    path = stored.substring(idx + marker.length);
+  } else if (/^https?:\/\//.test(stored)) {
+    // Unknown remote URL — return as-is
+    return stored;
+  }
+  try {
+    const { data, error } = await supabase.storage
+      .from("meeting-recordings")
+      .createSignedUrl(path, 60 * 60);
+    if (error || !data?.signedUrl) return stored;
+    return data.signedUrl;
+  } catch {
+    return stored;
+  }
+}
 
   // Fetch keen members for role management
   const fetchKeenMembers = useCallback(async () => {
