@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Folder, FolderOpen, FolderPlus, Trash2, Pencil, ChevronRight, MoveRight, X } from "lucide-react";
+import { Plus, Folder, FolderOpen, FolderPlus, Trash2, Pencil, ChevronRight, MoveRight, X, Palette } from "lucide-react";
+import NoteColorPicker from "@/components/NoteColorPicker";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
