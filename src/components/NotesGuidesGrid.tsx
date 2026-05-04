@@ -194,6 +194,19 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
     setDeleteFolder(null);
   };
 
+  const saveFolderColor = async () => {
+    if (!colorFolder) return;
+    const { error } = await (supabase.from as any)("note_folders")
+      .update({ color: colorValue })
+      .eq("id", colorFolder.id);
+    if (error) {
+      toast.error("Couldn't update color");
+      return;
+    }
+    toast.success("Folder color updated");
+    setColorFolder(null);
+  };
+
   // Drop handler on a folder
   const handleDropOnFolder = (folderId: string) => {
     if (!dragNoteId) return;
