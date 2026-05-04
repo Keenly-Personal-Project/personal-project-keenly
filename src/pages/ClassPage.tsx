@@ -244,6 +244,29 @@ function PublisherBadge({ email, avatarUrl }: { email: string; avatarUrl?: strin
   );
 }
 
+// Convert a stored media_url (public URL from older uploads, or a storage path) into a playable signed URL
+async function toPlayableUrl(stored: string | null | undefined): Promise<string> {
+  if (!stored) return "";
+  if (stored.startsWith("data:") || stored.startsWith("blob:")) return stored;
+  const marker = "/meeting-recordings/";
+  let path = stored;
+  const idx = stored.indexOf(marker);
+  if (idx !== -1) {
+    path = stored.substring(idx + marker.length).split("?")[0];
+  } else if (/^https?:\/\//.test(stored)) {
+    return stored;
+  }
+  try {
+    const { data, error } = await supabase.storage
+      .from("meeting-recordings")
+      .createSignedUrl(path, 60 * 60);
+    if (error || !data?.signedUrl) return stored;
+    return data.signedUrl;
+  } catch {
+    return stored;
+  }
+}
+
 const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
@@ -361,19 +384,20 @@ const ClassPage = () => {
           .select("*")
           .eq("class_name", slug)
           .order("created_at", { ascending: false })
-          .then(({ data }: any) => {
+          .then(async ({ data }: any) => {
             if (!cancelled && data) {
-              setRecordings(data.map((r: any) => ({
+              const mapped = await Promise.all(data.map(async (r: any) => ({
                 id: r.id,
                 title: r.title,
                 description: r.description || "",
-                mediaUrl: r.media_url,
+                mediaUrl: await toPlayableUrl(r.media_url),
                 mediaType: r.media_type,
                 mediaName: r.media_name,
                 duration: r.duration || 0,
                 date: r.created_at,
                 userId: r.user_id,
               })));
+              setRecordings(mapped);
             }
           });
       })
@@ -538,17 +562,18 @@ const ClassPage = () => {
       }
 
       if (data) {
-        setRecordings(data.map((r: any) => ({
+        const mapped = await Promise.all(data.map(async (r: any) => ({
           id: r.id,
           title: r.title,
           description: r.description || "",
-          mediaUrl: r.media_url,
+          mediaUrl: await toPlayableUrl(r.media_url),
           mediaType: r.media_type,
           mediaName: r.media_name,
           duration: r.duration || 0,
           date: r.created_at,
           userId: r.user_id,
         })));
+        setRecordings(mapped);
       }
       setLoadingRecordings(false);
     };
