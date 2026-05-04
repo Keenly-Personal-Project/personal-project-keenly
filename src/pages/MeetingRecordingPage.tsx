@@ -182,9 +182,10 @@ const MeetingRecordingPage = () => {
       if (uploadError) throw uploadError;
       setUploadProgress(80);
 
-      const { data: urlData } = supabase.storage
+      // Generate a signed URL for immediate playback (1 hour). Store the path so we can re-sign later.
+      const { data: signed } = await supabase.storage
         .from("meeting-recordings")
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 60 * 60);
 
       // Insert DB record
       const { error: dbError } = await (supabase.from as any)("meeting_recordings").insert({
@@ -192,7 +193,7 @@ const MeetingRecordingPage = () => {
         class_name: className || "",
         title: title.trim(),
         description: description.trim(),
-        media_url: urlData.publicUrl,
+        media_url: signed?.signedUrl || filePath,
         media_type: mediaFile.type,
         media_name: uploadedFile?.name || "Recording",
         duration: recordingTime,
