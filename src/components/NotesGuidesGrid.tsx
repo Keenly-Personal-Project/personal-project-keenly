@@ -85,6 +85,10 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
   // Delete folder
   const [deleteFolder, setDeleteFolder] = useState<NoteFolder | null>(null);
 
+  // Color folder
+  const [colorFolder, setColorFolder] = useState<NoteFolder | null>(null);
+  const [colorValue, setColorValue] = useState<string>("hsl(45, 85%, 50%)");
+
   // New folder dialog (also handles "Create folder from this note")
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
