@@ -298,7 +298,7 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
 
       {/* Folders row */}
       {folders.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4 items-start">
           {folders.map((folder) => {
             const isOpen = openFolderIds.has(folder.id);
             const count = notesInFolder(folder.id).length;
@@ -325,7 +325,9 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
                     return next;
                   })
                 }
-                className={`group relative rounded-2xl border-2 border-dashed p-3 pr-24 cursor-pointer transition-all ${
+                className={`group relative rounded-2xl border-2 border-dashed p-3 pr-24 cursor-pointer transition-all self-start ${
+                  isOpen ? "col-span-2 md:col-span-3" : ""
+                } ${
                   dragOver
                     ? "border-primary bg-primary/10 scale-[1.02]"
                     : "hover:opacity-90"
