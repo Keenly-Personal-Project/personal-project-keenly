@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Folder, FolderOpen, FolderPlus, Trash2, Pencil, ChevronRight, MoveRight, X } from "lucide-react";
+import { Plus, Folder, FolderOpen, FolderPlus, Trash2, Pencil, ChevronRight, MoveRight, X, Palette } from "lucide-react";
+import NoteColorPicker from "@/components/NoteColorPicker";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -83,6 +84,10 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
 
   // Delete folder
   const [deleteFolder, setDeleteFolder] = useState<NoteFolder | null>(null);
+
+  // Color folder
+  const [colorFolder, setColorFolder] = useState<NoteFolder | null>(null);
+  const [colorValue, setColorValue] = useState<string>("hsl(45, 85%, 50%)");
 
   // New folder dialog (also handles "Create folder from this note")
   const [newFolderOpen, setNewFolderOpen] = useState(false);
@@ -187,6 +192,19 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
     }
     toast.success("Folder deleted (notes kept)");
     setDeleteFolder(null);
+  };
+
+  const saveFolderColor = async () => {
+    if (!colorFolder) return;
+    const { error } = await (supabase.from as any)("note_folders")
+      .update({ color: colorValue })
+      .eq("id", colorFolder.id);
+    if (error) {
+      toast.error("Couldn't update color");
+      return;
+    }
+    toast.success("Folder color updated");
+    setColorFolder(null);
   };
 
   // Drop handler on a folder
@@ -304,24 +322,43 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
                     return next;
                   })
                 }
-                className={`group relative rounded-2xl border-2 border-dashed p-3 cursor-pointer transition-all ${
+                className={`group relative rounded-2xl border-2 border-dashed p-3 pr-24 cursor-pointer transition-all ${
                   dragOver
                     ? "border-primary bg-primary/10 scale-[1.02]"
-                    : "border-amber-400/50 bg-amber-50/40 dark:bg-amber-950/10 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                    : "hover:opacity-90"
                 }`}
+                style={
+                  dragOver
+                    ? undefined
+                    : folder.color
+                    ? {
+                        background: folder.color.includes("gradient")
+                          ? folder.color
+                          : `${folder.color}22`,
+                        borderColor: folder.color.includes("gradient") ? "transparent" : folder.color,
+                      }
+                    : { borderColor: "hsl(45 90% 55% / 0.5)", background: "hsl(45 90% 55% / 0.08)" }
+                }
               >
                 <div className="flex items-center gap-2">
                   {isOpen ? (
-                    <FolderOpen className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <FolderOpen className="h-5 w-5 shrink-0" style={{ color: folder.color && !folder.color.includes("gradient") ? folder.color : "hsl(38 92% 45%)" }} />
                   ) : (
-                    <Folder className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <Folder className="h-5 w-5 shrink-0" style={{ color: folder.color && !folder.color.includes("gradient") ? folder.color : "hsl(38 92% 45%)" }} />
                   )}
                   <p className="text-sm font-semibold text-foreground truncate flex-1">{folder.name}</p>
                   <span className="text-[10px] text-muted-foreground tabular-nums">{count}</span>
                   <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
                 </div>
                 {canEdit && (
-                  <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-1 right-1 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setColorFolder(folder); setColorValue(folder.color || "hsl(45, 85%, 50%)"); }}
+                      className="p-1 rounded hover:bg-background/80"
+                      aria-label="Folder color"
+                    >
+                      <Palette className="h-3 w-3 text-muted-foreground" />
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setRenameFolder(folder); setRenameValue(folder.name); }}
                       className="p-1 rounded hover:bg-background/80"
@@ -506,6 +543,18 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Folder color */}
+      <Dialog open={!!colorFolder} onOpenChange={(o) => !o && setColorFolder(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Folder color</DialogTitle></DialogHeader>
+          <NoteColorPicker value={colorValue} onChange={setColorValue} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setColorFolder(null)}>Cancel</Button>
+            <Button onClick={saveFolderColor}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
