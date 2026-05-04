@@ -361,19 +361,20 @@ const ClassPage = () => {
           .select("*")
           .eq("class_name", slug)
           .order("created_at", { ascending: false })
-          .then(({ data }: any) => {
+          .then(async ({ data }: any) => {
             if (!cancelled && data) {
-              setRecordings(data.map((r: any) => ({
+              const mapped = await Promise.all(data.map(async (r: any) => ({
                 id: r.id,
                 title: r.title,
                 description: r.description || "",
-                mediaUrl: r.media_url,
+                mediaUrl: await toPlayableUrl(r.media_url),
                 mediaType: r.media_type,
                 mediaName: r.media_name,
                 duration: r.duration || 0,
                 date: r.created_at,
                 userId: r.user_id,
               })));
+              setRecordings(mapped);
             }
           });
       })
