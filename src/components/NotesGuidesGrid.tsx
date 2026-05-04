@@ -96,6 +96,7 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
 
   // Long-press detection
   const pressTimer = useRef<number | null>(null);
+  const longPressFired = useRef(false);
 
   useEffect(() => {
     const close = () => setMenuFor(null);
@@ -111,9 +112,11 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
 
   const startPress = (note: Note, e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
+    longPressFired.current = false;
     const x = e.clientX;
     const y = e.clientY;
     pressTimer.current = window.setTimeout(() => {
+      longPressFired.current = true;
       setMenuFor({ note, x, y });
       pressTimer.current = null;
     }, 500);
@@ -126,8 +129,8 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
   };
 
   const handleNoteClick = (note: Note) => {
-    if (pressTimer.current === null) {
-      // Long-press already fired; ignore click
+    if (longPressFired.current) {
+      longPressFired.current = false;
       return;
     }
     cancelPress();
