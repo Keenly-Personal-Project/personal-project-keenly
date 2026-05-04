@@ -322,24 +322,43 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
                     return next;
                   })
                 }
-                className={`group relative rounded-2xl border-2 border-dashed p-3 cursor-pointer transition-all ${
+                className={`group relative rounded-2xl border-2 border-dashed p-3 pr-24 cursor-pointer transition-all ${
                   dragOver
                     ? "border-primary bg-primary/10 scale-[1.02]"
-                    : "border-amber-400/50 bg-amber-50/40 dark:bg-amber-950/10 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                    : "hover:opacity-90"
                 }`}
+                style={
+                  dragOver
+                    ? undefined
+                    : folder.color
+                    ? {
+                        background: folder.color.includes("gradient")
+                          ? folder.color
+                          : `${folder.color}22`,
+                        borderColor: folder.color.includes("gradient") ? "transparent" : folder.color,
+                      }
+                    : { borderColor: "hsl(45 90% 55% / 0.5)", background: "hsl(45 90% 55% / 0.08)" }
+                }
               >
                 <div className="flex items-center gap-2">
                   {isOpen ? (
-                    <FolderOpen className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <FolderOpen className="h-5 w-5 shrink-0" style={{ color: folder.color && !folder.color.includes("gradient") ? folder.color : "hsl(38 92% 45%)" }} />
                   ) : (
-                    <Folder className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <Folder className="h-5 w-5 shrink-0" style={{ color: folder.color && !folder.color.includes("gradient") ? folder.color : "hsl(38 92% 45%)" }} />
                   )}
                   <p className="text-sm font-semibold text-foreground truncate flex-1">{folder.name}</p>
                   <span className="text-[10px] text-muted-foreground tabular-nums">{count}</span>
                   <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
                 </div>
                 {canEdit && (
-                  <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-1 right-1 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setColorFolder(folder); setColorValue(folder.color || "hsl(45, 85%, 50%)"); }}
+                      className="p-1 rounded hover:bg-background/80"
+                      aria-label="Folder color"
+                    >
+                      <Palette className="h-3 w-3 text-muted-foreground" />
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setRenameFolder(folder); setRenameValue(folder.name); }}
                       className="p-1 rounded hover:bg-background/80"
