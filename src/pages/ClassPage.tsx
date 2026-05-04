@@ -244,6 +244,29 @@ function PublisherBadge({ email, avatarUrl }: { email: string; avatarUrl?: strin
   );
 }
 
+// Convert a stored media_url (public URL from older uploads, or a storage path) into a playable signed URL
+async function toPlayableUrl(stored: string | null | undefined): Promise<string> {
+  if (!stored) return "";
+  if (stored.startsWith("data:") || stored.startsWith("blob:")) return stored;
+  const marker = "/meeting-recordings/";
+  let path = stored;
+  const idx = stored.indexOf(marker);
+  if (idx !== -1) {
+    path = stored.substring(idx + marker.length).split("?")[0];
+  } else if (/^https?:\/\//.test(stored)) {
+    return stored;
+  }
+  try {
+    const { data, error } = await supabase.storage
+      .from("meeting-recordings")
+      .createSignedUrl(path, 60 * 60);
+    if (error || !data?.signedUrl) return stored;
+    return data.signedUrl;
+  } catch {
+    return stored;
+  }
+}
+
 const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
