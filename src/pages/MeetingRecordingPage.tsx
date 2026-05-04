@@ -14,7 +14,7 @@ const MeetingRecordingPage = () => {
   const { className } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  useEscapeBack(`/class/${className}?tab=Meeting+Recordings`);
+  useEscapeBack(`/class/${className}?tab=Recordings`);
 
   const [mode, setMode] = useState<"idle" | "recording" | "paused" | "recorded" | "uploaded">("idle");
   const [recordingTime, setRecordingTime] = useState(0);
@@ -204,7 +204,7 @@ const MeetingRecordingPage = () => {
       await new Promise((r) => setTimeout(r, 400));
 
       toast.success("Recording posted successfully!");
-      navigate(`/class/${className}?tab=Meeting+Recordings`);
+      navigate(`/class/${className}?tab=Recordings`);
     } catch (err: any) {
       toast.error(err.message || "Failed to post recording.");
     } finally {
@@ -232,7 +232,7 @@ const MeetingRecordingPage = () => {
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* Back nav */}
         <button
-          onClick={() => navigate(`/class/${className}?tab=Meeting+Recordings`)}
+          onClick={() => navigate(`/class/${className}?tab=Recordings`)}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
