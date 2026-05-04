@@ -298,7 +298,7 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
 
       {/* Folders row */}
       {folders.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4 items-start">
           {folders.map((folder) => {
             const isOpen = openFolderIds.has(folder.id);
             const count = notesInFolder(folder.id).length;
