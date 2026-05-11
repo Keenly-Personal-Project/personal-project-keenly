@@ -171,7 +171,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background p-4 relative overflow-hidden">
-      <IdleScreensaver idleMs={20000} />
+      
       {/* Grid of hello words covering entire background */}
       <div className="absolute inset-0 flex flex-wrap items-start content-start justify-center gap-x-3 gap-y-0 p-2 pointer-events-none select-none overflow-hidden">
         {Array.from({ length: 8 }, () => helloWords).flat().map((word, i) => (
