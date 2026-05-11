@@ -45,16 +45,12 @@ const IdleScreensaver = ({ idleMs = 20000 }: Props) => {
       "mousedown",
       "keydown",
       "touchstart",
-      "touchmove",
-      "wheel",
-      "scroll",
       "click",
     ];
     events.forEach((e) =>
       window.addEventListener(e, onActivity, { passive: true } as AddEventListenerOptions)
     );
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("focus", onActivity);
 
     startTimer();
 
