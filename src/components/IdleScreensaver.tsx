@@ -25,7 +25,7 @@ const IdleScreensaver = ({ idleMs = 20000 }: Props) => {
     const startTimer = () => {
       clearTimer();
       timerRef.current = window.setTimeout(() => {
-        if (!document.hidden) setActive(true);
+        setActive(true);
       }, idleMs);
     };
 
@@ -35,11 +35,9 @@ const IdleScreensaver = ({ idleMs = 20000 }: Props) => {
     };
 
     const onVisibility = () => {
-      if (document.hidden) {
-        clearTimer();
-      } else {
-        startTimer();
-      }
+      // Treat tab becoming hidden as inactivity — keep timer running so the
+      // screensaver appears after idleMs even when the user is on another tab.
+      startTimer();
     };
 
     const events: (keyof WindowEventMap)[] = [
