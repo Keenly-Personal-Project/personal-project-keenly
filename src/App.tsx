@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ChatProvider, useChat } from "@/contexts/ChatContext";
 import BackgroundWrapper from "@/components/BackgroundWrapper";
 import AIChatPanel from "@/components/AIChatPanel";
+import IdleScreensaver from "@/components/IdleScreensaver";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ClassPage from "./pages/ClassPage";
