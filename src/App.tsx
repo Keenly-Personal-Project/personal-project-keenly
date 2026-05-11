@@ -63,6 +63,8 @@ function AppLayout() {
       >
         <AIChatPanel />
       </div>
+
+      <IdleScreensaver idleMs={20000} />
     </div>
   );
 }
