@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import IdleScreensaver from '@/components/IdleScreensaver';
+
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
@@ -171,7 +171,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background p-4 relative overflow-hidden">
-      <IdleScreensaver idleMs={20000} />
+      
       {/* Grid of hello words covering entire background */}
       <div className="absolute inset-0 flex flex-wrap items-start content-start justify-center gap-x-3 gap-y-0 p-2 pointer-events-none select-none overflow-hidden">
         {Array.from({ length: 8 }, () => helloWords).flat().map((word, i) => (
