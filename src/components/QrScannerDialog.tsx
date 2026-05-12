@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import jsQR from "jsqr";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Camera, ImageUp, Loader2, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,6 @@ interface QrScannerDialogProps {
   onClose: () => void;
   onScan: (text: string) => void;
 }
-
-type ScannerModule = typeof import("html5-qrcode");
 
 function getCameraErrorMessage(error: unknown) {
   const details = [
@@ -49,11 +48,14 @@ function getCameraErrorMessage(error: unknown) {
 export default function QrScannerDialog({ open, onClose, onScan }: QrScannerDialogProps) {
   const reactId = useId();
   const containerId = `qr-scanner-region-${reactId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
-  const scannerRef = useRef<any>(null);
-  const scannerModuleRef = useRef<ScannerModule | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationRef = useRef<number | null>(null);
   const onScanRef = useRef(onScan);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const startRunRef = useRef(0);
+  const decodedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -63,147 +65,146 @@ export default function QrScannerDialog({ open, onClose, onScan }: QrScannerDial
     onScanRef.current = onScan;
   }, [onScan]);
 
-  const loadScannerModule = useCallback(async () => {
-    if (scannerModuleRef.current) return scannerModuleRef.current;
-
-    const mod = await import("html5-qrcode").catch((e) => {
-      console.error("Failed to load QR scanner library", e);
-      return null;
-    });
-
-    if (!mod) throw new Error("scanner-library-load-failed");
-    scannerModuleRef.current = mod;
-    return mod;
-  }, []);
-
-  const stopScanner = useCallback(async () => {
-    const scanner = scannerRef.current;
-    scannerRef.current = null;
-
-    if (!scanner) return;
-
-    try {
-      if (scanner.isScanning) await scanner.stop();
-    } catch (e) {
-      console.warn("QR scanner stop failed", e);
+  const stopCamera = useCallback(() => {
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
     }
 
-    try {
-      scanner.clear();
-    } catch (e) {
-      console.warn("QR scanner clear failed", e);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
     }
   }, []);
 
   const handleDecoded = useCallback(
     (decodedText: string) => {
+      if (decodedRef.current) return;
+      decodedRef.current = true;
+      stopCamera();
+      setCameraActive(false);
+
       try {
         onScanRef.current?.(decodedText);
       } catch (cbErr) {
         console.error("onScan handler threw", cbErr);
       }
-      void stopScanner();
-      setCameraActive(false);
     },
-    [stopScanner],
+    [stopCamera],
   );
+
+  const scanVideoFrame = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d", { willReadFrequently: true });
+
+    if (!video || !canvas || !context || decodedRef.current) return;
+
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const qr = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+
+      if (qr?.data) {
+        handleDecoded(qr.data);
+        return;
+      }
+    }
+
+    animationRef.current = requestAnimationFrame(scanVideoFrame);
+  }, [handleDecoded]);
+
+  const getCameraStream = async () => {
+    const cameraAttempts: MediaStreamConstraints[] = [
+      {
+        audio: false,
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      },
+      { audio: false, video: { facingMode: "environment" } },
+      { audio: false, video: { facingMode: "user" } },
+      { audio: false, video: true },
+    ];
+
+    let lastError: unknown = null;
+
+    for (const constraints of cameraAttempts) {
+      try {
+        return await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        lastError = err;
+        console.warn("Camera getUserMedia attempt failed", err);
+      }
+    }
+
+    throw lastError ?? new Error("camera-start-failed");
+  };
 
   const startCamera = useCallback(async () => {
     const runId = startRunRef.current + 1;
     startRunRef.current = runId;
+    decodedRef.current = false;
     setError(null);
     setStarting(true);
     setCameraActive(false);
+    stopCamera();
 
     try {
-      await stopScanner();
-
       await new Promise((resolve) => requestAnimationFrame(resolve));
       if (runId !== startRunRef.current) return;
 
-      const el = document.getElementById(containerId);
-      if (!el) throw new Error("scanner-area-not-ready");
+      if (!document.getElementById(containerId)) throw new Error("scanner-area-not-ready");
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("camera-api-not-supported");
 
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("camera-api-not-supported");
+      const stream = await getCameraStream();
+      if (runId !== startRunRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
       }
 
-      const mod = await loadScannerModule();
-      const scanConfig = {
-        fps: 10,
-        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          const smallestSide = Math.min(viewfinderWidth, viewfinderHeight);
-          const edge = Math.max(120, Math.min(280, Math.floor(smallestSide * 0.72)));
-          return { width: edge, height: edge };
-        },
-        disableFlip: false,
-      };
+      const video = videoRef.current;
+      if (!video) throw new Error("scanner-video-not-ready");
 
-      const cameraChoices: Array<string | MediaTrackConstraints> = [];
+      streamRef.current = stream;
+      video.srcObject = stream;
+      video.setAttribute("playsinline", "true");
+      video.muted = true;
+      await video.play();
 
-      try {
-        const cameras = await mod.Html5Qrcode.getCameras();
-        const usableCameras = cameras.filter((camera) => camera.id);
-        const backCamera = usableCameras.find((camera) => /back|rear|environment/i.test(camera.label || ""));
-        const frontCamera = usableCameras.find((camera) => /front|user|face/i.test(camera.label || ""));
+      if (runId !== startRunRef.current) return;
 
-        if (backCamera) cameraChoices.push(backCamera.id);
-        if (frontCamera && frontCamera.id !== backCamera?.id) cameraChoices.push(frontCamera.id);
-        usableCameras.forEach((camera) => {
-          if (!cameraChoices.includes(camera.id)) cameraChoices.push(camera.id);
-        });
-      } catch (enumErr) {
-        console.warn("Camera enumeration failed, falling back to browser camera selection", enumErr);
-      }
-
-      cameraChoices.push({ facingMode: "environment" }, { facingMode: "user" });
-
-      let lastError: unknown = null;
-
-      for (const choice of cameraChoices) {
-        if (runId !== startRunRef.current) return;
-
-        try {
-          await stopScanner();
-          const scanner = new mod.Html5Qrcode(containerId, {
-            verbose: false,
-            useBarCodeDetectorIfSupported: true,
-          });
-          scannerRef.current = scanner;
-          await scanner.start(choice, scanConfig, handleDecoded, () => {});
-
-          if (runId !== startRunRef.current) {
-            await stopScanner();
-            return;
-          }
-
-          setCameraActive(true);
-          setStarting(false);
-          return;
-        } catch (startErr) {
-          lastError = startErr;
-          console.warn("Camera start attempt failed", startErr);
-          await stopScanner();
-        }
-      }
-
-      throw lastError ?? new Error("camera-start-failed");
+      setCameraActive(true);
+      setStarting(false);
+      animationRef.current = requestAnimationFrame(scanVideoFrame);
     } catch (camErr) {
       console.error("Camera start failed", camErr);
       if (runId === startRunRef.current) {
+        stopCamera();
         setError(getCameraErrorMessage(camErr));
         setCameraActive(false);
         setStarting(false);
       }
     }
-  }, [containerId, handleDecoded, loadScannerModule, stopScanner]);
+  }, [containerId, scanVideoFrame, stopCamera]);
 
   useEffect(() => {
     if (!open) {
       startRunRef.current += 1;
+      decodedRef.current = false;
       setCameraActive(false);
       setStarting(false);
-      void stopScanner();
+      stopCamera();
       return;
     }
 
@@ -211,43 +212,55 @@ export default function QrScannerDialog({ open, onClose, onScan }: QrScannerDial
     setManual("");
     setCameraActive(false);
     setStarting(false);
+    decodedRef.current = false;
+
+    const startTimer = window.setTimeout(() => {
+      void startCamera();
+    }, 120);
 
     return () => {
+      window.clearTimeout(startTimer);
       startRunRef.current += 1;
+      decodedRef.current = false;
       setCameraActive(false);
       setStarting(false);
-      void stopScanner();
+      stopCamera();
     };
-  }, [open, stopScanner]);
+  }, [open, startCamera, stopCamera]);
 
   const submitManual = () => {
     const text = manual.trim();
     if (!text) return;
-    try {
-      onScanRef.current?.(text);
-    } catch (e) {
-      console.error(e);
-    }
+    handleDecoded(text);
   };
 
   const scanUploadedImage = async (file: File) => {
     setError(null);
     setStarting(true);
+    decodedRef.current = false;
+    stopCamera();
     setCameraActive(false);
 
     try {
-      const mod = await loadScannerModule();
-      await stopScanner();
+      const bitmap = await createImageBitmap(file);
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) throw new Error("canvas-unavailable");
 
-      const scanner = new mod.Html5Qrcode(containerId, { verbose: false });
-      scannerRef.current = scanner;
-      const decodedText = await scanner.scanFile(file, false);
-      handleDecoded(decodedText);
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      context.drawImage(bitmap, 0, 0);
+      bitmap.close();
+
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const qr = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+
+      if (!qr?.data) throw new Error("no-qr-found");
+      handleDecoded(qr.data);
     } catch (scanErr) {
       console.error("QR image scan failed", scanErr);
       setError("Couldn't read a QR code from that image. Try another image or paste the code below.");
     } finally {
-      await stopScanner();
       setStarting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -261,6 +274,13 @@ export default function QrScannerDialog({ open, onClose, onScan }: QrScannerDial
         </DialogHeader>
         <div className="space-y-3">
           <div id={containerId} className="rounded-lg overflow-hidden bg-foreground aspect-square w-full relative">
+            <video ref={videoRef} className="h-full w-full object-cover" playsInline muted autoPlay />
+            <canvas ref={canvasRef} className="hidden" />
+
+            {cameraActive && (
+              <div className="pointer-events-none absolute inset-[18%] rounded-lg border-2 border-primary shadow-[0_0_0_999px_hsl(var(--background)/0.35)]" />
+            )}
+
             {starting && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 text-foreground backdrop-blur-sm">
                 <Loader2 className="h-6 w-6 animate-spin" />
