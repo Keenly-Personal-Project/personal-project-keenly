@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Camera, ImageUp, Loader2, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -10,154 +10,215 @@ interface QrScannerDialogProps {
   onScan: (text: string) => void;
 }
 
+type ScannerModule = typeof import("html5-qrcode");
+
+function getCameraErrorMessage(error: unknown) {
+  const details = [
+    typeof error === "object" && error && "name" in error ? String((error as { name?: unknown }).name ?? "") : "",
+    typeof error === "object" && error && "message" in error ? String((error as { message?: unknown }).message ?? "") : "",
+    String(error ?? ""),
+  ].join(" ");
+
+  if (!window.isSecureContext && window.location.hostname !== "localhost") {
+    return "Camera access needs a secure HTTPS page. Open the published site directly, or paste the code below.";
+  }
+
+  if (/notallowed|permission|denied|not authorized/i.test(details)) {
+    return "Camera permission was blocked. Allow camera access for this site in your browser, then tap Open Camera again.";
+  }
+
+  if (/notfound|devicesnotfound|no camera|requested device not found/i.test(details)) {
+    return "No usable camera was found on this device. You can upload a QR image or paste the code below.";
+  }
+
+  if (/notreadable|trackstart|could not start video source|in use|busy/i.test(details)) {
+    return "The camera is already being used by another app. Close it, then tap Open Camera again.";
+  }
+
+  if (/overconstrained|constraint|facingmode|deviceid/i.test(details)) {
+    return "This camera mode is not available on this device. Tap Open Camera again or upload a QR image.";
+  }
+
+  if (/not supported|unsupported|secure context|https/i.test(details)) {
+    return "This browser cannot open the camera here. Try the published site directly, upload a QR image, or paste the code below.";
+  }
+
+  return "Couldn't access the camera. Tap Open Camera again, upload a QR image, or paste the code below.";
+}
+
 export default function QrScannerDialog({ open, onClose, onScan }: QrScannerDialogProps) {
-  const containerId = "qr-scanner-region";
+  const reactId = useId();
+  const containerId = `qr-scanner-region-${reactId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const scannerRef = useRef<any>(null);
+  const scannerModuleRef = useRef<ScannerModule | null>(null);
   const onScanRef = useRef(onScan);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const startRunRef = useRef(0);
   const [error, setError] = useState<string | null>(null);
-  const [starting, setStarting] = useState(true);
+  const [starting, setStarting] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
   const [manual, setManual] = useState("");
 
-  // Keep latest callback without re-running the effect
   useEffect(() => {
     onScanRef.current = onScan;
   }, [onScan]);
 
-  useEffect(() => {
-    if (!open) return;
+  const loadScannerModule = useCallback(async () => {
+    if (scannerModuleRef.current) return scannerModuleRef.current;
+
+    const mod = await import("html5-qrcode").catch((e) => {
+      console.error("Failed to load QR scanner library", e);
+      return null;
+    });
+
+    if (!mod) throw new Error("scanner-library-load-failed");
+    scannerModuleRef.current = mod;
+    return mod;
+  }, []);
+
+  const stopScanner = useCallback(async () => {
+    const scanner = scannerRef.current;
+    scannerRef.current = null;
+
+    if (!scanner) return;
+
+    try {
+      if (scanner.isScanning) await scanner.stop();
+    } catch (e) {
+      console.warn("QR scanner stop failed", e);
+    }
+
+    try {
+      scanner.clear();
+    } catch (e) {
+      console.warn("QR scanner clear failed", e);
+    }
+  }, []);
+
+  const handleDecoded = useCallback(
+    (decodedText: string) => {
+      try {
+        onScanRef.current?.(decodedText);
+      } catch (cbErr) {
+        console.error("onScan handler threw", cbErr);
+      }
+      void stopScanner();
+      setCameraActive(false);
+    },
+    [stopScanner],
+  );
+
+  const startCamera = useCallback(async () => {
+    const runId = startRunRef.current + 1;
+    startRunRef.current = runId;
     setError(null);
     setStarting(true);
-    let cancelled = false;
-    let scanner: any = null;
+    setCameraActive(false);
 
-    const stop = async () => {
-      try {
-        if (scanner) {
-          if (scanner.isScanning) await scanner.stop().catch(() => {});
-          await scanner.clear().catch(() => {});
-        }
-      } catch {
-        // swallow — never let cleanup crash the app
-      } finally {
-        scannerRef.current = null;
+    try {
+      await stopScanner();
+
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      if (runId !== startRunRef.current) return;
+
+      const el = document.getElementById(containerId);
+      if (!el) throw new Error("scanner-area-not-ready");
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("camera-api-not-supported");
       }
-    };
 
-    const start = async () => {
+      const mod = await loadScannerModule();
+      const scanConfig = {
+        fps: 10,
+        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+          const smallestSide = Math.min(viewfinderWidth, viewfinderHeight);
+          const edge = Math.max(120, Math.min(280, Math.floor(smallestSide * 0.72)));
+          return { width: edge, height: edge };
+        },
+        disableFlip: false,
+      };
+
+      const cameraChoices: Array<string | MediaTrackConstraints> = [];
+
       try {
-        // Wait for dialog DOM to mount
-        await new Promise((r) => setTimeout(r, 150));
-        if (cancelled) return;
+        const cameras = await mod.Html5Qrcode.getCameras();
+        const usableCameras = cameras.filter((camera) => camera.id);
+        const backCamera = usableCameras.find((camera) => /back|rear|environment/i.test(camera.label || ""));
+        const frontCamera = usableCameras.find((camera) => /front|user|face/i.test(camera.label || ""));
 
-        const el = document.getElementById(containerId);
-        if (!el) {
-          if (!cancelled) {
-            setError("Scanner area not ready. Please try again.");
-            setStarting(false);
-          }
-          return;
-        }
-
-        // Dynamic import so a load failure doesn't crash the page
-        const mod = await import("html5-qrcode").catch((e) => {
-          console.error("Failed to load QR scanner library", e);
-          return null;
+        if (backCamera) cameraChoices.push(backCamera.id);
+        if (frontCamera && frontCamera.id !== backCamera?.id) cameraChoices.push(frontCamera.id);
+        usableCameras.forEach((camera) => {
+          if (!cameraChoices.includes(camera.id)) cameraChoices.push(camera.id);
         });
-        if (!mod || cancelled) {
-          if (!cancelled) {
-            setError("Couldn't load the scanner. Please type the code manually below.");
-            setStarting(false);
-          }
-          return;
-        }
+      } catch (enumErr) {
+        console.warn("Camera enumeration failed, falling back to browser camera selection", enumErr);
+      }
+
+      cameraChoices.push({ facingMode: "environment" }, { facingMode: "user" });
+
+      let lastError: unknown = null;
+
+      for (const choice of cameraChoices) {
+        if (runId !== startRunRef.current) return;
 
         try {
-          // Pre-flight: check the browser supports camera at all
-          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            setError("This browser doesn't support camera access. Please paste the code manually below.");
-            setStarting(false);
+          await stopScanner();
+          const scanner = new mod.Html5Qrcode(containerId, {
+            verbose: false,
+            useBarCodeDetectorIfSupported: true,
+          });
+          scannerRef.current = scanner;
+          await scanner.start(choice, scanConfig, handleDecoded, () => {});
+
+          if (runId !== startRunRef.current) {
+            await stopScanner();
             return;
           }
 
-          scanner = new mod.Html5Qrcode(containerId, false);
-          scannerRef.current = scanner;
-
-          // Pick a camera: prefer back/environment, otherwise use the first one available (laptops usually only have a front cam).
-          let cameraConfig: any = { facingMode: "environment" };
-          try {
-            const cams: Array<{ id: string; label: string }> = await mod.Html5Qrcode.getCameras();
-            if (cams && cams.length > 0) {
-              const back = cams.find((c) =>
-                /back|rear|environment/i.test(c.label || "")
-              );
-              cameraConfig = { deviceId: { exact: (back || cams[0]).id } };
-            }
-          } catch (enumErr) {
-            console.warn("Camera enumeration failed, falling back to facingMode", enumErr);
-          }
-
-          const onDecoded = (decodedText: string) => {
-            try {
-              onScanRef.current?.(decodedText);
-            } catch (cbErr) {
-              console.error("onScan handler threw", cbErr);
-            }
-            stop();
-          };
-
-          try {
-            await scanner.start(
-              cameraConfig,
-              { fps: 10, qrbox: { width: 240, height: 240 } },
-              onDecoded,
-              () => {}
-            );
-          } catch (firstErr) {
-            console.warn("Primary camera start failed, retrying with default constraints", firstErr);
-            // Retry with the most permissive constraint set
-            try {
-              await scanner.start(
-                { facingMode: "user" },
-                { fps: 10, qrbox: { width: 240, height: 240 } },
-                onDecoded,
-                () => {}
-              );
-            } catch (secondErr) {
-              throw secondErr;
-            }
-          }
-          if (!cancelled) setStarting(false);
-        } catch (camErr: any) {
-          console.error("Camera start failed", camErr);
-          if (!cancelled) {
-            const name = camErr?.name || "";
-            let msg = "Couldn't access the camera. Please type the code below.";
-            if (name === "NotAllowedError" || name === "PermissionDeniedError") {
-              msg = "Camera permission was denied. Allow camera access in your browser, or paste the code manually below.";
-            } else if (name === "NotFoundError" || name === "OverconstrainedError") {
-              msg = "No usable camera was found on this device. Paste the code manually below.";
-            } else if (name === "NotReadableError") {
-              msg = "The camera is already in use by another app. Close it and try again, or paste the code below.";
-            }
-            setError(msg);
-            setStarting(false);
-          }
-        }
-      } catch (e) {
-        console.error("QR scanner unexpected error", e);
-        if (!cancelled) {
-          setError("Something went wrong starting the scanner.");
+          setCameraActive(true);
           setStarting(false);
+          return;
+        } catch (startErr) {
+          lastError = startErr;
+          console.warn("Camera start attempt failed", startErr);
+          await stopScanner();
         }
       }
-    };
 
-    start();
+      throw lastError ?? new Error("camera-start-failed");
+    } catch (camErr) {
+      console.error("Camera start failed", camErr);
+      if (runId === startRunRef.current) {
+        setError(getCameraErrorMessage(camErr));
+        setCameraActive(false);
+        setStarting(false);
+      }
+    }
+  }, [containerId, handleDecoded, loadScannerModule, stopScanner]);
+
+  useEffect(() => {
+    if (!open) {
+      startRunRef.current += 1;
+      setCameraActive(false);
+      setStarting(false);
+      void stopScanner();
+      return;
+    }
+
+    setError(null);
+    setManual("");
+    setCameraActive(false);
+    setStarting(false);
+
     return () => {
-      cancelled = true;
-      stop();
+      startRunRef.current += 1;
+      setCameraActive(false);
+      setStarting(false);
+      void stopScanner();
     };
-  }, [open]);
+  }, [open, stopScanner]);
 
   const submitManual = () => {
     const text = manual.trim();
@@ -169,6 +230,29 @@ export default function QrScannerDialog({ open, onClose, onScan }: QrScannerDial
     }
   };
 
+  const scanUploadedImage = async (file: File) => {
+    setError(null);
+    setStarting(true);
+    setCameraActive(false);
+
+    try {
+      const mod = await loadScannerModule();
+      await stopScanner();
+
+      const scanner = new mod.Html5Qrcode(containerId, { verbose: false });
+      scannerRef.current = scanner;
+      const decodedText = await scanner.scanFile(file, false);
+      handleDecoded(decodedText);
+    } catch (scanErr) {
+      console.error("QR image scan failed", scanErr);
+      setError("Couldn't read a QR code from that image. Try another image or paste the code below.");
+    } finally {
+      await stopScanner();
+      setStarting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
@@ -176,15 +260,48 @@ export default function QrScannerDialog({ open, onClose, onScan }: QrScannerDial
           <DialogTitle>Scan Assembly QR</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <div id={containerId} className="rounded-lg overflow-hidden bg-black aspect-square w-full relative">
-            {starting && !error && (
-              <div className="absolute inset-0 flex items-center justify-center text-white">
+          <div id={containerId} className="rounded-lg overflow-hidden bg-foreground aspect-square w-full relative">
+            {starting && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 text-foreground backdrop-blur-sm">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             )}
+
+            {!starting && !cameraActive && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-muted/70 p-4 text-center text-muted-foreground">
+                <Camera className="h-8 w-8 text-primary" />
+                <Button size="sm" onClick={startCamera} className="gap-2">
+                  <Camera className="h-4 w-4" />
+                  Open Camera
+                </Button>
+              </div>
+            )}
           </div>
+
           {error && <p className="text-sm text-destructive">{error}</p>}
           <p className="text-xs text-muted-foreground text-center">Point your camera at the assembly QR code.</p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button size="sm" variant="outline" onClick={startCamera} disabled={starting} className="gap-2">
+              {cameraActive ? <RotateCcw className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+              {cameraActive ? "Restart" : "Open Camera"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={starting} className="gap-2">
+              <ImageUp className="h-4 w-4" />
+              Upload QR
+            </Button>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void scanUploadedImage(file);
+            }}
+          />
 
           <div className="pt-2 border-t border-border">
             <p className="text-xs text-muted-foreground mb-1">Or paste the link/token manually:</p>
