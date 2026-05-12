@@ -1,4 +1,4 @@
-import { Bell, BotMessageSquare } from "lucide-react";
+import { Bell, BotMessageSquare, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
