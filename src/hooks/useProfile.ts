@@ -36,13 +36,17 @@ export const useProfile = () => {
       // Create profile
       const { data: newProfile, error: insertErr } = await supabase
         .from("profiles")
-        .insert({ user_id: user.id, availability_mode: "live", text_status: "" })
+        .insert({ user_id: user.id, email: user.email || null, availability_mode: "live", text_status: "" })
         .select()
         .single();
       if (!insertErr && newProfile) {
         setProfile(newProfile as unknown as Profile);
       }
     } else {
+      // Backfill email if missing
+      if (!(data as any).email && user.email) {
+        await supabase.from("profiles").update({ email: user.email }).eq("user_id", user.id);
+      }
       setProfile(data as unknown as Profile);
     }
     setLoading(false);
