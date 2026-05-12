@@ -72,26 +72,74 @@ export default function QrScannerDialog({ open, onClose, onScan }: QrScannerDial
         }
 
         try {
+          // Pre-flight: check the browser supports camera at all
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            setError("This browser doesn't support camera access. Please paste the code manually below.");
+            setStarting(false);
+            return;
+          }
+
           scanner = new mod.Html5Qrcode(containerId, false);
           scannerRef.current = scanner;
-          await scanner.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 240, height: 240 } },
-            (decodedText: string) => {
-              try {
-                onScanRef.current?.(decodedText);
-              } catch (cbErr) {
-                console.error("onScan handler threw", cbErr);
-              }
-              stop();
-            },
-            () => {}
-          );
+
+          // Pick a camera: prefer back/environment, otherwise use the first one available (laptops usually only have a front cam).
+          let cameraConfig: any = { facingMode: "environment" };
+          try {
+            const cams: Array<{ id: string; label: string }> = await mod.Html5Qrcode.getCameras();
+            if (cams && cams.length > 0) {
+              const back = cams.find((c) =>
+                /back|rear|environment/i.test(c.label || "")
+              );
+              cameraConfig = { deviceId: { exact: (back || cams[0]).id } };
+            }
+          } catch (enumErr) {
+            console.warn("Camera enumeration failed, falling back to facingMode", enumErr);
+          }
+
+          const onDecoded = (decodedText: string) => {
+            try {
+              onScanRef.current?.(decodedText);
+            } catch (cbErr) {
+              console.error("onScan handler threw", cbErr);
+            }
+            stop();
+          };
+
+          try {
+            await scanner.start(
+              cameraConfig,
+              { fps: 10, qrbox: { width: 240, height: 240 } },
+              onDecoded,
+              () => {}
+            );
+          } catch (firstErr) {
+            console.warn("Primary camera start failed, retrying with default constraints", firstErr);
+            // Retry with the most permissive constraint set
+            try {
+              await scanner.start(
+                { facingMode: "user" },
+                { fps: 10, qrbox: { width: 240, height: 240 } },
+                onDecoded,
+                () => {}
+              );
+            } catch (secondErr) {
+              throw secondErr;
+            }
+          }
           if (!cancelled) setStarting(false);
-        } catch (camErr) {
+        } catch (camErr: any) {
           console.error("Camera start failed", camErr);
           if (!cancelled) {
-            setError("Couldn't access the camera. Check browser permissions or type the code below.");
+            const name = camErr?.name || "";
+            let msg = "Couldn't access the camera. Please type the code below.";
+            if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+              msg = "Camera permission was denied. Allow camera access in your browser, or paste the code manually below.";
+            } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+              msg = "No usable camera was found on this device. Paste the code manually below.";
+            } else if (name === "NotReadableError") {
+              msg = "The camera is already in use by another app. Close it and try again, or paste the code below.";
+            }
+            setError(msg);
             setStarting(false);
           }
         }
