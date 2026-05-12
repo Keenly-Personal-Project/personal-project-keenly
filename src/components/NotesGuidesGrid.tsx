@@ -15,6 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserDirectory } from "@/hooks/useUserDirectory";
 
 export interface Note {
   id: string;
@@ -33,12 +34,14 @@ export interface NoteFolder {
 }
 
 function PublisherBadge({ email, avatarUrl }: { email: string; avatarUrl?: string | null }) {
-  const name = email.split("@")[0];
+  const directory = useUserDirectory();
+  const name = directory.getName(email);
   const initials = name.slice(0, 2).toUpperCase();
+  const resolvedAvatar = directory.getAvatar(email) || avatarUrl;
   return (
     <div className="flex items-center gap-2 mb-2">
       <Avatar className="h-6 w-6">
-        {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
+        {resolvedAvatar && <AvatarImage src={resolvedAvatar} alt={name} />}
         <AvatarFallback className="bg-primary text-primary-foreground text-[9px] font-semibold">{initials}</AvatarFallback>
       </Avatar>
       <span className="text-xs font-medium text-muted-foreground">{name}</span>
