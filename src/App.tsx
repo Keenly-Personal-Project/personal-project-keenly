@@ -8,6 +8,7 @@ import { ChatProvider, useChat } from "@/contexts/ChatContext";
 import BackgroundWrapper from "@/components/BackgroundWrapper";
 import AIChatPanel from "@/components/AIChatPanel";
 import IdleScreensaver from "@/components/IdleScreensaver";
+import FullscreenButton from "@/components/FullscreenButton";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ClassPage from "./pages/ClassPage";
@@ -65,6 +66,7 @@ function AppLayout() {
       </div>
 
       <IdleScreensaver idleMs={20000} />
+      <FullscreenButton />
     </div>
   );
 }

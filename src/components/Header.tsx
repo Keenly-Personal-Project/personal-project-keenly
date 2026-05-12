@@ -1,4 +1,4 @@
-import { Bell, BotMessageSquare, Maximize, Minimize } from "lucide-react";
+import { Bell, BotMessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -132,22 +132,6 @@ const Header = () => {
   const location = useLocation();
   const { chatOpen, toggleChat } = useChat();
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  useEffect(() => {
-    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", onChange);
-    return () => document.removeEventListener("fullscreenchange", onChange);
-  }, []);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => {});
-    } else {
-      document.exitFullscreen?.().catch(() => {});
-    }
-  };
-
   const handleLogoClick = () => {
     if (location.pathname === "/") return;
     const main = document.querySelector("main");
@@ -269,15 +253,6 @@ const Header = () => {
             onClick={toggleChat}
           >
             <BotMessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 sm:h-10 sm:w-10"
-            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            onClick={toggleFullscreen}
-          >
-            {isFullscreen ? <Minimize className="h-4 w-4 sm:h-5 sm:w-5" /> : <Maximize className="h-4 w-4 sm:h-5 sm:w-5" />}
           </Button>
           {user && <ProfileDropdown />}
         </div>
