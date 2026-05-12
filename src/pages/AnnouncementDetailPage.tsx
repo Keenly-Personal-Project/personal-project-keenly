@@ -179,7 +179,8 @@ const AnnouncementDetailPage = () => {
   };
 
   const publisherEmail = announcement?.publisherEmail || user?.email || "";
-  const publisherName = publisherEmail.split("@")[0];
+  const publisherName = directory.getName(publisherEmail);
+  const publisherAvatarFromDir = directory.getAvatar(publisherEmail);
   const publisherInitials = publisherName.slice(0, 2).toUpperCase();
 
   if (!announcement) {
