@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
+import { useUserDirectory } from "@/hooks/useUserDirectory";
 import AttendanceSection from "@/components/AttendanceSection";
 import NotesGuidesGrid from "@/components/NotesGuidesGrid";
 import ReactMarkdown from "react-markdown";
@@ -229,12 +230,14 @@ const EventCardCarousel = ({ images }: { images: string[] }) => {
 };
 
 function PublisherBadge({ email, avatarUrl }: { email: string; avatarUrl?: string | null }) {
-  const name = email.split("@")[0];
+  const directory = useUserDirectory();
+  const name = directory.getName(email);
   const initials = name.slice(0, 2).toUpperCase();
+  const resolvedAvatar = directory.getAvatar(email) || avatarUrl;
   return (
     <div className="flex items-center gap-2 mb-2">
       <Avatar className="h-6 w-6">
-        {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
+        {resolvedAvatar && <AvatarImage src={resolvedAvatar} alt={name} />}
         <AvatarFallback className="bg-primary text-primary-foreground text-[9px] font-semibold">
           {initials}
         </AvatarFallback>
