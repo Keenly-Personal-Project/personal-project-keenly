@@ -49,6 +49,7 @@ interface KeenMember {
 interface ProfileData {
   user_id: string;
   avatar_url: string | null;
+  username: string | null;
 }
 
 function generateToken(): string {
@@ -219,7 +220,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
       (supabase.from as any)("keen_members").select("*").eq("class_slug", classSlug),
       (supabase.from as any)("assemblies").select("*").eq("class_slug", classSlug).order("created_at", { ascending: true }),
       (supabase.from as any)("assembly_attendance").select("*"),
-      supabase.from("profiles").select("user_id, avatar_url"),
+      supabase.from("profiles").select("user_id, avatar_url, username"),
     ]);
     if (membersRes.data) setMembers(membersRes.data);
     if (assembliesRes.data) setAssemblies(assembliesRes.data);
@@ -231,6 +232,12 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
   const getProfileAvatar = (userId: string) => {
     const profile = profiles.find((p) => p.user_id === userId);
     return profile?.avatar_url || null;
+  };
+
+  const getProfileName = (userId: string, fallbackEmail?: string | null) => {
+    const profile = profiles.find((p) => p.user_id === userId);
+    if (profile?.username) return profile.username;
+    return fallbackEmail?.split("@")[0] || "User";
   };
 
   const handleCreateAssembly = async () => {
@@ -404,7 +411,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
             <p className="text-sm text-muted-foreground italic col-span-full text-center py-8">No members yet.</p>
           ) : (
             visibleMembers.map((member) => {
-              const name = member.email?.split("@")[0] || "User";
+              const name = getProfileName(member.user_id, member.email);
               const initials = name.slice(0, 2).toUpperCase();
               const avatarUrl = getProfileAvatar(member.user_id);
               return (
@@ -494,7 +501,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
       <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
         <DialogContent className="max-w-[95vw] max-h-[90vh] w-full h-[85vh] overflow-hidden flex flex-col sm:flex-row gap-0 p-0 [&>button.absolute]:hidden">
           {selectedMember && (() => {
-            const name = selectedMember.email?.split("@")[0] || "User";
+            const name = getProfileName(selectedMember.user_id, selectedMember.email);
             const initials = name.slice(0, 2).toUpperCase();
             const avatarUrl = getProfileAvatar(selectedMember.user_id);
             const history = getMemberAttendance(selectedMember.user_id);
@@ -656,7 +663,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
 
                   <div className="space-y-2">
                     {memberStatuses.map(({ member, status }) => {
-                      const name = member.email?.split("@")[0] || "User";
+                      const name = getProfileName(member.user_id, member.email);
                       const initials = name.slice(0, 2).toUpperCase();
                       const avatarUrl = getProfileAvatar(member.user_id);
                       return (

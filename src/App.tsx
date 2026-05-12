@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ChatProvider, useChat } from "@/contexts/ChatContext";
+import { UserDirectoryProvider } from "@/hooks/useUserDirectory";
 import BackgroundWrapper from "@/components/BackgroundWrapper";
 import AIChatPanel from "@/components/AIChatPanel";
 import IdleScreensaver from "@/components/IdleScreensaver";
@@ -74,6 +75,7 @@ function AppLayout() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <UserDirectoryProvider>
       <ChatProvider>
         <TooltipProvider>
           <Toaster />
@@ -83,6 +85,7 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
       </ChatProvider>
+      </UserDirectoryProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

@@ -59,7 +59,7 @@ const ProfileDropdown = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const email = user?.email || "Unknown";
-  const username = email.split("@")[0];
+  const username = profile?.username || email.split("@")[0];
   const initials = username.slice(0, 2).toUpperCase();
 
   const currentMode: AvailabilityMode = (profile?.availability_mode as AvailabilityMode) || "live";

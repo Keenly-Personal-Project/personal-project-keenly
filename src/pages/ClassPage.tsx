@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
+import { useUserDirectory } from "@/hooks/useUserDirectory";
 import AttendanceSection from "@/components/AttendanceSection";
 import NotesGuidesGrid from "@/components/NotesGuidesGrid";
 import ReactMarkdown from "react-markdown";
@@ -75,6 +76,7 @@ interface EventItem {
 }
 
 const PendingJoinRequests = ({ slug }: { slug: string }) => {
+  const directory = useUserDirectory();
   const [pendingRequests, setPendingRequests] = useState<{ id: string; user_id: string; email: string; created_at: string }[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
 
@@ -119,7 +121,7 @@ const PendingJoinRequests = ({ slug }: { slug: string }) => {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm font-medium text-foreground">{req.email.split("@")[0]} requests to join</p>
+                <p className="text-sm font-medium text-foreground">{directory.getName(req.email)} requests to join</p>
                 <p className="text-xs text-muted-foreground">{req.email}</p>
               </div>
             </div>
@@ -139,7 +141,7 @@ const PendingJoinRequests = ({ slug }: { slug: string }) => {
                     return;
                   }
                   await supabase.from("keen_join_requests").update({ status: "approved" }).eq("id", req.id);
-                  toast.success(`Approved ${req.email.split("@")[0]}!`);
+                  toast.success(`Approved ${directory.getName(req.email)}!`);
                   setPendingRequests(prev => prev.filter(r => r.id !== req.id));
                   window.dispatchEvent(new Event("keen_classes_updated"));
                 }}
@@ -152,7 +154,7 @@ const PendingJoinRequests = ({ slug }: { slug: string }) => {
                 className="h-7 text-xs"
                 onClick={async () => {
                   await supabase.from("keen_join_requests").update({ status: "rejected" }).eq("id", req.id);
-                  toast.info(`Declined ${req.email.split("@")[0]}'s request.`);
+                  toast.info(`Declined ${directory.getName(req.email)}'s request.`);
                   setPendingRequests(prev => prev.filter(r => r.id !== req.id));
                 }}
               >
@@ -229,12 +231,14 @@ const EventCardCarousel = ({ images }: { images: string[] }) => {
 };
 
 function PublisherBadge({ email, avatarUrl }: { email: string; avatarUrl?: string | null }) {
-  const name = email.split("@")[0];
+  const directory = useUserDirectory();
+  const name = directory.getName(email);
   const initials = name.slice(0, 2).toUpperCase();
+  const resolvedAvatar = directory.getAvatar(email) || avatarUrl;
   return (
     <div className="flex items-center gap-2 mb-2">
       <Avatar className="h-6 w-6">
-        {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
+        {resolvedAvatar && <AvatarImage src={resolvedAvatar} alt={name} />}
         <AvatarFallback className="bg-primary text-primary-foreground text-[9px] font-semibold">
           {initials}
         </AvatarFallback>
@@ -271,6 +275,7 @@ const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
   const { profile } = useProfile();
+  const directory = useUserDirectory();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawTab = searchParams.get("tab") || "Announcements";
@@ -511,7 +516,7 @@ const ClassPage = () => {
       .update({ role: "member" })
       .eq("id", myMembership.id);
     if (e2) { toast.error("Failed to update your role"); return; }
-    toast.success(`Ownership transferred to ${transferOwnerTarget.email.split("@")[0]}`);
+    toast.success(`Ownership transferred to ${directory.getName(transferOwnerTarget.email)}`);
     setPreviewRole("member");
     setTransferOwnerTarget(null);
     fetchKeenMembers();
@@ -524,7 +529,7 @@ const ClassPage = () => {
       .delete()
       .eq("id", removeMemberTarget.id);
     if (error) { toast.error("Failed to remove member"); return; }
-    toast.success(`${removeMemberTarget.email.split("@")[0]} removed from the Keen`);
+    toast.success(`${directory.getName(removeMemberTarget.email)} removed from the Keen`);
     setRemoveMemberTarget(null);
     fetchKeenMembers();
   };
@@ -879,20 +884,28 @@ const ClassPage = () => {
                 >
                   {/* Publisher badge */}
                   <div className="flex items-center gap-2 px-4 pt-4">
-                    <Avatar className="h-8 w-8">
-                      {ev.publisherAvatar && <AvatarImage src={ev.publisherAvatar} alt={email} />}
-                      <AvatarFallback className="bg-background/30 text-inherit text-[10px] font-semibold">
-                        {email.split("@")[0].slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-medium leading-tight" style={{ color: textCol || "inherit" }}>
-                        {email.split("@")[0]}
-                      </span>
-                      <span className="text-[10px] leading-tight opacity-70" style={{ color: textCol || "inherit" }}>
-                        {formatDate(ev.date)}
-                      </span>
-                    </div>
+                    {(() => {
+                      const evName = directory.getName(email);
+                      const evAvatar = directory.getAvatar(email) || ev.publisherAvatar;
+                      return (
+                        <>
+                          <Avatar className="h-8 w-8">
+                            {evAvatar && <AvatarImage src={evAvatar} alt={evName} />}
+                            <AvatarFallback className="bg-background/30 text-inherit text-[10px] font-semibold">
+                              {evName.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium leading-tight" style={{ color: textCol || "inherit" }}>
+                              {evName}
+                            </span>
+                            <span className="text-[10px] leading-tight opacity-70" style={{ color: textCol || "inherit" }}>
+                              {formatDate(ev.date)}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Title */}
@@ -990,13 +1003,14 @@ const ClassPage = () => {
               </div>
               <div className="flex flex-wrap gap-3">
                 {onlineMembers.map((m) => {
-                  const name = m.email.split("@")[0];
+                  const name = directory.getName(m.email);
                   const initials = name.slice(0, 2).toUpperCase();
+                  const dirAvatar = directory.getAvatar(m.email) || m.avatar_url;
                   return (
                     <div key={m.user_id} className="flex items-center gap-2">
                       <div className="relative">
                         <Avatar className="h-8 w-8">
-                          {m.avatar_url && <AvatarImage src={m.avatar_url} alt={name} />}
+                          {dirAvatar && <AvatarImage src={dirAvatar} alt={name} />}
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                             {initials}
                           </AvatarFallback>
@@ -1020,7 +1034,7 @@ const ClassPage = () => {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-semibold text-foreground">{user?.email?.split("@")[0] || "User"}</p>
+                <p className="font-semibold text-foreground">{directory.getName(user?.email || null) || "User"}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
               <div className="flex items-center gap-2">
@@ -1066,12 +1080,13 @@ const ClassPage = () => {
                       const mCfg = roleConfig[member.role];
                       const MIcon = mCfg.icon;
                       const isSelf = member.user_id === user?.id;
-                      const memberName = member.email.split("@")[0];
+                      const memberName = directory.getName(member.email);
+                      const memberAvatar = directory.getAvatar(member.email);
                       return (
                         <div key={member.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
-                              {isSelf && profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
+                              {isSelf && profile?.avatar_url ? <AvatarImage src={profile.avatar_url} /> : memberAvatar ? <AvatarImage src={memberAvatar} /> : null}
                               <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                                 {memberName.slice(0, 2).toUpperCase()}
                               </AvatarFallback>
@@ -1143,7 +1158,7 @@ const ClassPage = () => {
               <AlertDialogHeader>
                 <AlertDialogTitle>Transfer Ownership</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to transfer ownership to <strong>{transferOwnerTarget?.email.split("@")[0]}</strong>?
+                  Are you sure you want to transfer ownership to <strong>{directory.getName(transferOwnerTarget?.email)}</strong>?
                   You will become a regular member and lose owner privileges.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -1162,7 +1177,7 @@ const ClassPage = () => {
               <AlertDialogHeader>
                 <AlertDialogTitle>Remove member?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to remove <strong>{removeMemberTarget?.email.split("@")[0]}</strong> from this Keen?
+                  Are you sure you want to remove <strong>{directory.getName(removeMemberTarget?.email)}</strong> from this Keen?
                   They will lose access immediately and would need to request to join again.
                 </AlertDialogDescription>
               </AlertDialogHeader>

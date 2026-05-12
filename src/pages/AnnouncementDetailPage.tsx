@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserDirectory } from "@/hooks/useUserDirectory";
 import { useEffect, useState } from "react";
 import { useEscapeBack } from "@/hooks/useEscapeBack";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +42,7 @@ function formatDate(d?: string) {
 const AnnouncementDetailPage = () => {
   const { className, announcementId } = useParams<{ className: string; announcementId: string }>();
   const { user, loading } = useAuth();
+  const directory = useUserDirectory();
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -179,7 +181,8 @@ const AnnouncementDetailPage = () => {
   };
 
   const publisherEmail = announcement?.publisherEmail || user?.email || "";
-  const publisherName = publisherEmail.split("@")[0];
+  const publisherName = directory.getName(publisherEmail);
+  const publisherAvatarFromDir = directory.getAvatar(publisherEmail);
   const publisherInitials = publisherName.slice(0, 2).toUpperCase();
 
   if (!announcement) {
@@ -209,7 +212,7 @@ const AnnouncementDetailPage = () => {
         <div className={`rounded-xl border border-primary/40 bg-muted/40 p-6 space-y-4 transition-all duration-400 ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
           <div className="flex items-center gap-2 mb-2">
             <Avatar className="h-7 w-7">
-              {announcement.publisherAvatar && <AvatarImage src={announcement.publisherAvatar} alt={publisherName} />}
+              {(publisherAvatarFromDir || announcement.publisherAvatar) && <AvatarImage src={publisherAvatarFromDir || announcement.publisherAvatar!} alt={publisherName} />}
               <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-semibold">
                 {publisherInitials}
               </AvatarFallback>
