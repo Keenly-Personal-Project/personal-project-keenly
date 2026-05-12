@@ -386,14 +386,14 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
 
                 {/* Open: show contained notes inline */}
                 {isOpen && (
-                  <div onClick={(e) => e.stopPropagation()} className="mt-3 grid grid-cols-2 gap-2">
+                  <div onClick={(e) => e.stopPropagation()} className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-4">
                     {notesInFolder(folder.id).length === 0 ? (
-                      <p className="col-span-2 text-[11px] text-muted-foreground italic text-center py-2">
+                      <p className="col-span-2 md:col-span-3 text-[11px] text-muted-foreground italic text-center py-2">
                         Empty — drag a note here.
                       </p>
                     ) : (
                       notesInFolder(folder.id).map((n) => (
-                        <div key={n.id} className="scale-95 origin-top-left">{renderNote(n)}</div>
+                        <div key={n.id}>{renderNote(n)}</div>
                       ))
                     )}
                   </div>
