@@ -6,9 +6,17 @@ import { CheckCircle2, XCircle, Loader2, Clock, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
-const isDuplicateAttendance = (error: unknown) => {
-  const details = JSON.stringify(error ?? {}).toLowerCase();
-  return details.includes("23505") || details.includes("duplicate") || details.includes("idx_attendance_unique");
+const withTimeout = async <T,>(promise: PromiseLike<T>, ms: number) => {
+  let timeoutId: number | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error("timeout")), ms);
+  });
+
+  try {
+    return await Promise.race([Promise.resolve(promise), timeout]);
+  } finally {
+    if (timeoutId) window.clearTimeout(timeoutId);
+  }
 };
 
 export default function AssemblySignInPage() {
@@ -45,94 +53,69 @@ export default function AssemblySignInPage() {
         return;
       }
 
-      let assembly: any = null;
-      let lookupError: unknown = null;
+      let signInResult: any = null;
+      let signInError: unknown = null;
 
-      for (let attempt = 0; attempt < 4; attempt += 1) {
-        const { data: rows, error: aErr } = await supabase.rpc("lookup_assembly_by_token" as any, {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        try {
+          const { data: rows, error } = await withTimeout(supabase.rpc("sign_in_assembly_by_token" as any, {
           _qr_token: normalizedToken,
-        });
+          }), 6000);
 
-        assembly = Array.isArray(rows) ? rows[0] : rows;
-        lookupError = aErr;
+          signInResult = Array.isArray(rows) ? rows[0] : rows;
+          signInError = error;
 
-        if (!aErr && assembly) break;
-        await wait(350 + attempt * 250);
+          if (!error && signInResult) break;
+        } catch (error) {
+          signInError = error;
+        }
+
+        await wait(450 + attempt * 350);
         if (cancelled) return;
       }
 
       if (cancelled) return;
 
-      if (lookupError || !assembly) {
+      if (signInError || !signInResult) {
         setStatus("error");
-        setMessage("This QR link could not be confirmed. Try scanning again or tap Retry.");
+        setMessage("The QR sign-in took too long to confirm. Tap Retry or scan the QR again.");
         return;
       }
 
-      const now = new Date();
-      const lateTime = new Date(assembly.late_time);
-      const absentTime = new Date(assembly.absent_time);
+      if (signInResult.result === "signed_in") {
+        setStatus(signInResult.attendance_status === "late" ? "late" : "success");
+        return;
+      }
 
-      if (now > absentTime) {
+      if (signInResult.result === "already") {
+        setStatus("already");
+        return;
+      }
+
+      if (signInResult.result === "expired") {
         setStatus("expired");
         return;
       }
 
-      const isLate = now > lateTime;
-      const attendanceStatus = isLate ? "late" : "present";
-
-      const { data: existing, error: existingErr } = await (supabase.from as any)("assembly_attendance")
-        .select("id, status")
-        .eq("assembly_id", assembly.id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (cancelled) return;
-
-      if (existing?.id) {
-        if (existing.status === "pending") {
-          const { error: updateErr } = await (supabase.from as any)("assembly_attendance")
-            .update({ signed_in_at: now.toISOString(), status: attendanceStatus })
-            .eq("id", existing.id);
-
-          if (cancelled) return;
-
-          if (!updateErr) {
-            setStatus(isLate ? "late" : "success");
-            return;
-          }
-        } else {
-          setStatus("already");
-          return;
-        }
-      }
-
-      if (existingErr) {
-        console.warn("Attendance lookup failed; trying direct sign-in", existingErr);
-      }
-
-      const { error: insertErr } = await (supabase.from as any)("assembly_attendance").insert({
-        assembly_id: assembly.id,
-        user_id: user.id,
-        signed_in_at: now.toISOString(),
-        status: attendanceStatus,
-      });
-
-      if (cancelled) return;
-
-      if (insertErr) {
-        if (isDuplicateAttendance(insertErr)) {
-          setStatus("already");
-          return;
-        }
-
-        setStatus("error");
-        setMessage("The QR was valid, but sign-in did not finish. Tap Retry.");
-        console.error(insertErr);
+      if (signInResult.result === "auth_required") {
+        setStatus("auth");
         return;
       }
 
-      setStatus(isLate ? "late" : "success");
+      if (signInResult.result === "not_member") {
+        setStatus("error");
+        setMessage("This QR belongs to a class you have not joined yet.");
+        return;
+      }
+
+      if (signInResult.result === "not_found") {
+        setStatus("error");
+        setMessage("This QR code is not valid anymore. Ask the teacher to show the latest QR.");
+        return;
+      }
+
+      setStatus("error");
+      setMessage("This QR could not be confirmed. Tap Retry or scan the QR again.");
     };
 
     void signIn();
