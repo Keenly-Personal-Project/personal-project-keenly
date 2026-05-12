@@ -729,7 +729,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateAssembly} disabled={!newTitle.trim() || !newLateTime || !newAbsentTime}>Create</Button>
+            <Button onClick={handleCreateAssembly} disabled={creatingAssembly || !newTitle.trim() || !newLateTime || !newAbsentTime}>{creatingAssembly ? "Creating..." : "Create"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
