@@ -49,6 +49,7 @@ interface KeenMember {
 interface ProfileData {
   user_id: string;
   avatar_url: string | null;
+  username: string | null;
 }
 
 function generateToken(): string {
@@ -219,7 +220,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
       (supabase.from as any)("keen_members").select("*").eq("class_slug", classSlug),
       (supabase.from as any)("assemblies").select("*").eq("class_slug", classSlug).order("created_at", { ascending: true }),
       (supabase.from as any)("assembly_attendance").select("*"),
-      supabase.from("profiles").select("user_id, avatar_url"),
+      supabase.from("profiles").select("user_id, avatar_url, username"),
     ]);
     if (membersRes.data) setMembers(membersRes.data);
     if (assembliesRes.data) setAssemblies(assembliesRes.data);
@@ -231,6 +232,12 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
   const getProfileAvatar = (userId: string) => {
     const profile = profiles.find((p) => p.user_id === userId);
     return profile?.avatar_url || null;
+  };
+
+  const getProfileName = (userId: string, fallbackEmail?: string | null) => {
+    const profile = profiles.find((p) => p.user_id === userId);
+    if (profile?.username) return profile.username;
+    return fallbackEmail?.split("@")[0] || "User";
   };
 
   const handleCreateAssembly = async () => {
