@@ -1003,8 +1003,9 @@ const ClassPage = () => {
               </div>
               <div className="flex flex-wrap gap-3">
                 {onlineMembers.map((m) => {
-                  const name = m.email.split("@")[0];
+                  const name = directory.getName(m.email);
                   const initials = name.slice(0, 2).toUpperCase();
+                  const dirAvatar = directory.getAvatar(m.email) || m.avatar_url;
                   return (
                     <div key={m.user_id} className="flex items-center gap-2">
                       <div className="relative">
