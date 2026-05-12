@@ -121,7 +121,7 @@ const PendingJoinRequests = ({ slug }: { slug: string }) => {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm font-medium text-foreground">{req.email.split("@")[0]} requests to join</p>
+                <p className="text-sm font-medium text-foreground">{directory.getName(req.email)} requests to join</p>
                 <p className="text-xs text-muted-foreground">{req.email}</p>
               </div>
             </div>
@@ -141,7 +141,7 @@ const PendingJoinRequests = ({ slug }: { slug: string }) => {
                     return;
                   }
                   await supabase.from("keen_join_requests").update({ status: "approved" }).eq("id", req.id);
-                  toast.success(`Approved ${req.email.split("@")[0]}!`);
+                  toast.success(`Approved ${directory.getName(req.email)}!`);
                   setPendingRequests(prev => prev.filter(r => r.id !== req.id));
                   window.dispatchEvent(new Event("keen_classes_updated"));
                 }}
@@ -154,7 +154,7 @@ const PendingJoinRequests = ({ slug }: { slug: string }) => {
                 className="h-7 text-xs"
                 onClick={async () => {
                   await supabase.from("keen_join_requests").update({ status: "rejected" }).eq("id", req.id);
-                  toast.info(`Declined ${req.email.split("@")[0]}'s request.`);
+                  toast.info(`Declined ${directory.getName(req.email)}'s request.`);
                   setPendingRequests(prev => prev.filter(r => r.id !== req.id));
                 }}
               >
@@ -516,7 +516,7 @@ const ClassPage = () => {
       .update({ role: "member" })
       .eq("id", myMembership.id);
     if (e2) { toast.error("Failed to update your role"); return; }
-    toast.success(`Ownership transferred to ${transferOwnerTarget.email.split("@")[0]}`);
+    toast.success(`Ownership transferred to ${directory.getName(transferOwnerTarget.email)}`);
     setPreviewRole("member");
     setTransferOwnerTarget(null);
     fetchKeenMembers();
@@ -529,7 +529,7 @@ const ClassPage = () => {
       .delete()
       .eq("id", removeMemberTarget.id);
     if (error) { toast.error("Failed to remove member"); return; }
-    toast.success(`${removeMemberTarget.email.split("@")[0]} removed from the Keen`);
+    toast.success(`${directory.getName(removeMemberTarget.email)} removed from the Keen`);
     setRemoveMemberTarget(null);
     fetchKeenMembers();
   };
@@ -1158,7 +1158,7 @@ const ClassPage = () => {
               <AlertDialogHeader>
                 <AlertDialogTitle>Transfer Ownership</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to transfer ownership to <strong>{transferOwnerTarget?.email.split("@")[0]}</strong>?
+                  Are you sure you want to transfer ownership to <strong>{directory.getName(transferOwnerTarget?.email)}</strong>?
                   You will become a regular member and lose owner privileges.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -1177,7 +1177,7 @@ const ClassPage = () => {
               <AlertDialogHeader>
                 <AlertDialogTitle>Remove member?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to remove <strong>{removeMemberTarget?.email.split("@")[0]}</strong> from this Keen?
+                  Are you sure you want to remove <strong>{directory.getName(removeMemberTarget?.email)}</strong> from this Keen?
                   They will lose access immediately and would need to request to join again.
                 </AlertDialogDescription>
               </AlertDialogHeader>
