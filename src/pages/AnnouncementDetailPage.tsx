@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserDirectory } from "@/hooks/useUserDirectory";
 import { useEffect, useState } from "react";
 import { useEscapeBack } from "@/hooks/useEscapeBack";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +42,7 @@ function formatDate(d?: string) {
 const AnnouncementDetailPage = () => {
   const { className, announcementId } = useParams<{ className: string; announcementId: string }>();
   const { user, loading } = useAuth();
+  const directory = useUserDirectory();
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
