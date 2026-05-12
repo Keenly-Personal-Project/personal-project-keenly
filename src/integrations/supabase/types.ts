@@ -554,6 +554,7 @@ export type Database = {
           availability_mode: string
           avatar_url: string | null
           created_at: string
+          email: string | null
           id: string
           text_status: string | null
           updated_at: string
@@ -564,6 +565,7 @@ export type Database = {
           availability_mode?: string
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           text_status?: string | null
           updated_at?: string
@@ -574,6 +576,7 @@ export type Database = {
           availability_mode?: string
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           text_status?: string | null
           updated_at?: string
