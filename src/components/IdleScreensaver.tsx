@@ -75,10 +75,10 @@ const IdleScreensaver = ({ idleMs = 20000 }: Props) => {
     >
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
         <h2
-          className="text-primary-foreground/20 font-bold text-center leading-none px-4"
+          className="text-white/70 font-semibold text-center leading-tight px-4"
           style={{
-            fontFamily: "'Amatic SC', cursive",
-            fontSize: "clamp(4rem, 14vw, 16rem)",
+            fontFamily: "'Inter', system-ui, sans-serif",
+            fontSize: "clamp(3rem, 10vw, 12rem)",
           }}
         >
           Wanna come here? Yes you
