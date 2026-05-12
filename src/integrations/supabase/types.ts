@@ -657,6 +657,14 @@ export type Database = {
           read_ct: number
         }[]
       }
+      sign_in_assembly_by_token: {
+        Args: { _qr_token: string }
+        Returns: {
+          assembly_title: string
+          attendance_status: string
+          result: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
