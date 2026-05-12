@@ -1010,7 +1010,7 @@ const ClassPage = () => {
                     <div key={m.user_id} className="flex items-center gap-2">
                       <div className="relative">
                         <Avatar className="h-8 w-8">
-                          {m.avatar_url && <AvatarImage src={m.avatar_url} alt={name} />}
+                          {dirAvatar && <AvatarImage src={dirAvatar} alt={name} />}
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                             {initials}
                           </AvatarFallback>
@@ -1034,7 +1034,7 @@ const ClassPage = () => {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-semibold text-foreground">{user?.email?.split("@")[0] || "User"}</p>
+                <p className="font-semibold text-foreground">{directory.getName(user?.email || null) || "User"}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
               <div className="flex items-center gap-2">
@@ -1080,12 +1080,13 @@ const ClassPage = () => {
                       const mCfg = roleConfig[member.role];
                       const MIcon = mCfg.icon;
                       const isSelf = member.user_id === user?.id;
-                      const memberName = member.email.split("@")[0];
+                      const memberName = directory.getName(member.email);
+                      const memberAvatar = directory.getAvatar(member.email);
                       return (
                         <div key={member.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/40">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
-                              {isSelf && profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
+                              {isSelf && profile?.avatar_url ? <AvatarImage src={profile.avatar_url} /> : memberAvatar ? <AvatarImage src={memberAvatar} /> : null}
                               <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                                 {memberName.slice(0, 2).toUpperCase()}
                               </AvatarFallback>
