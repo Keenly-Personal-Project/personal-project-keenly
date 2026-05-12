@@ -884,20 +884,28 @@ const ClassPage = () => {
                 >
                   {/* Publisher badge */}
                   <div className="flex items-center gap-2 px-4 pt-4">
-                    <Avatar className="h-8 w-8">
-                      {ev.publisherAvatar && <AvatarImage src={ev.publisherAvatar} alt={email} />}
-                      <AvatarFallback className="bg-background/30 text-inherit text-[10px] font-semibold">
-                        {email.split("@")[0].slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-medium leading-tight" style={{ color: textCol || "inherit" }}>
-                        {email.split("@")[0]}
-                      </span>
-                      <span className="text-[10px] leading-tight opacity-70" style={{ color: textCol || "inherit" }}>
-                        {formatDate(ev.date)}
-                      </span>
-                    </div>
+                    {(() => {
+                      const evName = directory.getName(email);
+                      const evAvatar = directory.getAvatar(email) || ev.publisherAvatar;
+                      return (
+                        <>
+                          <Avatar className="h-8 w-8">
+                            {evAvatar && <AvatarImage src={evAvatar} alt={evName} />}
+                            <AvatarFallback className="bg-background/30 text-inherit text-[10px] font-semibold">
+                              {evName.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium leading-tight" style={{ color: textCol || "inherit" }}>
+                              {evName}
+                            </span>
+                            <span className="text-[10px] leading-tight opacity-70" style={{ color: textCol || "inherit" }}>
+                              {formatDate(ev.date)}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Title */}
