@@ -411,7 +411,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
             <p className="text-sm text-muted-foreground italic col-span-full text-center py-8">No members yet.</p>
           ) : (
             visibleMembers.map((member) => {
-              const name = member.email?.split("@")[0] || "User";
+              const name = getProfileName(member.user_id, member.email);
               const initials = name.slice(0, 2).toUpperCase();
               const avatarUrl = getProfileAvatar(member.user_id);
               return (
@@ -501,7 +501,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
       <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
         <DialogContent className="max-w-[95vw] max-h-[90vh] w-full h-[85vh] overflow-hidden flex flex-col sm:flex-row gap-0 p-0 [&>button.absolute]:hidden">
           {selectedMember && (() => {
-            const name = selectedMember.email?.split("@")[0] || "User";
+            const name = getProfileName(selectedMember.user_id, selectedMember.email);
             const initials = name.slice(0, 2).toUpperCase();
             const avatarUrl = getProfileAvatar(selectedMember.user_id);
             const history = getMemberAttendance(selectedMember.user_id);
@@ -663,7 +663,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
 
                   <div className="space-y-2">
                     {memberStatuses.map(({ member, status }) => {
-                      const name = member.email?.split("@")[0] || "User";
+                      const name = getProfileName(member.user_id, member.email);
                       const initials = name.slice(0, 2).toUpperCase();
                       const avatarUrl = getProfileAvatar(member.user_id);
                       return (
