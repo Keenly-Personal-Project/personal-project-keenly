@@ -76,6 +76,7 @@ interface EventItem {
 }
 
 const PendingJoinRequests = ({ slug }: { slug: string }) => {
+  const directory = useUserDirectory();
   const [pendingRequests, setPendingRequests] = useState<{ id: string; user_id: string; email: string; created_at: string }[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
 
