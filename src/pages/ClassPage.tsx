@@ -274,6 +274,7 @@ const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
   const { user, loading } = useAuth();
   const { profile } = useProfile();
+  const directory = useUserDirectory();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawTab = searchParams.get("tab") || "Announcements";
