@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -240,7 +240,10 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
     return fallbackEmail?.split("@")[0] || "User";
   };
 
+  const creatingAssemblyRef = useRef(false);
+  const [creatingAssembly, setCreatingAssembly] = useState(false);
   const handleCreateAssembly = async () => {
+    if (creatingAssemblyRef.current) return;
     if (!user || !newTitle.trim() || !newLateTime || !newAbsentTime) return;
     const lateDate = new Date(newLateTime);
     const absentDate = new Date(newAbsentTime);
@@ -257,27 +260,35 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
       toast.error("Absent time must be after the late time.");
       return;
     }
-    const token = generateToken();
-    const { error } = await (supabase.from as any)("assemblies").insert({
-      class_slug: classSlug,
-      title: newTitle.trim(),
-      late_time: lateDate.toISOString(),
-      absent_time: absentDate.toISOString(),
-      qr_token: token,
-      created_by: user.id,
-    });
-    if (error) {
-      toast.error("Failed to create assembly");
-      console.error(error);
-      return;
+    creatingAssemblyRef.current = true;
+    setCreatingAssembly(true);
+    try {
+      const token = generateToken();
+      const { error } = await (supabase.from as any)("assemblies").insert({
+        class_slug: classSlug,
+        title: newTitle.trim(),
+        late_time: lateDate.toISOString(),
+        absent_time: absentDate.toISOString(),
+        qr_token: token,
+        created_by: user.id,
+      });
+      if (error) {
+        toast.error("Failed to create assembly");
+        console.error(error);
+        return;
+      }
+      toast.success("Assembly created!");
+      setCreateOpen(false);
+      setNewTitle("");
+      setNewLateTime("");
+      setNewAbsentTime("");
+      await fetchAll();
+    } finally {
+      creatingAssemblyRef.current = false;
+      setCreatingAssembly(false);
     }
-    toast.success("Assembly created!");
-    setCreateOpen(false);
-    setNewTitle("");
-    setNewLateTime("");
-    setNewAbsentTime("");
-    fetchAll();
   };
+
 
   const handleDeleteAssembly = async (id: string) => {
     const { error } = await (supabase.from as any)("assemblies").delete().eq("id", id);
@@ -718,7 +729,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateAssembly} disabled={!newTitle.trim() || !newLateTime || !newAbsentTime}>Create</Button>
+            <Button onClick={handleCreateAssembly} disabled={creatingAssembly || !newTitle.trim() || !newLateTime || !newAbsentTime}>{creatingAssembly ? "Creating..." : "Create"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
