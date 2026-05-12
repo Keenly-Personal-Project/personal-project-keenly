@@ -60,7 +60,7 @@ export default function AssemblySignInPage() {
         try {
           const { data: rows, error } = await withTimeout(supabase.rpc("sign_in_assembly_by_token" as any, {
           _qr_token: normalizedToken,
-          }), 6000);
+          }), 12000);
 
           signInResult = Array.isArray(rows) ? rows[0] : rows;
           signInError = error;
@@ -76,7 +76,35 @@ export default function AssemblySignInPage() {
 
       if (cancelled) return;
 
+      // Fallback: even if the RPC hung or timed out, check if attendance was actually recorded.
       if (signInError || !signInResult) {
+        try {
+          const { data: assembly } = await withTimeout(
+            supabase.rpc("lookup_assembly_by_token" as any, { _qr_token: normalizedToken }),
+            6000,
+          );
+          const assemblyRow = Array.isArray(assembly) ? assembly[0] : assembly;
+          if (assemblyRow?.id) {
+            const { data: existing } = await withTimeout(
+              supabase
+                .from("assembly_attendance")
+                .select("status")
+                .eq("assembly_id", assemblyRow.id)
+                .eq("user_id", user.id)
+                .maybeSingle(),
+              6000,
+            );
+            if (existing?.status) {
+              if (existing.status === "late") setStatus("late");
+              else if (existing.status === "absent") setStatus("expired");
+              else setStatus("success");
+              return;
+            }
+          }
+        } catch {
+          // ignore, fall through to error
+        }
+
         setStatus("error");
         setMessage("The QR sign-in took too long to confirm. Tap Retry or scan the QR again.");
         return;
