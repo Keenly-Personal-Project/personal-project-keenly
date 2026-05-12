@@ -1,4 +1,4 @@
-import { Bell, BotMessageSquare, Maximize, Minimize } from "lucide-react";
+import { Bell, BotMessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -131,22 +131,6 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { chatOpen, toggleChat } = useChat();
-
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  useEffect(() => {
-    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", onChange);
-    return () => document.removeEventListener("fullscreenchange", onChange);
-  }, []);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => {});
-    } else {
-      document.exitFullscreen?.().catch(() => {});
-    }
-  };
 
   const handleLogoClick = () => {
     if (location.pathname === "/") return;
