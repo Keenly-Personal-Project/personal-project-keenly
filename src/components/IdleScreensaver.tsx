@@ -73,6 +73,17 @@ const IdleScreensaver = ({ idleMs = 20000 }: Props) => {
       onTouchStart={() => setActive(false)}
       onKeyDown={() => setActive(false)}
     >
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+        <h2
+          className="text-primary-foreground/20 font-bold text-center leading-none px-4"
+          style={{
+            fontFamily: "'Amatic SC', cursive",
+            fontSize: "clamp(4rem, 14vw, 16rem)",
+          }}
+        >
+          Wanna come here? Yes you
+        </h2>
+      </div>
       <div className="keen-screensaver-track">
         <img
           src={logo}
