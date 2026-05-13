@@ -56,53 +56,11 @@ export default function AssemblySignInPage() {
       let signInResult: any = null;
       let signInError: unknown = null;
 
-      // Look up the assembly once up-front so we can poll attendance as a fallback.
-      let assemblyId: string | null = null;
-      try {
-        const { data: assembly } = await withTimeout(
-          supabase.rpc("lookup_assembly_by_token" as any, { _qr_token: normalizedToken }),
-          5000,
-        );
-        const assemblyRow = Array.isArray(assembly) ? assembly[0] : assembly;
-        assemblyId = assemblyRow?.id ?? null;
-      } catch {
-        // ignore — we'll still try the RPC
-      }
-      if (cancelled) return;
-
-      const checkExistingAttendance = async () => {
-        if (!assemblyId) return null;
-        try {
-          const { data: existing } = await withTimeout(
-            supabase
-              .from("assembly_attendance")
-              .select("status")
-              .eq("assembly_id", assemblyId)
-              .eq("user_id", user.id)
-              .maybeSingle(),
-            4000,
-          );
-          return existing?.status ?? null;
-        } catch {
-          return null;
-        }
-      };
-
-      // If already signed in (e.g. a previous attempt succeeded), short-circuit immediately.
-      const preexisting = await checkExistingAttendance();
-      if (cancelled) return;
-      if (preexisting) {
-        if (preexisting === "late") setStatus("late");
-        else if (preexisting === "absent") setStatus("expired");
-        else setStatus("success");
-        return;
-      }
-
-      for (let attempt = 0; attempt < 4; attempt += 1) {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
         try {
           const { data: rows, error } = await withTimeout(supabase.rpc("sign_in_assembly_by_token" as any, {
-            _qr_token: normalizedToken,
-          }), 6000);
+          _qr_token: normalizedToken,
+          }), 12000);
 
           signInResult = Array.isArray(rows) ? rows[0] : rows;
           signInError = error;
@@ -112,32 +70,39 @@ export default function AssemblySignInPage() {
           signInError = error;
         }
 
-        if (cancelled) return;
-
-        // Between RPC retries, check if the row actually got written despite the client-side error/timeout.
-        const status = await checkExistingAttendance();
-        if (cancelled) return;
-        if (status) {
-          if (status === "late") setStatus("late");
-          else if (status === "absent") setStatus("expired");
-          else setStatus("success");
-          return;
-        }
-
-        await wait(400 + attempt * 300);
+        await wait(450 + attempt * 350);
         if (cancelled) return;
       }
 
       if (cancelled) return;
 
-      // Final fallback: even if every RPC attempt hung, check attendance one last time.
+      // Fallback: even if the RPC hung or timed out, check if attendance was actually recorded.
       if (signInError || !signInResult) {
-        const status = await checkExistingAttendance();
-        if (status) {
-          if (status === "late") setStatus("late");
-          else if (status === "absent") setStatus("expired");
-          else setStatus("success");
-          return;
+        try {
+          const { data: assembly } = await withTimeout(
+            supabase.rpc("lookup_assembly_by_token" as any, { _qr_token: normalizedToken }),
+            6000,
+          );
+          const assemblyRow = Array.isArray(assembly) ? assembly[0] : assembly;
+          if (assemblyRow?.id) {
+            const { data: existing } = await withTimeout(
+              supabase
+                .from("assembly_attendance")
+                .select("status")
+                .eq("assembly_id", assemblyRow.id)
+                .eq("user_id", user.id)
+                .maybeSingle(),
+              6000,
+            );
+            if (existing?.status) {
+              if (existing.status === "late") setStatus("late");
+              else if (existing.status === "absent") setStatus("expired");
+              else setStatus("success");
+              return;
+            }
+          }
+        } catch {
+          // ignore, fall through to error
         }
 
         setStatus("error");
