@@ -78,10 +78,11 @@ const IdleScreensaver = ({ idleMs = 20000 }: Props) => {
           className="text-white font-semibold text-center leading-tight px-4"
           style={{
             fontFamily: "'Inter', system-ui, sans-serif",
-            fontSize: "clamp(3rem, 10vw, 12rem)",
+            fontSize: "clamp(5rem, 18vw, 22rem)",
+            letterSpacing: "0.15em",
           }}
         >
-          keenly
+          eenly
         </h2>
       </div>
       <div className="keen-screensaver-track">
