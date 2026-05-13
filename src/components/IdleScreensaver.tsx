@@ -73,7 +73,7 @@ const IdleScreensaver = ({ idleMs = 20000 }: Props) => {
       onTouchStart={() => setActive(false)}
       onKeyDown={() => setActive(false)}
     >
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+      <div className="absolute inset-0 flex items-center justify-end pr-[5vw] pointer-events-none select-none">
         <h2
           className="text-white font-semibold text-center leading-tight px-4"
           style={{
