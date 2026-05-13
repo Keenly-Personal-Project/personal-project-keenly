@@ -210,7 +210,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
       if (attendanceRes.data) setAllAttendance(attendanceRes.data);
       if (profilesRes.data) setProfiles(profilesRes.data as ProfileData[]);
     } finally {
-      if (fetchSeq === fetchSeqRef.current && showSpinner) setLoading(false);
+      if (fetchSeq === fetchSeqRef.current) setLoading(false);
     }
   }, [classSlug, user]);
 
