@@ -328,7 +328,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
     toast.success("Assembly deleted");
     setDeleteAssemblyId(null);
     setSelectedAssembly(null);
-    fetchAll();
+    void fetchAll(false);
   };
 
   const handleShare = async (token: string) => {
