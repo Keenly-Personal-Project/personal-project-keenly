@@ -213,6 +213,19 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
     ensureMembership().then(() => fetchAll());
   }, [user, classSlug]);
 
+  // Realtime: refresh when assemblies or attendance change
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`attendance-${classSlug}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "assembly_attendance" }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "assemblies", filter: `class_slug=eq.${classSlug}` }, () => fetchAll())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, classSlug]);
+
   const fetchAll = async () => {
     if (!user) return;
     setLoading(true);
