@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -90,6 +90,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
   const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([]);
   const [profiles, setProfiles] = useState<ProfileData[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchSeqRef = useRef(0);
 
   // Individual dialog
   const [selectedMember, setSelectedMember] = useState<KeenMember | null>(null);
@@ -186,8 +187,32 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
 
     toast.success(isLate ? "Signed in (Late)" : "Signed in — see you there!");
     setSigningInId(null);
-    fetchAll();
+    void fetchAll(false);
   };
+
+  const fetchAll = useCallback(async (showSpinner = true) => {
+    if (!user) return;
+    const fetchSeq = fetchSeqRef.current + 1;
+    fetchSeqRef.current = fetchSeq;
+    if (showSpinner) setLoading(true);
+
+    try {
+      const [membersRes, assembliesRes, attendanceRes, profilesRes] = await Promise.all([
+        (supabase.from as any)("keen_members").select("*").eq("class_slug", classSlug),
+        (supabase.from as any)("assemblies").select("*").eq("class_slug", classSlug).order("created_at", { ascending: true }),
+        (supabase.from as any)("assembly_attendance").select("*"),
+        supabase.from("profiles").select("user_id, avatar_url, username"),
+      ]);
+
+      if (fetchSeq !== fetchSeqRef.current) return;
+      if (membersRes.data) setMembers(membersRes.data);
+      if (assembliesRes.data) setAssemblies(assembliesRes.data);
+      if (attendanceRes.data) setAllAttendance(attendanceRes.data);
+      if (profilesRes.data) setProfiles(profilesRes.data as ProfileData[]);
+    } finally {
+      if (fetchSeq === fetchSeqRef.current) setLoading(false);
+    }
+  }, [classSlug, user]);
 
 
   // Ensure current user has a membership row (as 'member' by default).
@@ -210,24 +235,28 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
         });
       }
     };
-    ensureMembership().then(() => fetchAll());
-  }, [user, classSlug]);
+    ensureMembership().then(() => fetchAll(true));
+  }, [user, classSlug, fetchAll]);
 
-  const fetchAll = async () => {
+  // Realtime: refresh when assemblies or attendance change
+  useEffect(() => {
     if (!user) return;
-    setLoading(true);
-    const [membersRes, assembliesRes, attendanceRes, profilesRes] = await Promise.all([
-      (supabase.from as any)("keen_members").select("*").eq("class_slug", classSlug),
-      (supabase.from as any)("assemblies").select("*").eq("class_slug", classSlug).order("created_at", { ascending: true }),
-      (supabase.from as any)("assembly_attendance").select("*"),
-      supabase.from("profiles").select("user_id, avatar_url, username"),
-    ]);
-    if (membersRes.data) setMembers(membersRes.data);
-    if (assembliesRes.data) setAssemblies(assembliesRes.data);
-    if (attendanceRes.data) setAllAttendance(attendanceRes.data);
-    if (profilesRes.data) setProfiles(profilesRes.data as ProfileData[]);
-    setLoading(false);
-  };
+    let refreshTimer: number | undefined;
+    const scheduleRefresh = () => {
+      if (refreshTimer) window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => void fetchAll(false), 150);
+    };
+
+    const channel = supabase
+      .channel(`attendance-${classSlug}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "assembly_attendance" }, scheduleRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "assemblies", filter: `class_slug=eq.${classSlug}` }, scheduleRefresh)
+      .subscribe();
+    return () => {
+      if (refreshTimer) window.clearTimeout(refreshTimer);
+      supabase.removeChannel(channel);
+    };
+  }, [user, classSlug, fetchAll]);
 
   const getProfileAvatar = (userId: string) => {
     const profile = profiles.find((p) => p.user_id === userId);
@@ -299,7 +328,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
     toast.success("Assembly deleted");
     setDeleteAssemblyId(null);
     setSelectedAssembly(null);
-    fetchAll();
+    void fetchAll(false);
   };
 
   const handleShare = async (token: string) => {
