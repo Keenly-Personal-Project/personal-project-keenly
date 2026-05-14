@@ -71,6 +71,11 @@ const Index = () => {
   const fetchClasses = useCallback(async () => {
     if (!user) return;
     setLoadingClasses(true);
+    if (isBypass) {
+      setClasses(loadDemoKeens());
+      setLoadingClasses(false);
+      return;
+    }
     // Get keens this user is a member of (via keen_members → keens)
     const { data: memberships, error: memberErr } = await (supabase.from as any)("keen_members")
       .select("class_slug, role")
@@ -97,7 +102,7 @@ const Index = () => {
     const roleBySlug = new Map((memberships || []).map((m: any) => [m.class_slug, m.role]));
     setClasses((keens || []).map((k: any) => ({ ...k, role: roleBySlug.get(k.slug) })));
     setLoadingClasses(false);
-  }, [user]);
+  }, [user, isBypass]);
 
   useEffect(() => {
     if (!loading && !user) {
