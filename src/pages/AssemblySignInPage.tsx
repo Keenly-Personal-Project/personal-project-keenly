@@ -231,6 +231,13 @@ export default function AssemblySignInPage() {
     );
   }
 
+  const BackButton = () => (
+    <Button variant="outline" onClick={goBackToAttendance} className="gap-2">
+      <ArrowLeft className="h-4 w-4" />
+      Back to Attendance
+    </Button>
+  );
+
   if (status === "expired") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
@@ -238,6 +245,7 @@ export default function AssemblySignInPage() {
           <XCircle className="h-16 w-16 text-destructive mx-auto" />
           <h1 className="text-xl font-bold text-foreground">QR Code Expired</h1>
           <p className="text-muted-foreground">The sign-in window for this assembly has closed. You have been marked as absent.</p>
+          <BackButton />
         </div>
       </div>
     );
@@ -250,10 +258,13 @@ export default function AssemblySignInPage() {
           <XCircle className="h-16 w-16 text-destructive mx-auto" />
           <h1 className="text-xl font-bold text-foreground">Try Again</h1>
           <p className="text-muted-foreground">{message}</p>
-          <Button onClick={() => setRetryNonce((value) => value + 1)} className="gap-2">
-            <RotateCcw className="h-4 w-4" />
-            Retry
-          </Button>
+          <div className="flex flex-col items-center gap-2">
+            <Button onClick={() => setRetryNonce((value) => value + 1)} className="gap-2">
+              <RotateCcw className="h-4 w-4" />
+              Retry
+            </Button>
+            <BackButton />
+          </div>
         </div>
       </div>
     );
@@ -266,6 +277,7 @@ export default function AssemblySignInPage() {
           <CheckCircle2 className="h-16 w-16 mx-auto" style={{ color: "hsl(142, 71%, 45%)" }} />
           <h1 className="text-xl font-bold text-foreground">Already Signed In</h1>
           <p className="text-muted-foreground">You have already signed in for this assembly.</p>
+          <BackButton />
         </div>
       </div>
     );
@@ -291,6 +303,7 @@ export default function AssemblySignInPage() {
           <CheckCircle2 className="h-8 w-8 mx-auto text-muted-foreground" />
           <p className="text-xs text-muted-foreground mt-1">Your attendance has been recorded.</p>
         </div>
+        <BackButton />
       </div>
     </div>
   );
