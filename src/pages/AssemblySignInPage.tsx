@@ -64,21 +64,18 @@ export default function AssemblySignInPage() {
       setStatus("loading");
       setMessage("");
 
-      if (!user) {
-        await wait(300);
-        if (!cancelled) setStatus("auth");
-        return;
-      }
-
-      if (!session) {
+      // Always verify session directly with Supabase — the AuthContext can be
+      // slow to propagate (especially in mobile in-app browsers), so don't
+      // trust !user alone before bailing to the "Sign In Required" screen.
+      if (!user || !session) {
         try {
-          const { data } = await withTimeout(supabase.auth.getSession(), 2500);
+          const { data } = await withTimeout(supabase.auth.getSession(), 3000);
           if (!data.session) {
-            setStatus("auth");
+            if (!cancelled) setStatus("auth");
             return;
           }
         } catch {
-          setStatus("auth");
+          if (!cancelled) setStatus("auth");
           return;
         }
       }
