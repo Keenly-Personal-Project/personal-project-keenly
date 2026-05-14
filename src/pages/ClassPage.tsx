@@ -61,6 +61,7 @@ interface NoteFolder {
   id: string;
   name: string;
   color?: string | null;
+  parentId?: string | null;
 }
 
 interface EventItem {
