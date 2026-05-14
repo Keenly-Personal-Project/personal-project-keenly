@@ -363,6 +363,20 @@ const ClassPage = () => {
   useEffect(() => {
     let cancelled = false;
     const fetchAll = async () => {
+      if (isBypass) {
+        try {
+          const a = JSON.parse(localStorage.getItem(`demo_announcements_${slug}`) || "[]");
+          const n = JSON.parse(localStorage.getItem(`demo_notes_${slug}`) || "[]");
+          const e = JSON.parse(localStorage.getItem(`demo_events_${slug}`) || "[]");
+          const f = JSON.parse(localStorage.getItem(`demo_note_folders_${slug}`) || "[]");
+          if (cancelled) return;
+          setAnnouncements(a.map(mapAnnouncement));
+          setNotes(n.map(mapNote));
+          setEvents(e.map(mapEvent));
+          setFolders(f.map((x: any) => ({ id: x.id, name: x.name, color: x.color })));
+        } catch { /* ignore */ }
+        return;
+      }
       const [aRes, nRes, eRes, fRes] = await Promise.all([
         (supabase.from as any)("announcements").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
         (supabase.from as any)("notes").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
