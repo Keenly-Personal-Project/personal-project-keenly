@@ -224,7 +224,7 @@ const Header = () => {
         <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
           <span
             className="text-sm sm:text-2xl md:text-3xl text-foreground font-bold whitespace-nowrap"
-            style={{ fontFamily: "'Amatic SC', cursive" }}
+            style={{ fontFamily: "Calibri, 'Trebuchet MS', sans-serif" }}
           >
             {formattedDate}
           </span>
