@@ -774,9 +774,14 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
             <div className="flex flex-col items-center gap-6">
               <QRCodeSVG value={signInUrl(qrFullscreen)} size={Math.min(window.innerWidth * 0.7, window.innerHeight * 0.7, 500)} />
               <p className="text-lg font-medium text-foreground">Scan to sign in</p>
-              <Button variant="outline" onClick={() => handleShare(qrFullscreen)} className="gap-2">
-                <Share2 className="h-4 w-4" /> Share Link
-              </Button>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => handleShare(qrFullscreen)} className="gap-2">
+                  <Share2 className="h-4 w-4" /> Share Link
+                </Button>
+                <Button variant="outline" onClick={() => window.open(signInUrl(qrFullscreen), "_blank")} className="gap-2">
+                  <ExternalLink className="h-4 w-4" /> Open in Tab
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
