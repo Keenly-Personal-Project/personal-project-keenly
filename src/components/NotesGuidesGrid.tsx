@@ -107,8 +107,8 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
   const longPressFired = useRef(false);
 
   useEffect(() => {
-    const close = () => setMenuFor(null);
-    if (menuFor) {
+    const close = () => { setMenuFor(null); setFolderMenuFor(null); };
+    if (menuFor || folderMenuFor) {
       window.addEventListener("click", close);
       window.addEventListener("scroll", close, true);
       return () => {
@@ -116,7 +116,7 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
         window.removeEventListener("scroll", close, true);
       };
     }
-  }, [menuFor]);
+  }, [menuFor, folderMenuFor]);
 
   const startPress = (note: Note, e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
