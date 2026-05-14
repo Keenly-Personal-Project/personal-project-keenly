@@ -36,6 +36,7 @@ const callWithAbort = async (url: string, accessToken: string, token: string, ms
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ token }),
