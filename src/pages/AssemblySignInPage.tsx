@@ -21,13 +21,23 @@ const withTimeout = async <T,>(promise: PromiseLike<T>, ms: number) => {
 
 export default function AssemblySignInPage() {
   const { token } = useParams<{ token: string }>();
-  const { user, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const attemptedTokenRef = useRef<string | null>(null);
   const [status, setStatus] = useState<"loading" | "success" | "late" | "expired" | "already" | "error" | "auth">("loading");
   const [message, setMessage] = useState("");
   const [classSlug, setClassSlug] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
+  const [authTimedOut, setAuthTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading) {
+      setAuthTimedOut(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setAuthTimedOut(true), 5000);
+    return () => window.clearTimeout(timer);
+  }, [authLoading]);
 
   const goBackToAttendance = () => {
     if (classSlug) navigate(`/class/${encodeURIComponent(classSlug)}?tab=Attendance`);
@@ -35,7 +45,7 @@ export default function AssemblySignInPage() {
   };
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading && !authTimedOut) return;
 
     const normalizedToken = token?.trim();
     if (!normalizedToken) {
@@ -55,31 +65,65 @@ export default function AssemblySignInPage() {
       setMessage("");
 
       if (!user) {
-        await wait(600);
+        await wait(300);
         if (!cancelled) setStatus("auth");
         return;
       }
 
-      const callRpc = async (): Promise<{ result?: string; attendance_status?: string; class_slug?: string | null } | null> => {
-        for (let attempt = 0; attempt < 6; attempt += 1) {
+      if (!session) {
+        try {
+          const { data } = await withTimeout(supabase.auth.getSession(), 2500);
+          if (!data.session) {
+            setStatus("auth");
+            return;
+          }
+        } catch {
+          setStatus("auth");
+          return;
+        }
+      }
+
+      const isAuthError = (error: any) => {
+        const text = `${error?.message ?? ""} ${error?.code ?? ""} ${error?.status ?? ""}`.toLowerCase();
+        return error?.status === 401 || error?.status === 403 || /jwt|token|session|auth|unauthorized|forbidden|permission/.test(text);
+      };
+
+      const callRpc = async (): Promise<{
+        row?: { result?: string; attendance_status?: string; class_slug?: string | null };
+        authError?: boolean;
+        errorMessage?: string;
+      } | null> => {
+        let lastError = "";
+        for (let attempt = 0; attempt < 3; attempt += 1) {
           if (cancelled) return null;
           try {
             const { data: rows, error } = await withTimeout(
               supabase.rpc("sign_in_assembly_by_token" as any, { _qr_token: normalizedToken }),
-              8000,
+              5000,
             );
+            if (error) {
+              if (isAuthError(error)) return { authError: true };
+              lastError = error.message || "Sign-in request failed.";
+            }
             const row = Array.isArray(rows) ? rows[0] : rows;
-            if (!error && row) return row as any;
-          } catch {
-            // timeout — try again
+            if (!error && row) return { row: row as any };
+          } catch (error: any) {
+            lastError = error?.message === "timeout" ? "The mobile connection timed out." : (error?.message || "Sign-in request failed.");
           }
           await wait(500 + attempt * 400);
         }
-        return null;
+        return { errorMessage: lastError };
       };
 
-      const r = await callRpc();
+      const result = await callRpc();
       if (cancelled) return;
+
+      if (result?.authError) {
+        setStatus("auth");
+        return;
+      }
+
+      const r = result?.row;
 
       if (r?.class_slug) setClassSlug(r.class_slug);
       if (r?.result === "signed_in") { setStatus(r.attendance_status === "late" ? "late" : "success"); return; }
@@ -98,7 +142,7 @@ export default function AssemblySignInPage() {
       }
 
       setStatus("error");
-      setMessage("The QR sign-in took too long to confirm. Tap Retry or scan the QR again.");
+      setMessage(result?.errorMessage ? `${result.errorMessage} Tap Retry or log in again.` : "The QR sign-in took too long to confirm. Tap Retry or scan the QR again.");
     };
 
     void signIn();
@@ -106,9 +150,9 @@ export default function AssemblySignInPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, user, authLoading, retryNonce]);
+  }, [token, user, session, authLoading, authTimedOut, retryNonce]);
 
-  if (authLoading || status === "loading") {
+  if ((authLoading && !authTimedOut) || status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
