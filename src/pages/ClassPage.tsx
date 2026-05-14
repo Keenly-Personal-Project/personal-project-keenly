@@ -381,7 +381,7 @@ const ClassPage = () => {
           setAnnouncements(a.map(mapAnnouncement));
           setNotes(n.map(mapNote));
           setEvents(e.map(mapEvent));
-          setFolders(f.map((x: any) => ({ id: x.id, name: x.name, color: x.color })));
+          setFolders(f.map((x: any) => ({ id: x.id, name: x.name, color: x.color, parentId: x.parent_id || x.parentId || null })));
         } catch { /* ignore */ }
         return;
       }
