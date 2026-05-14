@@ -1,0 +1,1 @@
+ALTER TABLE public.keens ADD COLUMN IF NOT EXISTS folder text;

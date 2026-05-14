@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from "@/components/Header";
 import { generateHexCode } from "@/components/Header";
-import { Loader2, BookOpen, FlaskConical, X, Pencil, Image, Palette, Plus } from 'lucide-react';
+import { Loader2, BookOpen, FlaskConical, X, Pencil, Image, Palette, Plus, Folder } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -24,6 +24,7 @@ interface ClassItem {
   icon: string;
   image?: string | null;
   color?: string | null;
+  folder?: string | null;
   code: string;
   created_by: string;
   role?: string;
@@ -46,6 +47,7 @@ const Index = () => {
   const [editColor, setEditColor] = useState('');
   const [editImage, setEditImage] = useState('');
   const [editName, setEditName] = useState('');
+  const [editFolder, setEditFolder] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -151,6 +153,7 @@ const Index = () => {
     setEditColor(cls.color || '');
     setEditImage(cls.image || '');
     setEditName(cls.name);
+    setEditFolder(cls.folder || '');
     setEditDialogOpen(true);
   };
 
@@ -161,6 +164,7 @@ const Index = () => {
         name: editName.trim() || undefined,
         color: editColor || null,
         image: editImage || null,
+        folder: editFolder.trim() || null,
       })
       .eq("id", editId);
     if (error) {
@@ -355,8 +359,17 @@ const Index = () => {
                 <p className="text-xs mt-1">Use the button above to create one or join with a code.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {classes.map((cls) => {
+              (() => {
+                const groups = new Map<string, ClassItem[]>();
+                for (const cls of classes) {
+                  const key = cls.folder?.trim() || '';
+                  if (!groups.has(key)) groups.set(key, []);
+                  groups.get(key)!.push(cls);
+                }
+                const folderNames = Array.from(groups.keys()).filter(k => k).sort((a, b) => a.localeCompare(b));
+                const orderedKeys = [...folderNames, ...(groups.has('') ? [''] : [])];
+
+                const renderCard = (cls: ClassItem) => {
                   const Icon = iconMap[cls.icon] || BookOpen;
                   const labelColor = cls.color || undefined;
                   const canEdit = cls.role === "owner" || cls.role === "admin";
@@ -399,8 +412,38 @@ const Index = () => {
                       </button>
                     </div>
                   );
-                })}
-              </div>
+                };
+
+                if (folderNames.length === 0) {
+                  return (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                      {classes.map(renderCard)}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-8">
+                    {orderedKeys.map((key) => (
+                      <div key={key || '__unfiled'}>
+                        <div className="flex items-center gap-2 mb-3 text-foreground/70">
+                          <Folder className="h-4 w-4" />
+                          <h2
+                            className="text-lg"
+                            style={{ fontFamily: "'Courier New', monospace" }}
+                          >
+                            {key || 'Unfiled'}
+                          </h2>
+                          <div className="flex-1 h-px bg-foreground/15" />
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                          {groups.get(key)!.map(renderCard)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()
             )}
           </div>
         </div>
@@ -431,6 +474,20 @@ const Index = () => {
                   </button>
                 </div>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2"><Folder className="h-4 w-4" /> Folder</Label>
+              <Input
+                value={editFolder}
+                onChange={(e) => setEditFolder(e.target.value)}
+                placeholder="e.g. Year 10, Science, Personal (leave empty for none)"
+                list="keen-folder-suggestions"
+              />
+              <datalist id="keen-folder-suggestions">
+                {Array.from(new Set(classes.map(c => c.folder).filter((f): f is string => !!f))).map(f => (
+                  <option key={f} value={f} />
+                ))}
+              </datalist>
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><Palette className="h-4 w-4" /> Label Color</Label>

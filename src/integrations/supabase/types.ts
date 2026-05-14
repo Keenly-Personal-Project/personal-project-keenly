@@ -340,6 +340,7 @@ export type Database = {
           color: string | null
           created_at: string
           created_by: string
+          folder: string | null
           icon: string
           id: string
           image: string | null
@@ -352,6 +353,7 @@ export type Database = {
           color?: string | null
           created_at?: string
           created_by: string
+          folder?: string | null
           icon?: string
           id?: string
           image?: string | null
@@ -364,6 +366,7 @@ export type Database = {
           color?: string | null
           created_at?: string
           created_by?: string
+          folder?: string | null
           icon?: string
           id?: string
           image?: string | null
