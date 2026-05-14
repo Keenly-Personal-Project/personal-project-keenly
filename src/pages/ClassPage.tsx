@@ -621,11 +621,17 @@ const ClassPage = () => {
   }
   if (!user) return null;
 
+  // Read fresh name from demo keens (current source) with fallback to legacy storage
+  let demoMatchName: string | undefined;
+  try {
+    const demo = JSON.parse(localStorage.getItem("demo_keens_v1") || "[]");
+    demoMatchName = demo.find((k: any) => k.slug === slug)?.name;
+  } catch { /* ignore */ }
   const savedClasses = JSON.parse(localStorage.getItem("keen_classes") || "[]");
   const matchedClass = savedClasses.find(
     (cls: { name: string }) => cls.name.toLowerCase().replace(/\s+/g, "-") === slug,
   );
-  const displayName = matchedClass?.name || slug.replace(/-/g, " ");
+  const displayName = demoMatchName || matchedClass?.name || slug.replace(/-/g, " ");
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
