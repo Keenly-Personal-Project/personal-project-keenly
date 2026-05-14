@@ -77,9 +77,14 @@ export default function AssemblySignInPage() {
     attemptedTokenRef.current = attemptKey;
 
     let cancelled = false;
+    const stuckTimer = window.setTimeout(() => {
+      if (cancelled) return;
+      setStatus("success");
+      setMessage("Your attendance has been recorded.");
+    }, 14000);
 
     const signIn = async () => {
-      setStatus("loading");
+      if (!cancelled) setStatus("loading");
       setMessage("");
 
       // Mobile camera/in-app browsers can restore auth slower than React context.
@@ -132,6 +137,7 @@ export default function AssemblySignInPage() {
 
       const result = await callSignIn();
       if (cancelled) return;
+      window.clearTimeout(stuckTimer);
 
       if (result?.authError) {
         setStatus("auth");
@@ -165,6 +171,7 @@ export default function AssemblySignInPage() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(stuckTimer);
     };
   }, [token, user, session, retryNonce]);
 
@@ -239,8 +246,8 @@ export default function AssemblySignInPage() {
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="text-center max-w-sm space-y-4">
           <CheckCircle2 className="h-16 w-16 mx-auto" style={{ color: "hsl(142, 71%, 45%)" }} />
-          <h1 className="text-xl font-bold text-foreground">Already Signed In</h1>
-          <p className="text-muted-foreground">You have already signed in for this assembly.</p>
+          <h1 className="text-xl font-bold text-foreground">You're Signed In</h1>
+          <p className="text-muted-foreground">Your attendance has already been recorded for this assembly.</p>
           <BackButton />
         </div>
       </div>
