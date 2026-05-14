@@ -140,7 +140,10 @@ const Index = () => {
     const target = classes.find(c => c.id === id);
     setTimeout(async () => {
       if (target) {
-        if (target.created_by === user?.id) {
+        if (isBypass) {
+          const next = loadDemoKeens().filter(k => k.id !== id);
+          saveDemoKeens(next);
+        } else if (target.created_by === user?.id) {
           // Owner: delete the keen entirely
           await (supabase.from as any)("keens").delete().eq("id", id);
         } else {
