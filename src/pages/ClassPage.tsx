@@ -694,7 +694,8 @@ const ClassPage = () => {
 
   const handleAddAnnouncement = async () => {
     if (!newBrief.trim() || !user) return;
-    const { error } = await (supabase.from as any)("announcements").insert({
+    const payload = {
+      id: crypto.randomUUID(),
       class_slug: slug,
       user_id: user.id,
       publisher_email: user.email || "Unknown",
@@ -703,10 +704,21 @@ const ClassPage = () => {
       description: newDescription.trim(),
       images: newImages.length > 0 ? newImages : null,
       date: newDate ? new Date(newDate).toISOString() : new Date().toISOString(),
-    });
-    if (error) {
-      toast.error(error.message || "Failed to add announcement");
-      return;
+      created_at: new Date().toISOString(),
+    };
+    if (isBypass) {
+      try {
+        const key = `demo_announcements_${slug}`;
+        const existing = JSON.parse(localStorage.getItem(key) || "[]");
+        localStorage.setItem(key, JSON.stringify([payload, ...existing]));
+        window.dispatchEvent(new Event("demo_keen_content_updated"));
+      } catch { /* ignore */ }
+    } else {
+      const { error } = await (supabase.from as any)("announcements").insert(payload);
+      if (error) {
+        toast.error(error.message || "Failed to add announcement");
+        return;
+      }
     }
     setNewBrief("");
     setNewDescription("");
