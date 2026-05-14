@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import logo from "@/assets/keen-logo-mark.png";
+import logo from "@/assets/keen-screensaver-mark.png";
 
 interface Props {
   idleMs?: number;

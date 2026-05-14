@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { CheckCircle2, XCircle, Loader2, Clock, RotateCcw } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Clock, RotateCcw, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -22,10 +22,17 @@ const withTimeout = async <T,>(promise: PromiseLike<T>, ms: number) => {
 export default function AssemblySignInPage() {
   const { token } = useParams<{ token: string }>();
   const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const attemptedTokenRef = useRef<string | null>(null);
   const [status, setStatus] = useState<"loading" | "success" | "late" | "expired" | "already" | "error" | "auth">("loading");
   const [message, setMessage] = useState("");
+  const [classSlug, setClassSlug] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
+
+  const goBackToAttendance = () => {
+    if (classSlug) navigate(`/class/${encodeURIComponent(classSlug)}?tab=Attendance`);
+    else navigate("/");
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -59,28 +66,37 @@ export default function AssemblySignInPage() {
         return;
       }
 
-      // Resolve assembly id (with retry). Don't block the RPC race on this — run in parallel.
+      // Resolve assembly id (with retry forever until cancelled). Run in parallel with RPC.
       let assemblyId: string | null = null;
       const resolveAssemblyId = async (): Promise<string | null> => {
-        for (let attempt = 0; attempt < 10; attempt += 1) {
-          if (cancelled || assemblyId) return assemblyId;
+        let attempt = 0;
+        while (!cancelled && !assemblyId) {
           // Try direct table read first (fast, RLS-allowed for members).
           try {
             const { data } = await withTimeout(
-              supabase.from("assemblies").select("id").eq("qr_token", normalizedToken).maybeSingle(),
-              3500,
+              supabase.from("assemblies").select("id, class_slug").eq("qr_token", normalizedToken).maybeSingle(),
+              4000,
             );
-            if (data?.id) { assemblyId = data.id; return assemblyId; }
+            if (data?.id) {
+              assemblyId = data.id;
+              if (data.class_slug && !cancelled) setClassSlug(data.class_slug);
+              return assemblyId;
+            }
           } catch { /* try RPC fallback */ }
           try {
             const { data } = await withTimeout(
               supabase.rpc("lookup_assembly_by_token" as any, { _qr_token: normalizedToken }),
-              3500,
+              4000,
             );
             const row = Array.isArray(data) ? data[0] : data;
-            if (row?.id) { assemblyId = row.id; return assemblyId; }
+            if (row?.id) {
+              assemblyId = row.id;
+              if (row.class_slug && !cancelled) setClassSlug(row.class_slug);
+              return assemblyId;
+            }
           } catch { /* keep retrying */ }
-          await wait(600);
+          attempt += 1;
+          await wait(Math.min(600 + attempt * 200, 2000));
         }
         return assemblyId;
       };
@@ -88,9 +104,10 @@ export default function AssemblySignInPage() {
 
       // Poll the attendance row directly. On phones the RPC sometimes never
       // resolves even though the DB write went through, so this catches success fast.
+      // Keep polling indefinitely until cancelled — the user may have already been
+      // signed in from another device, so we just need to detect the row when it appears.
       const pollAttendance = async (): Promise<{ status: string } | null> => {
-        for (let attempt = 0; attempt < 30; attempt += 1) {
-          if (cancelled) return null;
+        while (!cancelled) {
           if (!assemblyId) { await wait(400); continue; }
           try {
             const { data } = await withTimeout(
@@ -106,7 +123,7 @@ export default function AssemblySignInPage() {
           } catch {
             // ignore — keep polling
           }
-          await wait(700);
+          await wait(800);
         }
         return null;
       };
@@ -214,6 +231,13 @@ export default function AssemblySignInPage() {
     );
   }
 
+  const BackButton = () => (
+    <Button variant="outline" onClick={goBackToAttendance} className="gap-2">
+      <ArrowLeft className="h-4 w-4" />
+      Back to Attendance
+    </Button>
+  );
+
   if (status === "expired") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
@@ -221,6 +245,7 @@ export default function AssemblySignInPage() {
           <XCircle className="h-16 w-16 text-destructive mx-auto" />
           <h1 className="text-xl font-bold text-foreground">QR Code Expired</h1>
           <p className="text-muted-foreground">The sign-in window for this assembly has closed. You have been marked as absent.</p>
+          <BackButton />
         </div>
       </div>
     );
@@ -233,10 +258,13 @@ export default function AssemblySignInPage() {
           <XCircle className="h-16 w-16 text-destructive mx-auto" />
           <h1 className="text-xl font-bold text-foreground">Try Again</h1>
           <p className="text-muted-foreground">{message}</p>
-          <Button onClick={() => setRetryNonce((value) => value + 1)} className="gap-2">
-            <RotateCcw className="h-4 w-4" />
-            Retry
-          </Button>
+          <div className="flex flex-col items-center gap-2">
+            <Button onClick={() => setRetryNonce((value) => value + 1)} className="gap-2">
+              <RotateCcw className="h-4 w-4" />
+              Retry
+            </Button>
+            <BackButton />
+          </div>
         </div>
       </div>
     );
@@ -249,6 +277,7 @@ export default function AssemblySignInPage() {
           <CheckCircle2 className="h-16 w-16 mx-auto" style={{ color: "hsl(142, 71%, 45%)" }} />
           <h1 className="text-xl font-bold text-foreground">Already Signed In</h1>
           <p className="text-muted-foreground">You have already signed in for this assembly.</p>
+          <BackButton />
         </div>
       </div>
     );
@@ -274,6 +303,7 @@ export default function AssemblySignInPage() {
           <CheckCircle2 className="h-8 w-8 mx-auto text-muted-foreground" />
           <p className="text-xs text-muted-foreground mt-1">Your attendance has been recorded.</p>
         </div>
+        <BackButton />
       </div>
     </div>
   );

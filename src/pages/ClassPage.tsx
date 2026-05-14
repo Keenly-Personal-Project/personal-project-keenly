@@ -277,14 +277,21 @@ const ClassPage = () => {
   const { profile } = useProfile();
   const directory = useUserDirectory();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get("tab") || "Announcements";
   const initialTab = sidebarTabs.includes(rawTab) ? rawTab : "Announcements";
   const slug = decodeURIComponent(className || "");
   // (announcement/note/event storage is now in the cloud DB; only favorites remain local per-user)
   const favKey = `keen_event_favs_${slug}`;
   const recordingsKey = `keen_recordings_${slug}`;
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, _setActiveTab] = useState(initialTab);
+  const setActiveTab = (tab: string) => {
+    _setActiveTab(tab);
+    const next = new URLSearchParams(searchParams);
+    if (tab === "Announcements") next.delete("tab");
+    else next.set("tab", tab);
+    setSearchParams(next, { replace: true });
+  };
   const [onlineMembers, setOnlineMembers] = useState<{ user_id: string; email: string; avatar_url?: string }[]>([]);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newBrief, setNewBrief] = useState("");
