@@ -50,12 +50,6 @@ export default function AssemblySignInPage() {
 
     let cancelled = false;
 
-    const applyAttendanceStatus = (s: string) => {
-      if (s === "late") setStatus("late");
-      else if (s === "absent") setStatus("expired");
-      else setStatus("success");
-    };
-
     const signIn = async () => {
       setStatus("loading");
       setMessage("");
