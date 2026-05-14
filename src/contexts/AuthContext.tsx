@@ -21,7 +21,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  activateBypass: () => void;
+  activateBypass: () => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [isBypass]);
 
-  const activateBypass = async () => {
+  const activateBypass = async (): Promise<{ error: Error | null }> => {
     // Use a per-browser real Supabase account so all DB operations
     // (notes, events, announcements, folders, etc.) work natively under RLS.
     setLoading(true);
@@ -113,24 +113,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('keen_demo_account', JSON.stringify({ email, password }));
     }
 
-    // Try sign in first; if it fails, sign up (auto-confirm is enabled).
-    let { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-    if (signInErr) {
-      const { error: signUpErr } = await supabase.auth.signUp({ email, password });
-      if (signUpErr) {
-        console.error('Demo activation failed:', signUpErr);
-        setLoading(false);
-        return;
+    try {
+      // Try sign in first; if it fails, sign up (auto-confirm is enabled).
+      let { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInErr || !signInData?.session) {
+        const { error: signUpErr } = await supabase.auth.signUp({ email, password });
+        if (signUpErr) {
+          console.error('Demo activation failed:', signUpErr);
+          setLoading(false);
+          return { error: signUpErr as Error };
+        }
+        // Sign in again to guarantee a session
+        const retry = await supabase.auth.signInWithPassword({ email, password });
+        if (retry.error || !retry.data?.session) {
+          setLoading(false);
+          return { error: (retry.error as Error) || new Error('No session after demo signup') };
+        }
+        setSession(retry.data.session);
+        setUser(retry.data.session.user);
+      } else {
+        setSession(signInData.session);
+        setUser(signInData.session.user);
       }
-      // Try sign-in again in case sign-up didn't return a session
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        await supabase.auth.signInWithPassword({ email, password });
-      }
+      localStorage.removeItem('keen_bypass_mode');
+      setIsBypass(false);
+      setLoading(false);
+      return { error: null };
+    } catch (e) {
+      console.error('Demo activation network error:', e);
+      setLoading(false);
+      return { error: e as Error };
     }
-    // onAuthStateChange will populate user/session.
-    localStorage.removeItem('keen_bypass_mode');
-    setIsBypass(false);
   };
 
   const signUp = async (email: string, password: string) => {
