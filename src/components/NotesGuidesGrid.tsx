@@ -75,12 +75,15 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
 
   const [openFolderIds, setOpenFolderIds] = useState<Set<string>>(new Set());
   const [menuFor, setMenuFor] = useState<{ note: Note; x: number; y: number } | null>(null);
+  const [folderMenuFor, setFolderMenuFor] = useState<{ folder: NoteFolder; x: number; y: number } | null>(null);
   const [dragNoteId, setDragNoteId] = useState<string | null>(null);
+  const [dragFolderId, setDragFolderId] = useState<string | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
   const [dragOverRoot, setDragOverRoot] = useState(false);
 
-  // Move-to-folder dialog
+  // Move-to-folder dialog (works for notes OR folders)
   const [moveDialogFor, setMoveDialogFor] = useState<Note | null>(null);
+  const [moveFolderDialogFor, setMoveFolderDialogFor] = useState<NoteFolder | null>(null);
 
   // Rename folder
   const [renameFolder, setRenameFolder] = useState<NoteFolder | null>(null);
@@ -93,10 +96,11 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
   const [colorFolder, setColorFolder] = useState<NoteFolder | null>(null);
   const [colorValue, setColorValue] = useState<string>("hsl(45, 85%, 50%)");
 
-  // New folder dialog (also handles "Create folder from this note")
+  // New folder dialog (also handles "Create folder from this note" and "New subfolder")
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderSeedNoteId, setNewFolderSeedNoteId] = useState<string | null>(null);
+  const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
 
   // Long-press detection
   const pressTimer = useRef<number | null>(null);
