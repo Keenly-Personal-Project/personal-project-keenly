@@ -437,6 +437,20 @@ const Index = () => {
               )}
             </div>
             <div className="space-y-2">
+              <Label className="flex items-center gap-2"><Folder className="h-4 w-4" /> Folder</Label>
+              <Input
+                value={editFolder}
+                onChange={(e) => setEditFolder(e.target.value)}
+                placeholder="e.g. Year 10, Science, Personal (leave empty for none)"
+                list="keen-folder-suggestions"
+              />
+              <datalist id="keen-folder-suggestions">
+                {Array.from(new Set(classes.map(c => c.folder).filter((f): f is string => !!f))).map(f => (
+                  <option key={f} value={f} />
+                ))}
+              </datalist>
+            </div>
+            <div className="space-y-2">
               <Label className="flex items-center gap-2"><Palette className="h-4 w-4" /> Label Color</Label>
               <NoteColorPicker value={editColor || 'hsl(175, 70%, 40%)'} onChange={setEditColor} />
             </div>
