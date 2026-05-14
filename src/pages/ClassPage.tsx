@@ -414,6 +414,19 @@ const ClassPage = () => {
   const fetchMyRole = useCallback(async () => {
     if (!user) return;
     setRoleLoading(true);
+    if (isBypass) {
+      // In demo mode, infer role from local demo keens (creator = owner)
+      try {
+        const demo = JSON.parse(localStorage.getItem("demo_keens_v1") || "[]");
+        const k = demo.find((k: any) => k.slug === slug);
+        const r = k?.role;
+        setPreviewRole(r === "owner" || r === "admin" || r === "member" ? r : "owner");
+      } catch {
+        setPreviewRole("owner");
+      }
+      setRoleLoading(false);
+      return;
+    }
     const { data } = await (supabase.from as any)("keen_members")
       .select("role")
       .eq("class_slug", slug)
@@ -422,7 +435,7 @@ const ClassPage = () => {
     const r = data?.role;
     setPreviewRole(r === "owner" || r === "admin" || r === "member" ? r : "member");
     setRoleLoading(false);
-  }, [user, slug]);
+  }, [user, slug, isBypass]);
 
   useEffect(() => { fetchMyRole(); }, [fetchMyRole]);
 
