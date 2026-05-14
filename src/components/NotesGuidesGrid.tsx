@@ -696,7 +696,37 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
         </DialogContent>
       </Dialog>
 
-      {/* Delete folder */}
+      {/* Move-folder dialog */}
+      <Dialog open={!!moveFolderDialogFor} onOpenChange={(o) => !o && setMoveFolderDialogFor(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Move "{moveFolderDialogFor?.name}" into…</DialogTitle></DialogHeader>
+          <div className="space-y-1 max-h-72 overflow-y-auto">
+            <button
+              onClick={() => moveFolderDialogFor && moveFolderToFolder(moveFolderDialogFor.id, null)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent text-sm text-foreground"
+            >
+              <X className="h-4 w-4" /> Top level (no parent)
+            </button>
+            {(() => {
+              if (!moveFolderDialogFor) return null;
+              const forbidden = getDescendantIds(moveFolderDialogFor.id);
+              const candidates = folders.filter((f) => !forbidden.has(f.id));
+              if (candidates.length === 0) {
+                return <p className="text-xs text-muted-foreground italic text-center py-3">No other folders available.</p>;
+              }
+              return candidates.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => moveFolderDialogFor && moveFolderToFolder(moveFolderDialogFor.id, f.id)}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent text-sm text-foreground"
+                >
+                  <Folder className="h-4 w-4 text-amber-500" /> {f.name}
+                </button>
+              ));
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
       <AlertDialog open={!!deleteFolder} onOpenChange={(o) => !o && setDeleteFolder(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
