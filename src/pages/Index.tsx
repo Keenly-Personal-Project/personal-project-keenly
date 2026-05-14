@@ -380,19 +380,20 @@ const Index = () => {
                     >
                       <button
                         onClick={() => navigate(`/class/${cls.slug}`)}
-                        className="w-full flex flex-col rounded-xl border border-foreground/30 overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer bg-card"
+                        className="w-full flex flex-col rounded-xl border overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer"
+                        style={{
+                          background: labelColor || 'hsl(var(--primary))',
+                          borderColor: labelColor || 'hsl(var(--primary))',
+                        }}
                       >
-                        <div className="flex items-center justify-center aspect-[3/4] bg-muted/50 overflow-hidden">
+                        <div className="flex items-center justify-center aspect-[3/4] overflow-hidden" style={{ background: labelColor ? `${labelColor}` : 'hsl(var(--primary))' }}>
                           {cls.image ? (
                             <img src={cls.image} alt={cls.name} className="w-full h-full object-cover" />
                           ) : (
-                            <Icon className="h-16 w-16 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <Icon className="h-16 w-16 text-primary-foreground/80" />
                           )}
                         </div>
-                        <div
-                          className="w-full py-3 text-center"
-                          style={{ background: labelColor || 'hsl(var(--primary))' }}
-                        >
+                        <div className="w-full py-3 text-center">
                           <span className="text-sm font-semibold text-primary-foreground">{cls.name}</span>
                         </div>
                       </button>
