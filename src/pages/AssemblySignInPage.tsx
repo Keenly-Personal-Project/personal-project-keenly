@@ -66,28 +66,37 @@ export default function AssemblySignInPage() {
         return;
       }
 
-      // Resolve assembly id (with retry). Don't block the RPC race on this — run in parallel.
+      // Resolve assembly id (with retry forever until cancelled). Run in parallel with RPC.
       let assemblyId: string | null = null;
       const resolveAssemblyId = async (): Promise<string | null> => {
-        for (let attempt = 0; attempt < 10; attempt += 1) {
-          if (cancelled || assemblyId) return assemblyId;
+        let attempt = 0;
+        while (!cancelled && !assemblyId) {
           // Try direct table read first (fast, RLS-allowed for members).
           try {
             const { data } = await withTimeout(
-              supabase.from("assemblies").select("id").eq("qr_token", normalizedToken).maybeSingle(),
-              3500,
+              supabase.from("assemblies").select("id, class_slug").eq("qr_token", normalizedToken).maybeSingle(),
+              4000,
             );
-            if (data?.id) { assemblyId = data.id; return assemblyId; }
+            if (data?.id) {
+              assemblyId = data.id;
+              if (data.class_slug && !cancelled) setClassSlug(data.class_slug);
+              return assemblyId;
+            }
           } catch { /* try RPC fallback */ }
           try {
             const { data } = await withTimeout(
               supabase.rpc("lookup_assembly_by_token" as any, { _qr_token: normalizedToken }),
-              3500,
+              4000,
             );
             const row = Array.isArray(data) ? data[0] : data;
-            if (row?.id) { assemblyId = row.id; return assemblyId; }
+            if (row?.id) {
+              assemblyId = row.id;
+              if (row.class_slug && !cancelled) setClassSlug(row.class_slug);
+              return assemblyId;
+            }
           } catch { /* keep retrying */ }
-          await wait(600);
+          attempt += 1;
+          await wait(Math.min(600 + attempt * 200, 2000));
         }
         return assemblyId;
       };
@@ -95,9 +104,10 @@ export default function AssemblySignInPage() {
 
       // Poll the attendance row directly. On phones the RPC sometimes never
       // resolves even though the DB write went through, so this catches success fast.
+      // Keep polling indefinitely until cancelled — the user may have already been
+      // signed in from another device, so we just need to detect the row when it appears.
       const pollAttendance = async (): Promise<{ status: string } | null> => {
-        for (let attempt = 0; attempt < 30; attempt += 1) {
-          if (cancelled) return null;
+        while (!cancelled) {
           if (!assemblyId) { await wait(400); continue; }
           try {
             const { data } = await withTimeout(
@@ -113,7 +123,7 @@ export default function AssemblySignInPage() {
           } catch {
             // ignore — keep polling
           }
-          await wait(700);
+          await wait(800);
         }
         return null;
       };
