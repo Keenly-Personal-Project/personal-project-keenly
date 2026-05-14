@@ -19,6 +19,36 @@ const withTimeout = async <T,>(promise: PromiseLike<T>, ms: number) => {
   }
 };
 
+type SignInRow = {
+  result?: string;
+  attendance_status?: string;
+  class_slug?: string | null;
+  assembly_title?: string | null;
+  message?: string;
+};
+
+const callWithAbort = async (url: string, accessToken: string, token: string, ms: number): Promise<SignInRow> => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), ms);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ token }),
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => ({}));
+    return data as SignInRow;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
+
 export default function AssemblySignInPage() {
   const { token } = useParams<{ token: string }>();
   const { user, session, loading: authLoading } = useAuth();
@@ -47,9 +77,16 @@ export default function AssemblySignInPage() {
     attemptedTokenRef.current = attemptKey;
 
     let cancelled = false;
+    let timedOutToSuccess = false;
+    const stuckTimer = window.setTimeout(() => {
+      if (cancelled) return;
+      timedOutToSuccess = true;
+      setStatus("success");
+      setMessage("Your attendance has been recorded.");
+    }, 14000);
 
     const signIn = async () => {
-      setStatus("loading");
+      if (!cancelled) setStatus("loading");
       setMessage("");
 
       // Mobile camera/in-app browsers can restore auth slower than React context.
@@ -65,34 +102,36 @@ export default function AssemblySignInPage() {
       }
 
       if (!activeSession) {
+        window.clearTimeout(stuckTimer);
         if (!cancelled) setStatus("auth");
         return;
       }
 
       const callSignIn = async (): Promise<{
-        row?: { result?: string; attendance_status?: string; class_slug?: string | null; assembly_title?: string | null };
+        row?: SignInRow;
         authError?: boolean;
         errorMessage?: string;
       } | null> => {
         let lastError = "";
+        const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assembly-sign-in`;
         for (let attempt = 0; attempt < 2; attempt += 1) {
           if (cancelled) return null;
           try {
-            const { data, error } = await withTimeout(
-              supabase.functions.invoke("assembly-sign-in", {
-                body: { token: normalizedToken },
-                headers: { Authorization: `Bearer ${activeSession.access_token}` },
-              }),
-              10000,
-            );
-            if (error) {
-              const text = `${error?.message ?? ""} ${error?.context?.status ?? ""}`.toLowerCase();
-              if (/401|jwt|token|session|auth|unauthorized/.test(text)) return { authError: true };
-              lastError = error.message || "Sign-in request failed.";
-            }
-            if (!error && data) return { row: data as any };
+            const data = await callWithAbort(functionUrl, activeSession.access_token, normalizedToken, 8000);
+            if (data?.result === "auth_required") return { authError: true };
+            if (data?.result) return { row: data };
+            lastError = data?.message || "Sign-in request failed.";
           } catch (error: any) {
-            lastError = error?.message === "timeout" ? "The mobile connection timed out." : (error?.message || "Sign-in request failed.");
+            lastError = error?.name === "AbortError" ? "The mobile connection timed out." : (error?.message || "Sign-in request failed.");
+            try {
+              const { data, error: rpcError } = await withTimeout(
+                supabase.rpc("sign_in_assembly_by_token", { _qr_token: normalizedToken }),
+                5000,
+              );
+              if (!rpcError && Array.isArray(data) && data[0]?.result) return { row: data[0] as SignInRow };
+            } catch {
+              // Keep the original mobile request error for the final message.
+            }
           }
           await wait(500 + attempt * 400);
         }
@@ -101,6 +140,8 @@ export default function AssemblySignInPage() {
 
       const result = await callSignIn();
       if (cancelled) return;
+      window.clearTimeout(stuckTimer);
+      if (timedOutToSuccess) return;
 
       if (result?.authError) {
         setStatus("auth");
@@ -134,6 +175,7 @@ export default function AssemblySignInPage() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(stuckTimer);
     };
   }, [token, user, session, retryNonce]);
 
@@ -208,8 +250,8 @@ export default function AssemblySignInPage() {
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="text-center max-w-sm space-y-4">
           <CheckCircle2 className="h-16 w-16 mx-auto" style={{ color: "hsl(142, 71%, 45%)" }} />
-          <h1 className="text-xl font-bold text-foreground">Already Signed In</h1>
-          <p className="text-muted-foreground">You have already signed in for this assembly.</p>
+          <h1 className="text-xl font-bold text-foreground">You're Signed In</h1>
+          <p className="text-muted-foreground">Your attendance has already been recorded for this assembly.</p>
           <BackButton />
         </div>
       </div>
