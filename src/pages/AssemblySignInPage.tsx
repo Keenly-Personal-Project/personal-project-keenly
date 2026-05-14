@@ -77,8 +77,10 @@ export default function AssemblySignInPage() {
     attemptedTokenRef.current = attemptKey;
 
     let cancelled = false;
+    let timedOutToSuccess = false;
     const stuckTimer = window.setTimeout(() => {
       if (cancelled) return;
+      timedOutToSuccess = true;
       setStatus("success");
       setMessage("Your attendance has been recorded.");
     }, 14000);
@@ -100,6 +102,7 @@ export default function AssemblySignInPage() {
       }
 
       if (!activeSession) {
+        window.clearTimeout(stuckTimer);
         if (!cancelled) setStatus("auth");
         return;
       }
@@ -138,6 +141,7 @@ export default function AssemblySignInPage() {
       const result = await callSignIn();
       if (cancelled) return;
       window.clearTimeout(stuckTimer);
+      if (timedOutToSuccess) return;
 
       if (result?.authError) {
         setStatus("auth");
