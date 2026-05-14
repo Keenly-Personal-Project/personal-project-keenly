@@ -43,6 +43,12 @@ export default function AssemblySignInPage() {
 
     let cancelled = false;
 
+    const applyAttendanceStatus = (s: string) => {
+      if (s === "late") setStatus("late");
+      else if (s === "absent") setStatus("expired");
+      else setStatus("success");
+    };
+
     const signIn = async () => {
       setStatus("loading");
       setMessage("");
@@ -53,97 +59,111 @@ export default function AssemblySignInPage() {
         return;
       }
 
-      let signInResult: any = null;
-      let signInError: unknown = null;
-
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        try {
-          const { data: rows, error } = await withTimeout(supabase.rpc("sign_in_assembly_by_token" as any, {
-          _qr_token: normalizedToken,
-          }), 12000);
-
-          signInResult = Array.isArray(rows) ? rows[0] : rows;
-          signInError = error;
-
-          if (!error && signInResult) break;
-        } catch (error) {
-          signInError = error;
-        }
-
-        await wait(450 + attempt * 350);
-        if (cancelled) return;
+      // Look up the assembly once so the attendance poll knows what to watch for.
+      let assemblyId: string | null = null;
+      try {
+        const { data: assembly } = await withTimeout(
+          supabase.rpc("lookup_assembly_by_token" as any, { _qr_token: normalizedToken }),
+          5000,
+        );
+        const assemblyRow = Array.isArray(assembly) ? assembly[0] : assembly;
+        assemblyId = assemblyRow?.id ?? null;
+      } catch {
+        // ignore — RPC race below may still succeed
       }
 
-      if (cancelled) return;
-
-      // Fallback: even if the RPC hung or timed out, check if attendance was actually recorded.
-      if (signInError || !signInResult) {
-        try {
-          const { data: assembly } = await withTimeout(
-            supabase.rpc("lookup_assembly_by_token" as any, { _qr_token: normalizedToken }),
-            6000,
-          );
-          const assemblyRow = Array.isArray(assembly) ? assembly[0] : assembly;
-          if (assemblyRow?.id) {
-            const { data: existing } = await withTimeout(
+      // Poll the attendance row directly. On phones the RPC sometimes never
+      // resolves even though the DB write went through, so this catches success fast.
+      const pollAttendance = async (): Promise<{ status: string } | null> => {
+        if (!assemblyId) return null;
+        for (let attempt = 0; attempt < 25; attempt += 1) {
+          if (cancelled) return null;
+          try {
+            const { data } = await withTimeout(
               supabase
                 .from("assembly_attendance")
                 .select("status")
-                .eq("assembly_id", assemblyRow.id)
+                .eq("assembly_id", assemblyId)
                 .eq("user_id", user.id)
                 .maybeSingle(),
-              6000,
+              4000,
             );
-            if (existing?.status) {
-              if (existing.status === "late") setStatus("late");
-              else if (existing.status === "absent") setStatus("expired");
-              else setStatus("success");
-              return;
-            }
+            if (data?.status) return { status: data.status };
+          } catch {
+            // ignore — keep polling
           }
-        } catch {
-          // ignore, fall through to error
+          await wait(700);
         }
+        return null;
+      };
 
-        setStatus("error");
-        setMessage("The QR sign-in took too long to confirm. Tap Retry or scan the QR again.");
+      const callRpc = async (): Promise<{ result?: string; attendance_status?: string } | null> => {
+        for (let attempt = 0; attempt < 4; attempt += 1) {
+          if (cancelled) return null;
+          try {
+            const { data: rows, error } = await withTimeout(
+              supabase.rpc("sign_in_assembly_by_token" as any, { _qr_token: normalizedToken }),
+              5000,
+            );
+            const row = Array.isArray(rows) ? rows[0] : rows;
+            if (!error && row) return row as any;
+          } catch {
+            // timeout — try again
+          }
+          await wait(400 + attempt * 300);
+        }
+        return null;
+      };
+
+      type RpcWin = { kind: "rpc"; value: { result?: string; attendance_status?: string } | null };
+      type PollWin = { kind: "poll"; value: { status: string } | null };
+
+      const rpcPromise: Promise<RpcWin> = callRpc().then((value) => ({ kind: "rpc", value }));
+      const pollPromise: Promise<PollWin> = pollAttendance().then((value) => ({ kind: "poll", value }));
+
+      const winner = await Promise.race<RpcWin | PollWin>([rpcPromise, pollPromise]);
+      if (cancelled) return;
+
+      if (winner.kind === "poll" && winner.value?.status) {
+        applyAttendanceStatus(winner.value.status);
         return;
       }
 
-      if (signInResult.result === "signed_in") {
-        setStatus(signInResult.attendance_status === "late" ? "late" : "success");
-        return;
+      if (winner.kind === "rpc" && winner.value) {
+        const r = winner.value;
+        if (r.result === "signed_in") { setStatus(r.attendance_status === "late" ? "late" : "success"); return; }
+        if (r.result === "already") { setStatus("already"); return; }
+        if (r.result === "expired") { setStatus("expired"); return; }
+        if (r.result === "auth_required") { setStatus("auth"); return; }
+        if (r.result === "not_member") {
+          setStatus("error");
+          setMessage("This QR belongs to a class you have not joined yet.");
+          return;
+        }
+        if (r.result === "not_found") {
+          setStatus("error");
+          setMessage("This QR code is not valid anymore. Ask the teacher to show the latest QR.");
+          return;
+        }
       }
 
-      if (signInResult.result === "already") {
-        setStatus("already");
+      // First finisher returned nothing useful — wait on the other one.
+      const other = winner.kind === "rpc" ? await pollPromise : await rpcPromise;
+      if (cancelled) return;
+
+      if (other.kind === "poll" && other.value?.status) {
+        applyAttendanceStatus(other.value.status);
         return;
       }
-
-      if (signInResult.result === "expired") {
-        setStatus("expired");
-        return;
-      }
-
-      if (signInResult.result === "auth_required") {
-        setStatus("auth");
-        return;
-      }
-
-      if (signInResult.result === "not_member") {
-        setStatus("error");
-        setMessage("This QR belongs to a class you have not joined yet.");
-        return;
-      }
-
-      if (signInResult.result === "not_found") {
-        setStatus("error");
-        setMessage("This QR code is not valid anymore. Ask the teacher to show the latest QR.");
-        return;
+      if (other.kind === "rpc" && other.value) {
+        const r = other.value;
+        if (r.result === "signed_in") { setStatus(r.attendance_status === "late" ? "late" : "success"); return; }
+        if (r.result === "already") { setStatus("already"); return; }
+        if (r.result === "expired") { setStatus("expired"); return; }
       }
 
       setStatus("error");
-      setMessage("This QR could not be confirmed. Tap Retry or scan the QR again.");
+      setMessage("The QR sign-in took too long to confirm. Tap Retry or scan the QR again.");
     };
 
     void signIn();
