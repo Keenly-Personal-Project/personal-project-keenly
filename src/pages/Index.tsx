@@ -359,8 +359,17 @@ const Index = () => {
                 <p className="text-xs mt-1">Use the button above to create one or join with a code.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {classes.map((cls) => {
+              (() => {
+                const groups = new Map<string, ClassItem[]>();
+                for (const cls of classes) {
+                  const key = cls.folder?.trim() || '';
+                  if (!groups.has(key)) groups.set(key, []);
+                  groups.get(key)!.push(cls);
+                }
+                const folderNames = Array.from(groups.keys()).filter(k => k).sort((a, b) => a.localeCompare(b));
+                const orderedKeys = [...folderNames, ...(groups.has('') ? [''] : [])];
+
+                const renderCard = (cls: ClassItem) => {
                   const Icon = iconMap[cls.icon] || BookOpen;
                   const labelColor = cls.color || undefined;
                   const canEdit = cls.role === "owner" || cls.role === "admin";
@@ -403,8 +412,38 @@ const Index = () => {
                       </button>
                     </div>
                   );
-                })}
-              </div>
+                };
+
+                if (folderNames.length === 0) {
+                  return (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                      {classes.map(renderCard)}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-8">
+                    {orderedKeys.map((key) => (
+                      <div key={key || '__unfiled'}>
+                        <div className="flex items-center gap-2 mb-3 text-foreground/70">
+                          <Folder className="h-4 w-4" />
+                          <h2
+                            className="text-lg"
+                            style={{ fontFamily: "'Courier New', monospace" }}
+                          >
+                            {key || 'Unfiled'}
+                          </h2>
+                          <div className="flex-1 h-px bg-foreground/15" />
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                          {groups.get(key)!.map(renderCard)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()
             )}
           </div>
         </div>
