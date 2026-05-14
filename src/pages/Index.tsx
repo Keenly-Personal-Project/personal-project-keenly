@@ -153,6 +153,7 @@ const Index = () => {
     setEditColor(cls.color || '');
     setEditImage(cls.image || '');
     setEditName(cls.name);
+    setEditFolder(cls.folder || '');
     setEditDialogOpen(true);
   };
 
@@ -163,6 +164,7 @@ const Index = () => {
         name: editName.trim() || undefined,
         color: editColor || null,
         image: editImage || null,
+        folder: editFolder.trim() || null,
       })
       .eq("id", editId);
     if (error) {
