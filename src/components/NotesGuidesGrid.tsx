@@ -521,7 +521,8 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
       {/* Root notes */}
       <div
         onDragOver={(e) => {
-          if (!canEdit || !dragNoteId) return;
+          if (!canEdit) return;
+          if (!dragNoteId && !dragFolderId) return;
           e.preventDefault();
           setDragOverRoot(true);
         }}
@@ -531,7 +532,7 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
           handleDropOnRoot();
         }}
         className={`grid grid-cols-2 md:grid-cols-3 gap-4 rounded-lg p-1 transition-colors ${
-          dragOverRoot && dragNoteId ? "bg-muted/40" : ""
+          dragOverRoot && (dragNoteId || dragFolderId) ? "bg-muted/40" : ""
         }`}
       >
         {rootNotes.map(renderNote)}
