@@ -31,6 +31,7 @@ export interface NoteFolder {
   id: string;
   name: string;
   color?: string | null;
+  parentId?: string | null;
 }
 
 function PublisherBadge({ email, avatarUrl }: { email: string; avatarUrl?: string | null }) {
