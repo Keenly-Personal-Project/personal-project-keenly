@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from "@/components/Header";
 import { generateHexCode } from "@/components/Header";
-import { Loader2, BookOpen, FlaskConical, X, Pencil, Image, Palette, Plus, Folder } from 'lucide-react';
+import { Loader2, BookOpen, FlaskConical, X, Pencil, Image, Palette, Plus, Folder, ChevronDown, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
