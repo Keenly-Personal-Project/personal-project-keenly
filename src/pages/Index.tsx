@@ -175,6 +175,20 @@ const Index = () => {
 
   const handleSaveEdit = async () => {
     if (!editId) return;
+    if (isBypass) {
+      const next = loadDemoKeens().map(k => k.id === editId ? {
+        ...k,
+        name: editName.trim() || k.name,
+        color: editColor || null,
+        image: editImage || null,
+        folder: editFolder.trim() || null,
+      } : k);
+      saveDemoKeens(next);
+      setEditDialogOpen(false);
+      setEditId(null);
+      setClasses(next);
+      return;
+    }
     const { error } = await (supabase.from as any)("keens")
       .update({
         name: editName.trim() || undefined,
