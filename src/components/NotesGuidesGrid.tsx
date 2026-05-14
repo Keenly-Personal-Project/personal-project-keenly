@@ -67,9 +67,22 @@ interface Props {
   notes: Note[];
   folders: NoteFolder[];
   canEdit: boolean;
+  onNoteMoved?: (noteId: string, folderId: string | null) => void;
+  onFolderMoved?: (folderId: string, parentId: string | null) => void;
 }
 
-export default function NotesGuidesGrid({ classSlug, className, notes, folders, canEdit }: Props) {
+const getDragPayload = (e: React.DragEvent) => {
+  const typedNote = e.dataTransfer.getData("application/x-keen-note-id");
+  const typedFolder = e.dataTransfer.getData("application/x-keen-folder-id");
+  const plain = e.dataTransfer.getData("text/plain");
+  if (typedNote) return { type: "note" as const, id: typedNote };
+  if (typedFolder) return { type: "folder" as const, id: typedFolder };
+  if (plain.startsWith("note:")) return { type: "note" as const, id: plain.slice(5) };
+  if (plain.startsWith("folder:")) return { type: "folder" as const, id: plain.slice(7) };
+  return null;
+};
+
+export default function NotesGuidesGrid({ classSlug, className, notes, folders, canEdit, onNoteMoved, onFolderMoved }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -154,6 +167,7 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
       toast.error("Couldn't move note");
       return;
     }
+    onNoteMoved?.(noteId, folderId);
     toast.success(folderId ? "Moved to folder" : "Removed from folder");
     setMoveDialogFor(null);
   };
@@ -255,34 +269,39 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
       toast.error("Couldn't move folder");
       return;
     }
+    onFolderMoved?.(folderId, newParentId);
     toast.success(newParentId ? "Folder moved" : "Folder moved to top level");
     setMoveFolderDialogFor(null);
   };
 
   // Drop handler on a folder
-  const handleDropOnFolder = (folderId: string) => {
-    if (dragNoteId) {
-      moveNoteToFolder(dragNoteId, folderId);
+  const handleDropOnFolder = (folderId: string, payload?: ReturnType<typeof getDragPayload>) => {
+    const draggedNoteId = payload?.type === "note" ? payload.id : dragNoteId;
+    const draggedFolderId = payload?.type === "folder" ? payload.id : dragFolderId;
+    if (draggedNoteId) {
+      moveNoteToFolder(draggedNoteId, folderId);
       setDragNoteId(null);
       setDragOverFolderId(null);
       return;
     }
-    if (dragFolderId && dragFolderId !== folderId) {
-      moveFolderToFolder(dragFolderId, folderId);
+    if (draggedFolderId && draggedFolderId !== folderId) {
+      moveFolderToFolder(draggedFolderId, folderId);
       setDragFolderId(null);
       setDragOverFolderId(null);
       return;
     }
   };
-  const handleDropOnRoot = () => {
-    if (dragNoteId) {
-      moveNoteToFolder(dragNoteId, null);
+  const handleDropOnRoot = (payload?: ReturnType<typeof getDragPayload>) => {
+    const draggedNoteId = payload?.type === "note" ? payload.id : dragNoteId;
+    const draggedFolderId = payload?.type === "folder" ? payload.id : dragFolderId;
+    if (draggedNoteId) {
+      moveNoteToFolder(draggedNoteId, null);
       setDragNoteId(null);
       setDragOverRoot(false);
       return;
     }
-    if (dragFolderId) {
-      moveFolderToFolder(dragFolderId, null);
+    if (draggedFolderId) {
+      moveFolderToFolder(draggedFolderId, null);
       setDragFolderId(null);
       setDragOverRoot(false);
       return;
@@ -304,8 +323,12 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
         onDragStart={(e) => {
           if (!canEdit) return;
           setDragNoteId(note.id);
+          setDragFolderId(null);
           e.dataTransfer.effectAllowed = "move";
-          try { e.dataTransfer.setData("text/plain", `note:${note.id}`); } catch {}
+          try {
+            e.dataTransfer.setData("application/x-keen-note-id", note.id);
+            e.dataTransfer.setData("text/plain", `note:${note.id}`);
+          } catch {}
         }}
         onDragEnd={() => setDragNoteId(null)}
         onPointerDown={(e) => startPress(note, e)}
@@ -354,7 +377,7 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
     const dragOver = dragOverFolderId === folder.id;
     const beingDragged = dragFolderId === folder.id;
     // Disallow dropping a folder onto itself or one of its descendants
-    const droppingForbidden = !!dragFolderId && getDescendantIds(folder.id).has(dragFolderId);
+    const droppingForbidden = !!dragFolderId && getDescendantIds(dragFolderId).has(folder.id);
 
     return (
       <div
@@ -367,13 +390,18 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
           setDragNoteId(null);
           e.dataTransfer.effectAllowed = "move";
           // Required for Firefox / some mobile browsers — drag is cancelled without data.
-          try { e.dataTransfer.setData("text/plain", `folder:${folder.id}`); } catch {}
+          try {
+            e.dataTransfer.setData("application/x-keen-folder-id", folder.id);
+            e.dataTransfer.setData("text/plain", `folder:${folder.id}`);
+          } catch {}
         }}
         onDragEnd={() => setDragFolderId(null)}
         onDragOver={(e) => {
           if (!canEdit) return;
-          if (!dragNoteId && !dragFolderId) return;
-          if (droppingForbidden) return;
+          const payload = getDragPayload(e);
+          if (!dragNoteId && !dragFolderId && !payload) return;
+          if (payload?.type === "folder" && getDescendantIds(payload.id).has(folder.id)) return;
+          if (!payload && droppingForbidden) return;
           e.preventDefault();
           e.stopPropagation();
           setDragOverFolderId(folder.id);
@@ -382,8 +410,9 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
         onDrop={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          if (droppingForbidden) return;
-          handleDropOnFolder(folder.id);
+          const payload = getDragPayload(e);
+          if (payload?.type === "folder" && getDescendantIds(payload.id).has(folder.id)) return;
+          handleDropOnFolder(folder.id, payload);
         }}
         onContextMenu={(e) => {
           if (!canEdit) return;
@@ -498,7 +527,9 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
     <div
       onDragOver={(e) => {
         if (!canEdit) return;
-        if (!dragNoteId && !dragFolderId) return;
+          const payload = getDragPayload(e);
+          const hasDrag = !!dragNoteId || !!dragFolderId || !!payload;
+          if (!hasDrag) return;
         // root drop only when not over a folder
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
@@ -525,14 +556,15 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
       <div
         onDragOver={(e) => {
           if (!canEdit) return;
-          if (!dragNoteId && !dragFolderId) return;
+          const payload = getDragPayload(e);
+          if (!dragNoteId && !dragFolderId && !payload) return;
           e.preventDefault();
           setDragOverRoot(true);
         }}
         onDragLeave={() => setDragOverRoot(false)}
         onDrop={(e) => {
           e.preventDefault();
-          handleDropOnRoot();
+          handleDropOnRoot(getDragPayload(e));
         }}
         className={`grid grid-cols-2 md:grid-cols-3 gap-4 rounded-lg p-1 transition-colors ${
           dragOverRoot && (dragNoteId || dragFolderId) ? "bg-muted/40" : ""

@@ -28,16 +28,6 @@ export default function AssemblySignInPage() {
   const [message, setMessage] = useState("");
   const [classSlug, setClassSlug] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
-  const [authTimedOut, setAuthTimedOut] = useState(false);
-
-  useEffect(() => {
-    if (!authLoading) {
-      setAuthTimedOut(false);
-      return;
-    }
-    const timer = window.setTimeout(() => setAuthTimedOut(true), 5000);
-    return () => window.clearTimeout(timer);
-  }, [authLoading]);
 
   const goBackToAttendance = () => {
     if (classSlug) navigate(`/class/${encodeURIComponent(classSlug)}?tab=Attendance`);
@@ -45,8 +35,6 @@ export default function AssemblySignInPage() {
   };
 
   useEffect(() => {
-    if (authLoading && !authTimedOut) return;
-
     const normalizedToken = token?.trim();
     if (!normalizedToken) {
       setStatus("error");
@@ -54,7 +42,7 @@ export default function AssemblySignInPage() {
       return;
     }
 
-    const attemptKey = `${normalizedToken}:${user?.id ?? "guest"}:${retryNonce}`;
+    const attemptKey = `${normalizedToken}:${session?.user?.id ?? user?.id ?? "guest"}:${retryNonce}`;
     if (attemptedTokenRef.current === attemptKey) return;
     attemptedTokenRef.current = attemptKey;
 
@@ -64,20 +52,24 @@ export default function AssemblySignInPage() {
       setStatus("loading");
       setMessage("");
 
-      // Always verify session directly with Supabase — the AuthContext can be
-      // slow to propagate (especially in mobile in-app browsers), so don't
-      // trust !user alone before bailing to the "Sign In Required" screen.
-      if (!user || !session) {
-        try {
-          const { data } = await withTimeout(supabase.auth.getSession(), 3000);
-          if (!data.session) {
-            if (!cancelled) setStatus("auth");
-            return;
+      // Mobile camera/in-app browsers can restore auth slower than React context.
+      // Query the auth client directly a few times, then either sign in or show login.
+      let activeSession = session;
+      if (!activeSession) {
+        for (let attempt = 0; attempt < 5 && !activeSession && !cancelled; attempt += 1) {
+          try {
+            const { data } = await withTimeout(supabase.auth.getSession(), 5000);
+            activeSession = data.session;
+          } catch {
+            activeSession = null;
           }
-        } catch {
-          if (!cancelled) setStatus("auth");
-          return;
+          if (!activeSession) await wait(700);
         }
+      }
+
+      if (!activeSession) {
+        if (!cancelled) setStatus("auth");
+        return;
       }
 
       const isAuthError = (error: any) => {
@@ -86,17 +78,17 @@ export default function AssemblySignInPage() {
       };
 
       const callRpc = async (): Promise<{
-        row?: { result?: string; attendance_status?: string; class_slug?: string | null };
+        row?: { result?: string; attendance_status?: string; class_slug?: string | null; assembly_title?: string | null };
         authError?: boolean;
         errorMessage?: string;
       } | null> => {
         let lastError = "";
-        for (let attempt = 0; attempt < 3; attempt += 1) {
+        for (let attempt = 0; attempt < 4; attempt += 1) {
           if (cancelled) return null;
           try {
             const { data: rows, error } = await withTimeout(
               supabase.rpc("sign_in_assembly_by_token" as any, { _qr_token: normalizedToken }),
-              5000,
+              7000,
             );
             if (error) {
               if (isAuthError(error)) return { authError: true };
@@ -123,6 +115,7 @@ export default function AssemblySignInPage() {
       const r = result?.row;
 
       if (r?.class_slug) setClassSlug(r.class_slug);
+      if (r?.assembly_title) setMessage(r.assembly_title);
       if (r?.result === "signed_in") { setStatus(r.attendance_status === "late" ? "late" : "success"); return; }
       if (r?.result === "already") { setStatus("already"); return; }
       if (r?.result === "expired") { setStatus("expired"); return; }
@@ -147,9 +140,9 @@ export default function AssemblySignInPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, user, session, authLoading, authTimedOut, retryNonce]);
+  }, [token, user, session, retryNonce]);
 
-  if ((authLoading && !authTimedOut) || status === "loading") {
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">

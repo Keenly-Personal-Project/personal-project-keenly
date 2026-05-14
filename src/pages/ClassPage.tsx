@@ -830,6 +830,12 @@ const ClassPage = () => {
           notes={notes as any}
           folders={folders}
           canEdit={canEdit}
+          onNoteMoved={(noteId, folderId) => {
+            setNotes((prev) => prev.map((note) => (note.id === noteId ? { ...note, folderId } : note)));
+          }}
+          onFolderMoved={(folderId, parentId) => {
+            setFolders((prev) => prev.map((folder) => (folder.id === folderId ? { ...folder, parentId } : folder)));
+          }}
         />,
         "Notes/Guides",
       );
