@@ -66,7 +66,7 @@ function AppLayout() {
         <AIChatPanel />
       </div>
 
-      <IdleScreensaver idleMs={20000} />
+      <IdleScreensaver idleMs={40000} />
       <FullscreenButton />
     </div>
   );
