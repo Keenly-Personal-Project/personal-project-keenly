@@ -53,17 +53,14 @@ export default function AssemblySignInPage() {
       setMessage("");
 
       // Mobile camera/in-app browsers can restore auth slower than React context.
-      // Query the auth client directly a few times, then either sign in or show login.
+      // Read the real persisted session directly before calling the backend sign-in.
       let activeSession = session;
       if (!activeSession) {
-        for (let attempt = 0; attempt < 5 && !activeSession && !cancelled; attempt += 1) {
-          try {
-            const { data } = await withTimeout(supabase.auth.getSession(), 5000);
-            activeSession = data.session;
-          } catch {
-            activeSession = null;
-          }
-          if (!activeSession) await wait(700);
+        try {
+          const { data } = await withTimeout(supabase.auth.getSession(), 3000);
+          activeSession = data.session;
+        } catch {
+          activeSession = null;
         }
       }
 
@@ -72,30 +69,28 @@ export default function AssemblySignInPage() {
         return;
       }
 
-      const isAuthError = (error: any) => {
-        const text = `${error?.message ?? ""} ${error?.code ?? ""} ${error?.status ?? ""}`.toLowerCase();
-        return error?.status === 401 || error?.status === 403 || /jwt|token|session|auth|unauthorized|forbidden|permission/.test(text);
-      };
-
-      const callRpc = async (): Promise<{
+      const callSignIn = async (): Promise<{
         row?: { result?: string; attendance_status?: string; class_slug?: string | null; assembly_title?: string | null };
         authError?: boolean;
         errorMessage?: string;
       } | null> => {
         let lastError = "";
-        for (let attempt = 0; attempt < 4; attempt += 1) {
+        for (let attempt = 0; attempt < 2; attempt += 1) {
           if (cancelled) return null;
           try {
-            const { data: rows, error } = await withTimeout(
-              supabase.rpc("sign_in_assembly_by_token" as any, { _qr_token: normalizedToken }),
-              7000,
+            const { data, error } = await withTimeout(
+              supabase.functions.invoke("assembly-sign-in", {
+                body: { token: normalizedToken },
+                headers: { Authorization: `Bearer ${activeSession.access_token}` },
+              }),
+              10000,
             );
             if (error) {
-              if (isAuthError(error)) return { authError: true };
+              const text = `${error?.message ?? ""} ${error?.context?.status ?? ""}`.toLowerCase();
+              if (/401|jwt|token|session|auth|unauthorized/.test(text)) return { authError: true };
               lastError = error.message || "Sign-in request failed.";
             }
-            const row = Array.isArray(rows) ? rows[0] : rows;
-            if (!error && row) return { row: row as any };
+            if (!error && data) return { row: data as any };
           } catch (error: any) {
             lastError = error?.message === "timeout" ? "The mobile connection timed out." : (error?.message || "Sign-in request failed.");
           }
@@ -104,7 +99,7 @@ export default function AssemblySignInPage() {
         return { errorMessage: lastError };
       };
 
-      const result = await callRpc();
+      const result = await callSignIn();
       if (cancelled) return;
 
       if (result?.authError) {
