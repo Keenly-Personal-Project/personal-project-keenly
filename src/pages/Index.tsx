@@ -37,8 +37,16 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+const DEMO_KEENS_KEY = 'demo_keens_v1';
+const loadDemoKeens = (): ClassItem[] => {
+  try { return JSON.parse(localStorage.getItem(DEMO_KEENS_KEY) || '[]'); } catch { return []; }
+};
+const saveDemoKeens = (items: ClassItem[]) => {
+  try { localStorage.setItem(DEMO_KEENS_KEY, JSON.stringify(items)); } catch { /* ignore */ }
+};
+
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isBypass } = useAuth();
   const navigate = useNavigate();
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
@@ -63,6 +71,11 @@ const Index = () => {
   const fetchClasses = useCallback(async () => {
     if (!user) return;
     setLoadingClasses(true);
+    if (isBypass) {
+      setClasses(loadDemoKeens());
+      setLoadingClasses(false);
+      return;
+    }
     // Get keens this user is a member of (via keen_members → keens)
     const { data: memberships, error: memberErr } = await (supabase.from as any)("keen_members")
       .select("class_slug, role")
@@ -89,7 +102,7 @@ const Index = () => {
     const roleBySlug = new Map((memberships || []).map((m: any) => [m.class_slug, m.role]));
     setClasses((keens || []).map((k: any) => ({ ...k, role: roleBySlug.get(k.slug) })));
     setLoadingClasses(false);
-  }, [user]);
+  }, [user, isBypass]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -127,7 +140,10 @@ const Index = () => {
     const target = classes.find(c => c.id === id);
     setTimeout(async () => {
       if (target) {
-        if (target.created_by === user?.id) {
+        if (isBypass) {
+          const next = loadDemoKeens().filter(k => k.id !== id);
+          saveDemoKeens(next);
+        } else if (target.created_by === user?.id) {
           // Owner: delete the keen entirely
           await (supabase.from as any)("keens").delete().eq("id", id);
         } else {
@@ -159,6 +175,20 @@ const Index = () => {
 
   const handleSaveEdit = async () => {
     if (!editId) return;
+    if (isBypass) {
+      const next = loadDemoKeens().map(k => k.id === editId ? {
+        ...k,
+        name: editName.trim() || k.name,
+        color: editColor || null,
+        image: editImage || null,
+        folder: editFolder.trim() || null,
+      } : k);
+      saveDemoKeens(next);
+      setEditDialogOpen(false);
+      setEditId(null);
+      setClasses(next);
+      return;
+    }
     const { error } = await (supabase.from as any)("keens")
       .update({
         name: editName.trim() || undefined,
@@ -192,6 +222,29 @@ const Index = () => {
     if (!baseSlug) {
       toast.error("Invalid Keen name.");
       setSubmitting(false);
+      return;
+    }
+
+    if (isBypass) {
+      const existing = loadDemoKeens();
+      const slug = existing.some(k => k.slug === baseSlug)
+        ? `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`
+        : baseSlug;
+      const code = generateHexCode();
+      const newKeen: ClassItem = {
+        id: `demo-${Date.now()}`,
+        name, slug, code, icon: "BookOpen",
+        image: null, color: null, folder: null,
+        created_by: user.id, role: 'owner',
+      };
+      const next = [...existing, newKeen];
+      saveDemoKeens(next);
+      setClasses(next);
+      toast.success(`Keen created! Code: ${code}`);
+      setNewClassName("");
+      setCreateDialogOpen(false);
+      setSubmitting(false);
+      navigate(`/class/${slug}`);
       return;
     }
 
@@ -394,7 +447,7 @@ const Index = () => {
                           )}
                         </div>
                         <div className="w-full py-3 text-center">
-                          <span className="text-sm font-semibold text-primary-foreground">{cls.name}</span>
+                          <span className="text-sm font-semibold text-primary-foreground" style={{ fontFamily: "Calibri, 'Trebuchet MS', sans-serif" }}>{cls.name}</span>
                         </div>
                       </button>
                       {canEdit && (
@@ -431,7 +484,7 @@ const Index = () => {
                           <Folder className="h-4 w-4" />
                           <h2
                             className="text-lg"
-                            style={{ fontFamily: "'Courier New', monospace" }}
+                            style={{ fontFamily: "Calibri, 'Trebuchet MS', sans-serif" }}
                           >
                             {key || 'Unfiled'}
                           </h2>
