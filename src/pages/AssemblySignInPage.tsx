@@ -59,25 +59,39 @@ export default function AssemblySignInPage() {
         return;
       }
 
-      // Look up the assembly once so the attendance poll knows what to watch for.
+      // Resolve assembly id (with retry). Don't block the RPC race on this — run in parallel.
       let assemblyId: string | null = null;
-      try {
-        const { data: assembly } = await withTimeout(
-          supabase.rpc("lookup_assembly_by_token" as any, { _qr_token: normalizedToken }),
-          5000,
-        );
-        const assemblyRow = Array.isArray(assembly) ? assembly[0] : assembly;
-        assemblyId = assemblyRow?.id ?? null;
-      } catch {
-        // ignore — RPC race below may still succeed
-      }
+      const resolveAssemblyId = async (): Promise<string | null> => {
+        for (let attempt = 0; attempt < 10; attempt += 1) {
+          if (cancelled || assemblyId) return assemblyId;
+          // Try direct table read first (fast, RLS-allowed for members).
+          try {
+            const { data } = await withTimeout(
+              supabase.from("assemblies").select("id").eq("qr_token", normalizedToken).maybeSingle(),
+              3500,
+            );
+            if (data?.id) { assemblyId = data.id; return assemblyId; }
+          } catch { /* try RPC fallback */ }
+          try {
+            const { data } = await withTimeout(
+              supabase.rpc("lookup_assembly_by_token" as any, { _qr_token: normalizedToken }),
+              3500,
+            );
+            const row = Array.isArray(data) ? data[0] : data;
+            if (row?.id) { assemblyId = row.id; return assemblyId; }
+          } catch { /* keep retrying */ }
+          await wait(600);
+        }
+        return assemblyId;
+      };
+      void resolveAssemblyId();
 
       // Poll the attendance row directly. On phones the RPC sometimes never
       // resolves even though the DB write went through, so this catches success fast.
       const pollAttendance = async (): Promise<{ status: string } | null> => {
-        if (!assemblyId) return null;
-        for (let attempt = 0; attempt < 25; attempt += 1) {
+        for (let attempt = 0; attempt < 30; attempt += 1) {
           if (cancelled) return null;
+          if (!assemblyId) { await wait(400); continue; }
           try {
             const { data } = await withTimeout(
               supabase
