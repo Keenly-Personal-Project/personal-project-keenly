@@ -305,6 +305,7 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
           if (!canEdit) return;
           setDragNoteId(note.id);
           e.dataTransfer.effectAllowed = "move";
+          try { e.dataTransfer.setData("text/plain", `note:${note.id}`); } catch {}
         }}
         onDragEnd={() => setDragNoteId(null)}
         onPointerDown={(e) => startPress(note, e)}
