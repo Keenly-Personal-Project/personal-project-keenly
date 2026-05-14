@@ -12,14 +12,14 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    if (req.method !== "POST") return json({ result: "error", message: "Method not allowed" }, 405);
+    if (req.method !== "POST") return json({ result: "error", message: "Method not allowed" });
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return json({ result: "auth_required" }, 401);
 
     const body = await req.json().catch(() => null);
     const token = typeof body?.token === "string" ? body.token.trim() : "";
-    if (!/^[A-Za-z0-9]{8,128}$/.test(token)) return json({ result: "not_found" }, 400);
+    if (!/^[A-Za-z0-9]{8,128}$/.test(token)) return json({ result: "not_found" });
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -41,7 +41,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (assemblyError) throw assemblyError;
-    if (!assembly) return json({ result: "not_found" }, 404);
+    if (!assembly) return json({ result: "not_found" });
 
     const { data: member, error: memberError } = await adminClient
       .from("keen_members")
@@ -52,7 +52,7 @@ serve(async (req) => {
 
     if (memberError) throw memberError;
     if (!member) {
-      return json({ result: "not_member", assembly_title: assembly.title, class_slug: assembly.class_slug, assembly_id: assembly.id }, 403);
+      return json({ result: "not_member", assembly_title: assembly.title, class_slug: assembly.class_slug, assembly_id: assembly.id });
     }
 
     const now = new Date();
