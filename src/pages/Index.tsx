@@ -37,8 +37,16 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+const DEMO_KEENS_KEY = 'demo_keens_v1';
+const loadDemoKeens = (): ClassItem[] => {
+  try { return JSON.parse(localStorage.getItem(DEMO_KEENS_KEY) || '[]'); } catch { return []; }
+};
+const saveDemoKeens = (items: ClassItem[]) => {
+  try { localStorage.setItem(DEMO_KEENS_KEY, JSON.stringify(items)); } catch { /* ignore */ }
+};
+
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isBypass } = useAuth();
   const navigate = useNavigate();
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
