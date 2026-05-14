@@ -291,6 +291,9 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
 
   const rootNotes = notes.filter((n) => !n.folderId);
   const notesInFolder = (folderId: string) => notes.filter((n) => n.folderId === folderId);
+  const childFoldersOf = (folderId: string | null) =>
+    folders.filter((f) => (f.parentId || null) === folderId);
+  const rootFolders = childFoldersOf(null);
 
   const renderNote = (note: Note) => {
     const noteEmail = note.publisherEmail || user?.email || "";
