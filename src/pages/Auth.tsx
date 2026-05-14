@@ -164,11 +164,12 @@ const Auth = () => {
         toast({ variant: "destructive", title: "Sign-in failed", description: signInErr.message });
         return;
       }
+      await supabase.auth.getSession();
       toast({
         title: isLogin ? "Welcome back!" : "Account created!",
         description: isLogin ? "You have successfully logged in." : "You're now signed in.",
       });
-      navigate(getRedirectPath());
+      window.location.assign(getRedirectPath());
     } finally {
       setIsLoading(false);
     }
