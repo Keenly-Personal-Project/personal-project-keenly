@@ -377,7 +377,7 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
     const dragOver = dragOverFolderId === folder.id;
     const beingDragged = dragFolderId === folder.id;
     // Disallow dropping a folder onto itself or one of its descendants
-    const droppingForbidden = !!dragFolderId && getDescendantIds(folder.id).has(dragFolderId);
+    const droppingForbidden = !!dragFolderId && getDescendantIds(dragFolderId).has(folder.id);
 
     return (
       <div
@@ -398,8 +398,10 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
         onDragEnd={() => setDragFolderId(null)}
         onDragOver={(e) => {
           if (!canEdit) return;
-          if (!dragNoteId && !dragFolderId) return;
-          if (droppingForbidden) return;
+          const payload = getDragPayload(e);
+          if (!dragNoteId && !dragFolderId && !payload) return;
+          if (payload?.type === "folder" && getDescendantIds(payload.id).has(folder.id)) return;
+          if (!payload && droppingForbidden) return;
           e.preventDefault();
           e.stopPropagation();
           setDragOverFolderId(folder.id);
