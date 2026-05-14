@@ -491,23 +491,35 @@ const Index = () => {
 
                 return (
                   <div className="space-y-8">
-                    {orderedKeys.map((key) => (
-                      <div key={key || '__unfiled'}>
-                        <div className="flex items-center gap-2 mb-3 text-foreground/70">
-                          <Folder className="h-4 w-4" />
-                          <h2
-                            className="text-lg"
-                            style={{ fontFamily: "Calibri, 'Trebuchet MS', sans-serif" }}
+                    {orderedKeys.map((key) => {
+                      const folderKey = key || '__unfiled';
+                      const collapsed = collapsedFolders.has(folderKey);
+                      return (
+                        <div key={folderKey}>
+                          <button
+                            type="button"
+                            onClick={() => toggleFolder(folderKey)}
+                            className="w-full flex items-center gap-2 mb-3 text-foreground/70 hover:text-foreground transition-colors"
                           >
-                            {key || 'Unfiled'}
-                          </h2>
-                          <div className="flex-1 h-px bg-foreground/15" />
+                            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            <Folder className="h-4 w-4" />
+                            <h2
+                              className="text-lg"
+                              style={{ fontFamily: "Calibri, 'Trebuchet MS', sans-serif" }}
+                            >
+                              {key || 'Unfiled'}
+                            </h2>
+                            <span className="text-xs text-foreground/50">({groups.get(key)!.length})</span>
+                            <div className="flex-1 h-px bg-foreground/15" />
+                          </button>
+                          {!collapsed && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                              {groups.get(key)!.map(renderCard)}
+                            </div>
+                          )}
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                          {groups.get(key)!.map(renderCard)}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })()
