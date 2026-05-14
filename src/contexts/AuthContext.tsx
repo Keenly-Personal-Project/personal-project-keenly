@@ -30,7 +30,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isBypass, setIsBypass] = useState(() => localStorage.getItem('keen_bypass_mode') === 'true');
+  const [isBypass, setIsBypass] = useState(false);
+  // Migrate legacy bypass users to the new real-account demo flow on first load.
+  useEffect(() => {
+    if (localStorage.getItem('keen_bypass_mode') === 'true') {
+      localStorage.removeItem('keen_bypass_mode');
+      // Defer to next tick so activateBypass is defined.
+      setTimeout(() => { activateBypass(); }, 0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (isBypass) {
