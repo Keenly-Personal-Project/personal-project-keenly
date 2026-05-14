@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from "@/components/Header";
 import { generateHexCode } from "@/components/Header";
-import { Loader2, BookOpen, FlaskConical, X, Pencil, Image, Palette, Plus, Folder } from 'lucide-react';
+import { Loader2, BookOpen, FlaskConical, X, Pencil, Image, Palette, Plus, Folder, ChevronDown, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -67,6 +67,19 @@ const Index = () => {
   const [newClassName, setNewClassName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const COLLAPSED_FOLDERS_KEY = 'keen_collapsed_folders_v1';
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(COLLAPSED_FOLDERS_KEY) || '[]')); } catch { return new Set(); }
+  });
+  const toggleFolder = (key: string) => {
+    setCollapsedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      try { localStorage.setItem(COLLAPSED_FOLDERS_KEY, JSON.stringify(Array.from(next))); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   const fetchClasses = useCallback(async () => {
     if (!user) return;
@@ -478,23 +491,35 @@ const Index = () => {
 
                 return (
                   <div className="space-y-8">
-                    {orderedKeys.map((key) => (
-                      <div key={key || '__unfiled'}>
-                        <div className="flex items-center gap-2 mb-3 text-foreground/70">
-                          <Folder className="h-4 w-4" />
-                          <h2
-                            className="text-lg"
-                            style={{ fontFamily: "Calibri, 'Trebuchet MS', sans-serif" }}
+                    {orderedKeys.map((key) => {
+                      const folderKey = key || '__unfiled';
+                      const collapsed = collapsedFolders.has(folderKey);
+                      return (
+                        <div key={folderKey}>
+                          <button
+                            type="button"
+                            onClick={() => toggleFolder(folderKey)}
+                            className="w-full flex items-center gap-2 mb-3 text-foreground/70 hover:text-foreground transition-colors"
                           >
-                            {key || 'Unfiled'}
-                          </h2>
-                          <div className="flex-1 h-px bg-foreground/15" />
+                            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            <Folder className="h-4 w-4" />
+                            <h2
+                              className="text-lg"
+                              style={{ fontFamily: "Calibri, 'Trebuchet MS', sans-serif" }}
+                            >
+                              {key || 'Unfiled'}
+                            </h2>
+                            <span className="text-xs text-foreground/50">({groups.get(key)!.length})</span>
+                            <div className="flex-1 h-px bg-foreground/15" />
+                          </button>
+                          {!collapsed && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                              {groups.get(key)!.map(renderCard)}
+                            </div>
+                          )}
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                          {groups.get(key)!.map(renderCard)}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })()

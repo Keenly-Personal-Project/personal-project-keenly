@@ -273,7 +273,7 @@ async function toPlayableUrl(stored: string | null | undefined): Promise<string>
 
 const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
-  const { user, loading } = useAuth();
+  const { user, loading, isBypass } = useAuth();
   const { profile } = useProfile();
   const directory = useUserDirectory();
   const navigate = useNavigate();
@@ -363,6 +363,20 @@ const ClassPage = () => {
   useEffect(() => {
     let cancelled = false;
     const fetchAll = async () => {
+      if (isBypass) {
+        try {
+          const a = JSON.parse(localStorage.getItem(`demo_announcements_${slug}`) || "[]");
+          const n = JSON.parse(localStorage.getItem(`demo_notes_${slug}`) || "[]");
+          const e = JSON.parse(localStorage.getItem(`demo_events_${slug}`) || "[]");
+          const f = JSON.parse(localStorage.getItem(`demo_note_folders_${slug}`) || "[]");
+          if (cancelled) return;
+          setAnnouncements(a.map(mapAnnouncement));
+          setNotes(n.map(mapNote));
+          setEvents(e.map(mapEvent));
+          setFolders(f.map((x: any) => ({ id: x.id, name: x.name, color: x.color })));
+        } catch { /* ignore */ }
+        return;
+      }
       const [aRes, nRes, eRes, fRes] = await Promise.all([
         (supabase.from as any)("announcements").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
         (supabase.from as any)("notes").select("*").eq("class_slug", slug).order("created_at", { ascending: false }),
@@ -376,6 +390,13 @@ const ClassPage = () => {
       if (fRes.data) setFolders(fRes.data.map((f: any) => ({ id: f.id, name: f.name, color: f.color })));
     };
     fetchAll();
+
+    if (isBypass) {
+      // Demo mode: refresh on local storage events
+      const handler = () => fetchAll();
+      window.addEventListener("demo_keen_content_updated", handler);
+      return () => { cancelled = true; window.removeEventListener("demo_keen_content_updated", handler); };
+    }
 
     const channel = supabase
       .channel(`keen-content-${slug}`)
@@ -408,12 +429,25 @@ const ClassPage = () => {
       })
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(channel); };
-  }, [slug]);
+  }, [slug, isBypass]);
 
   // Fetch the current user's role from the database (source of truth).
   const fetchMyRole = useCallback(async () => {
     if (!user) return;
     setRoleLoading(true);
+    if (isBypass) {
+      // In demo mode, infer role from local demo keens (creator = owner)
+      try {
+        const demo = JSON.parse(localStorage.getItem("demo_keens_v1") || "[]");
+        const k = demo.find((k: any) => k.slug === slug);
+        const r = k?.role;
+        setPreviewRole(r === "owner" || r === "admin" || r === "member" ? r : "owner");
+      } catch {
+        setPreviewRole("owner");
+      }
+      setRoleLoading(false);
+      return;
+    }
     const { data } = await (supabase.from as any)("keen_members")
       .select("role")
       .eq("class_slug", slug)
@@ -422,7 +456,7 @@ const ClassPage = () => {
     const r = data?.role;
     setPreviewRole(r === "owner" || r === "admin" || r === "member" ? r : "member");
     setRoleLoading(false);
-  }, [user, slug]);
+  }, [user, slug, isBypass]);
 
   useEffect(() => { fetchMyRole(); }, [fetchMyRole]);
 
@@ -621,11 +655,17 @@ const ClassPage = () => {
   }
   if (!user) return null;
 
+  // Read fresh name from demo keens (current source) with fallback to legacy storage
+  let demoMatchName: string | undefined;
+  try {
+    const demo = JSON.parse(localStorage.getItem("demo_keens_v1") || "[]");
+    demoMatchName = demo.find((k: any) => k.slug === slug)?.name;
+  } catch { /* ignore */ }
   const savedClasses = JSON.parse(localStorage.getItem("keen_classes") || "[]");
   const matchedClass = savedClasses.find(
     (cls: { name: string }) => cls.name.toLowerCase().replace(/\s+/g, "-") === slug,
   );
-  const displayName = matchedClass?.name || slug.replace(/-/g, " ");
+  const displayName = demoMatchName || matchedClass?.name || slug.replace(/-/g, " ");
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -654,7 +694,8 @@ const ClassPage = () => {
 
   const handleAddAnnouncement = async () => {
     if (!newBrief.trim() || !user) return;
-    const { error } = await (supabase.from as any)("announcements").insert({
+    const payload = {
+      id: crypto.randomUUID(),
       class_slug: slug,
       user_id: user.id,
       publisher_email: user.email || "Unknown",
@@ -663,10 +704,21 @@ const ClassPage = () => {
       description: newDescription.trim(),
       images: newImages.length > 0 ? newImages : null,
       date: newDate ? new Date(newDate).toISOString() : new Date().toISOString(),
-    });
-    if (error) {
-      toast.error(error.message || "Failed to add announcement");
-      return;
+      created_at: new Date().toISOString(),
+    };
+    if (isBypass) {
+      try {
+        const key = `demo_announcements_${slug}`;
+        const existing = JSON.parse(localStorage.getItem(key) || "[]");
+        localStorage.setItem(key, JSON.stringify([payload, ...existing]));
+        window.dispatchEvent(new Event("demo_keen_content_updated"));
+      } catch { /* ignore */ }
+    } else {
+      const { error } = await (supabase.from as any)("announcements").insert(payload);
+      if (error) {
+        toast.error(error.message || "Failed to add announcement");
+        return;
+      }
     }
     setNewBrief("");
     setNewDescription("");
