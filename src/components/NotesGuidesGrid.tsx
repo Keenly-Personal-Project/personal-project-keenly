@@ -305,6 +305,7 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
           if (!canEdit) return;
           setDragNoteId(note.id);
           e.dataTransfer.effectAllowed = "move";
+          try { e.dataTransfer.setData("text/plain", `note:${note.id}`); } catch {}
         }}
         onDragEnd={() => setDragNoteId(null)}
         onPointerDown={(e) => startPress(note, e)}
@@ -365,6 +366,8 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
           setDragFolderId(folder.id);
           setDragNoteId(null);
           e.dataTransfer.effectAllowed = "move";
+          // Required for Firefox / some mobile browsers — drag is cancelled without data.
+          try { e.dataTransfer.setData("text/plain", `folder:${folder.id}`); } catch {}
         }}
         onDragEnd={() => setDragFolderId(null)}
         onDragOver={(e) => {
