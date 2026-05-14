@@ -45,11 +45,17 @@ const saveDemoKeens = (items: ClassItem[]) => {
   try { localStorage.setItem(DEMO_KEENS_KEY, JSON.stringify(items)); } catch { /* ignore */ }
 };
 
+// Module-level cache so navigating away and back doesn't re-show the loading state.
+let cachedClasses: ClassItem[] | null = null;
+let cachedForUserId: string | null = null;
+
 const Index = () => {
   const { user, loading, isBypass } = useAuth();
   const navigate = useNavigate();
-  const [classes, setClasses] = useState<ClassItem[]>([]);
-  const [loadingClasses, setLoadingClasses] = useState(true);
+  const [classes, setClasses] = useState<ClassItem[]>(() =>
+    cachedClasses && cachedForUserId ? cachedClasses : []
+  );
+  const [loadingClasses, setLoadingClasses] = useState(() => !cachedClasses);
 
   const [editId, setEditId] = useState<string | null>(null);
   const [editColor, setEditColor] = useState('');
@@ -83,13 +89,17 @@ const Index = () => {
 
   const fetchClasses = useCallback(async () => {
     if (!user) return;
-    setLoadingClasses(true);
+    // Only show the spinner if we have nothing cached for this user yet.
+    const hasCache = cachedClasses !== null && cachedForUserId === user.id;
+    if (!hasCache) setLoadingClasses(true);
     if (isBypass) {
-      setClasses(loadDemoKeens());
+      const demo = loadDemoKeens();
+      cachedClasses = demo;
+      cachedForUserId = user.id;
+      setClasses(demo);
       setLoadingClasses(false);
       return;
     }
-    // Get keens this user is a member of (via keen_members → keens)
     const { data: memberships, error: memberErr } = await (supabase.from as any)("keen_members")
       .select("class_slug, role")
       .eq("user_id", user.id);
@@ -100,6 +110,8 @@ const Index = () => {
     }
     const slugs = (memberships || []).map((m: any) => m.class_slug);
     if (slugs.length === 0) {
+      cachedClasses = [];
+      cachedForUserId = user.id;
       setClasses([]);
       setLoadingClasses(false);
       return;
@@ -113,7 +125,10 @@ const Index = () => {
       return;
     }
     const roleBySlug = new Map((memberships || []).map((m: any) => [m.class_slug, m.role]));
-    setClasses((keens || []).map((k: any) => ({ ...k, role: roleBySlug.get(k.slug) })));
+    const next = (keens || []).map((k: any) => ({ ...k, role: roleBySlug.get(k.slug) }));
+    cachedClasses = next;
+    cachedForUserId = user.id;
+    setClasses(next);
     setLoadingClasses(false);
   }, [user, isBypass]);
 
@@ -122,8 +137,23 @@ const Index = () => {
       navigate('/auth');
       return;
     }
-    if (user) fetchClasses();
+    if (user) {
+      // If switching accounts, reset cache
+      if (cachedForUserId && cachedForUserId !== user.id) {
+        cachedClasses = null;
+        cachedForUserId = null;
+      }
+      fetchClasses();
+    }
   }, [user, loading, navigate, fetchClasses]);
+
+  // Keep module cache in sync with local mutations (rename, delete, etc.)
+  useEffect(() => {
+    if (user && !loadingClasses) {
+      cachedClasses = classes;
+      cachedForUserId = user.id;
+    }
+  }, [classes, user, loadingClasses]);
 
   // Refresh when other parts of the app indicate a change (e.g. join request approved)
   useEffect(() => {
