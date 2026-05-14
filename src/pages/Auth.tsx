@@ -85,8 +85,18 @@ const Auth = () => {
     }
   };
 
-  const handleBypass = () => {
-    activateBypass();
+  const handleBypass = async () => {
+    setIsLoading(true);
+    const { error } = await activateBypass();
+    setIsLoading(false);
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Demo couldn't start",
+        description: "Check your connection and try again.",
+      });
+      return;
+    }
     navigate('/');
   };
 
@@ -95,14 +105,23 @@ const Auth = () => {
     if (isResend) setResending(true); else setIsLoading(true);
     try {
       const fnName = mode === 'login' ? 'send-login-code' : 'send-signup-code';
-      const { data, error } = await supabase.functions.invoke(fnName, {
+      // Race the function call against a timeout — on flaky mobile networks
+      // the request can hang indefinitely with no error surfaced to the user.
+      const invokePromise = supabase.functions.invoke(fnName, {
         body: { email: email.trim().toLowerCase(), password },
       });
+      const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+        setTimeout(
+          () => resolve({ data: null, error: { message: 'Request timed out. Check your connection and try again.' } }),
+          15000,
+        ),
+      );
+      const { data, error } = (await Promise.race([invokePromise, timeoutPromise])) as any;
       if (error || data?.error) {
         toast({
           variant: "destructive",
           title: mode === 'login' ? "Login failed" : "Sign up failed",
-          description: data?.error || (mode === 'login' ? "Invalid email or password." : "Could not create account."),
+          description: data?.error || error?.message || (mode === 'login' ? "Invalid email or password." : "Could not create account."),
         });
         return;
       }
@@ -113,8 +132,8 @@ const Auth = () => {
         title: isResend ? "New code sent" : "Verification code sent",
         description: `Check ${email} for your 6-character code.`,
       });
-    } catch {
-      toast({ variant: "destructive", title: "Error", description: "Could not send code. Try again." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e?.message || "Could not send code. Try again." });
     } finally {
       setIsLoading(false);
       setResending(false);
