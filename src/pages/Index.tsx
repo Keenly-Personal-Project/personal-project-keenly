@@ -24,6 +24,7 @@ interface ClassItem {
   icon: string;
   image?: string | null;
   color?: string | null;
+  folder?: string | null;
   code: string;
   created_by: string;
   role?: string;
