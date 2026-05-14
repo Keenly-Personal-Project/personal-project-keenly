@@ -158,11 +158,13 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
     setMoveDialogFor(null);
   };
 
-  const createFolder = async (name: string, seedNoteId?: string | null) => {
+  const createFolder = async (name: string, seedNoteId?: string | null, parentId?: string | null) => {
     if (!user) return;
     const trimmed = name.trim() || "New Folder";
+    const payload: any = { class_slug: classSlug, user_id: user.id, name: trimmed };
+    if (parentId) payload.parent_id = parentId;
     const { data, error } = await (supabase.from as any)("note_folders")
-      .insert({ class_slug: classSlug, user_id: user.id, name: trimmed })
+      .insert(payload)
       .select("id")
       .single();
     if (error || !data) {
@@ -173,10 +175,15 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
       await (supabase.from as any)("notes").update({ folder_id: data.id }).eq("id", seedNoteId);
     }
     toast.success("Folder created");
-    setOpenFolderIds((prev) => new Set([...prev, data.id]));
+    setOpenFolderIds((prev) => {
+      const next = new Set([...prev, data.id]);
+      if (parentId) next.add(parentId);
+      return next;
+    });
     setNewFolderOpen(false);
     setNewFolderName("");
     setNewFolderSeedNoteId(null);
+    setNewFolderParentId(null);
   };
 
   const renameFolderSubmit = async () => {
@@ -196,12 +203,13 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
   const deleteFolderConfirm = async () => {
     if (!deleteFolder) return;
     // Notes inside will have folder_id set to null via ON DELETE SET NULL
+    // Child folders will have parent_id set to null via ON DELETE SET NULL
     const { error } = await (supabase.from as any)("note_folders").delete().eq("id", deleteFolder.id);
     if (error) {
       toast.error("Couldn't delete folder");
       return;
     }
-    toast.success("Folder deleted (notes kept)");
+    toast.success("Folder deleted (contents kept)");
     setDeleteFolder(null);
   };
 
@@ -218,18 +226,67 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
     setColorFolder(null);
   };
 
+  // Compute descendant folder ids of a folder (to prevent moving into self/descendant)
+  const getDescendantIds = (folderId: string): Set<string> => {
+    const out = new Set<string>([folderId]);
+    let added = true;
+    while (added) {
+      added = false;
+      for (const f of folders) {
+        if (f.parentId && out.has(f.parentId) && !out.has(f.id)) {
+          out.add(f.id);
+          added = true;
+        }
+      }
+    }
+    return out;
+  };
+
+  const moveFolderToFolder = async (folderId: string, newParentId: string | null) => {
+    if (!canEdit) return;
+    if (newParentId && getDescendantIds(folderId).has(newParentId)) {
+      toast.error("Can't move a folder into itself");
+      return;
+    }
+    const { error } = await (supabase.from as any)("note_folders")
+      .update({ parent_id: newParentId })
+      .eq("id", folderId);
+    if (error) {
+      toast.error("Couldn't move folder");
+      return;
+    }
+    toast.success(newParentId ? "Folder moved" : "Folder moved to top level");
+    setMoveFolderDialogFor(null);
+  };
+
   // Drop handler on a folder
   const handleDropOnFolder = (folderId: string) => {
-    if (!dragNoteId) return;
-    moveNoteToFolder(dragNoteId, folderId);
-    setDragNoteId(null);
-    setDragOverFolderId(null);
+    if (dragNoteId) {
+      moveNoteToFolder(dragNoteId, folderId);
+      setDragNoteId(null);
+      setDragOverFolderId(null);
+      return;
+    }
+    if (dragFolderId && dragFolderId !== folderId) {
+      moveFolderToFolder(dragFolderId, folderId);
+      setDragFolderId(null);
+      setDragOverFolderId(null);
+      return;
+    }
   };
   const handleDropOnRoot = () => {
-    if (!dragNoteId) return;
-    moveNoteToFolder(dragNoteId, null);
-    setDragNoteId(null);
-    setDragOverRoot(false);
+    if (dragNoteId) {
+      moveNoteToFolder(dragNoteId, null);
+      setDragNoteId(null);
+      setDragOverRoot(false);
+      return;
+    }
+    if (dragFolderId) {
+      moveFolderToFolder(dragFolderId, null);
+      setDragFolderId(null);
+      setDragOverRoot(false);
+      return;
+    }
   };
 
   const rootNotes = notes.filter((n) => !n.folderId);
