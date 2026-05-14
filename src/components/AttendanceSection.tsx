@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Users, ClipboardList, QrCode, Maximize2, Share2, Trash2, ScanLine, MousePointerClick } from "lucide-react";
+import { Plus, Users, ClipboardList, QrCode, Maximize2, Share2, Trash2, ScanLine, MousePointerClick, ExternalLink } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import QrScannerDialog from "@/components/QrScannerDialog";
 import { useNavigate } from "react-router-dom";
@@ -675,6 +675,9 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
                       <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => handleShare(selectedAssembly.qr_token)}>
                         <Share2 className="h-3 w-3" /> Share
                       </Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => window.open(signInUrl(selectedAssembly.qr_token), "_blank")}>
+                        <ExternalLink className="h-3 w-3" /> Open in Tab
+                      </Button>
                     </div>
                   </div>
 
@@ -771,9 +774,14 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
             <div className="flex flex-col items-center gap-6">
               <QRCodeSVG value={signInUrl(qrFullscreen)} size={Math.min(window.innerWidth * 0.7, window.innerHeight * 0.7, 500)} />
               <p className="text-lg font-medium text-foreground">Scan to sign in</p>
-              <Button variant="outline" onClick={() => handleShare(qrFullscreen)} className="gap-2">
-                <Share2 className="h-4 w-4" /> Share Link
-              </Button>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => handleShare(qrFullscreen)} className="gap-2">
+                  <Share2 className="h-4 w-4" /> Share Link
+                </Button>
+                <Button variant="outline" onClick={() => window.open(signInUrl(qrFullscreen), "_blank")} className="gap-2">
+                  <ExternalLink className="h-4 w-4" /> Open in Tab
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
