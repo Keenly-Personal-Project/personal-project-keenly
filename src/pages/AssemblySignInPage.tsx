@@ -22,10 +22,17 @@ const withTimeout = async <T,>(promise: PromiseLike<T>, ms: number) => {
 export default function AssemblySignInPage() {
   const { token } = useParams<{ token: string }>();
   const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const attemptedTokenRef = useRef<string | null>(null);
   const [status, setStatus] = useState<"loading" | "success" | "late" | "expired" | "already" | "error" | "auth">("loading");
   const [message, setMessage] = useState("");
+  const [classSlug, setClassSlug] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
+
+  const goBackToAttendance = () => {
+    if (classSlug) navigate(`/class/${encodeURIComponent(classSlug)}?tab=Attendance`);
+    else navigate("/");
+  };
 
   useEffect(() => {
     if (authLoading) return;
