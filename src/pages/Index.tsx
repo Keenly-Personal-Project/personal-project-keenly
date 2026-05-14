@@ -89,13 +89,17 @@ const Index = () => {
 
   const fetchClasses = useCallback(async () => {
     if (!user) return;
-    setLoadingClasses(true);
+    // Only show the spinner if we have nothing cached for this user yet.
+    const hasCache = cachedClasses !== null && cachedForUserId === user.id;
+    if (!hasCache) setLoadingClasses(true);
     if (isBypass) {
-      setClasses(loadDemoKeens());
+      const demo = loadDemoKeens();
+      cachedClasses = demo;
+      cachedForUserId = user.id;
+      setClasses(demo);
       setLoadingClasses(false);
       return;
     }
-    // Get keens this user is a member of (via keen_members → keens)
     const { data: memberships, error: memberErr } = await (supabase.from as any)("keen_members")
       .select("class_slug, role")
       .eq("user_id", user.id);
@@ -106,6 +110,8 @@ const Index = () => {
     }
     const slugs = (memberships || []).map((m: any) => m.class_slug);
     if (slugs.length === 0) {
+      cachedClasses = [];
+      cachedForUserId = user.id;
       setClasses([]);
       setLoadingClasses(false);
       return;
@@ -119,7 +125,10 @@ const Index = () => {
       return;
     }
     const roleBySlug = new Map((memberships || []).map((m: any) => [m.class_slug, m.role]));
-    setClasses((keens || []).map((k: any) => ({ ...k, role: roleBySlug.get(k.slug) })));
+    const next = (keens || []).map((k: any) => ({ ...k, role: roleBySlug.get(k.slug) }));
+    cachedClasses = next;
+    cachedForUserId = user.id;
+    setClasses(next);
     setLoadingClasses(false);
   }, [user, isBypass]);
 
@@ -128,7 +137,14 @@ const Index = () => {
       navigate('/auth');
       return;
     }
-    if (user) fetchClasses();
+    if (user) {
+      // If switching accounts, reset cache
+      if (cachedForUserId && cachedForUserId !== user.id) {
+        cachedClasses = null;
+        cachedForUserId = null;
+      }
+      fetchClasses();
+    }
   }, [user, loading, navigate, fetchClasses]);
 
   // Refresh when other parts of the app indicate a change (e.g. join request approved)
