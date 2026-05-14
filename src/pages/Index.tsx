@@ -45,11 +45,17 @@ const saveDemoKeens = (items: ClassItem[]) => {
   try { localStorage.setItem(DEMO_KEENS_KEY, JSON.stringify(items)); } catch { /* ignore */ }
 };
 
+// Module-level cache so navigating away and back doesn't re-show the loading state.
+let cachedClasses: ClassItem[] | null = null;
+let cachedForUserId: string | null = null;
+
 const Index = () => {
   const { user, loading, isBypass } = useAuth();
   const navigate = useNavigate();
-  const [classes, setClasses] = useState<ClassItem[]>([]);
-  const [loadingClasses, setLoadingClasses] = useState(true);
+  const [classes, setClasses] = useState<ClassItem[]>(() =>
+    cachedClasses && cachedForUserId ? cachedClasses : []
+  );
+  const [loadingClasses, setLoadingClasses] = useState(() => !cachedClasses);
 
   const [editId, setEditId] = useState<string | null>(null);
   const [editColor, setEditColor] = useState('');
