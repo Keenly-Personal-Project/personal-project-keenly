@@ -47,6 +47,7 @@ const Index = () => {
   const [editColor, setEditColor] = useState('');
   const [editImage, setEditImage] = useState('');
   const [editName, setEditName] = useState('');
+  const [editFolder, setEditFolder] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
