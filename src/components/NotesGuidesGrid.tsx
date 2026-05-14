@@ -67,9 +67,22 @@ interface Props {
   notes: Note[];
   folders: NoteFolder[];
   canEdit: boolean;
+  onNoteMoved?: (noteId: string, folderId: string | null) => void;
+  onFolderMoved?: (folderId: string, parentId: string | null) => void;
 }
 
-export default function NotesGuidesGrid({ classSlug, className, notes, folders, canEdit }: Props) {
+const getDragPayload = (e: React.DragEvent) => {
+  const typedNote = e.dataTransfer.getData("application/x-keen-note-id");
+  const typedFolder = e.dataTransfer.getData("application/x-keen-folder-id");
+  const plain = e.dataTransfer.getData("text/plain");
+  if (typedNote) return { type: "note" as const, id: typedNote };
+  if (typedFolder) return { type: "folder" as const, id: typedFolder };
+  if (plain.startsWith("note:")) return { type: "note" as const, id: plain.slice(5) };
+  if (plain.startsWith("folder:")) return { type: "folder" as const, id: plain.slice(7) };
+  return null;
+};
+
+export default function NotesGuidesGrid({ classSlug, className, notes, folders, canEdit, onNoteMoved, onFolderMoved }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -154,6 +167,7 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
       toast.error("Couldn't move note");
       return;
     }
+    onNoteMoved?.(noteId, folderId);
     toast.success(folderId ? "Moved to folder" : "Removed from folder");
     setMoveDialogFor(null);
   };
@@ -255,34 +269,39 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
       toast.error("Couldn't move folder");
       return;
     }
+    onFolderMoved?.(folderId, newParentId);
     toast.success(newParentId ? "Folder moved" : "Folder moved to top level");
     setMoveFolderDialogFor(null);
   };
 
   // Drop handler on a folder
-  const handleDropOnFolder = (folderId: string) => {
-    if (dragNoteId) {
-      moveNoteToFolder(dragNoteId, folderId);
+  const handleDropOnFolder = (folderId: string, payload?: ReturnType<typeof getDragPayload>) => {
+    const draggedNoteId = payload?.type === "note" ? payload.id : dragNoteId;
+    const draggedFolderId = payload?.type === "folder" ? payload.id : dragFolderId;
+    if (draggedNoteId) {
+      moveNoteToFolder(draggedNoteId, folderId);
       setDragNoteId(null);
       setDragOverFolderId(null);
       return;
     }
-    if (dragFolderId && dragFolderId !== folderId) {
-      moveFolderToFolder(dragFolderId, folderId);
+    if (draggedFolderId && draggedFolderId !== folderId) {
+      moveFolderToFolder(draggedFolderId, folderId);
       setDragFolderId(null);
       setDragOverFolderId(null);
       return;
     }
   };
-  const handleDropOnRoot = () => {
-    if (dragNoteId) {
-      moveNoteToFolder(dragNoteId, null);
+  const handleDropOnRoot = (payload?: ReturnType<typeof getDragPayload>) => {
+    const draggedNoteId = payload?.type === "note" ? payload.id : dragNoteId;
+    const draggedFolderId = payload?.type === "folder" ? payload.id : dragFolderId;
+    if (draggedNoteId) {
+      moveNoteToFolder(draggedNoteId, null);
       setDragNoteId(null);
       setDragOverRoot(false);
       return;
     }
-    if (dragFolderId) {
-      moveFolderToFolder(dragFolderId, null);
+    if (draggedFolderId) {
+      moveFolderToFolder(draggedFolderId, null);
       setDragFolderId(null);
       setDragOverRoot(false);
       return;
