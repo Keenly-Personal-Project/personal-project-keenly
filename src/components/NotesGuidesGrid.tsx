@@ -345,10 +345,157 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
     );
   };
 
+  const renderFolder = (folder: NoteFolder, depth: number = 0) => {
+    const isOpen = openFolderIds.has(folder.id);
+    const childFolders = childFoldersOf(folder.id);
+    const folderNotes = notesInFolder(folder.id);
+    const count = folderNotes.length + childFolders.length;
+    const dragOver = dragOverFolderId === folder.id;
+    const beingDragged = dragFolderId === folder.id;
+    // Disallow dropping a folder onto itself or one of its descendants
+    const droppingForbidden = !!dragFolderId && getDescendantIds(folder.id).has(dragFolderId);
+
+    return (
+      <div
+        key={folder.id}
+        draggable={canEdit}
+        onDragStart={(e) => {
+          if (!canEdit) return;
+          e.stopPropagation();
+          setDragFolderId(folder.id);
+          setDragNoteId(null);
+          e.dataTransfer.effectAllowed = "move";
+        }}
+        onDragEnd={() => setDragFolderId(null)}
+        onDragOver={(e) => {
+          if (!canEdit) return;
+          if (!dragNoteId && !dragFolderId) return;
+          if (droppingForbidden) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDragOverFolderId(folder.id);
+        }}
+        onDragLeave={() => setDragOverFolderId((cur) => (cur === folder.id ? null : cur))}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (droppingForbidden) return;
+          handleDropOnFolder(folder.id);
+        }}
+        onContextMenu={(e) => {
+          if (!canEdit) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setFolderMenuFor({ folder, x: e.clientX, y: e.clientY });
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpenFolderIds((prev) => {
+            const next = new Set(prev);
+            next.has(folder.id) ? next.delete(folder.id) : next.add(folder.id);
+            return next;
+          });
+        }}
+        className={`group relative rounded-2xl border-2 border-dashed p-3 pr-24 cursor-pointer transition-all self-start ${
+          isOpen ? "col-span-2 md:col-span-3" : ""
+        } ${beingDragged ? "opacity-40" : ""} ${
+          dragOver
+            ? "border-primary bg-primary/10 scale-[1.02]"
+            : "hover:opacity-90"
+        }`}
+        style={
+          dragOver
+            ? undefined
+            : folder.color
+            ? {
+                background: folder.color.includes("gradient")
+                  ? folder.color
+                  : `${folder.color}22`,
+                borderColor: folder.color.includes("gradient") ? "transparent" : folder.color,
+              }
+            : { borderColor: "hsl(45 90% 55% / 0.5)", background: "hsl(45 90% 55% / 0.08)" }
+        }
+      >
+        <div className="flex items-center gap-2">
+          {isOpen ? (
+            <FolderOpen className="h-5 w-5 shrink-0" style={{ color: folder.color && !folder.color.includes("gradient") ? folder.color : "hsl(38 92% 45%)" }} />
+          ) : (
+            <Folder className="h-5 w-5 shrink-0" style={{ color: folder.color && !folder.color.includes("gradient") ? folder.color : "hsl(38 92% 45%)" }} />
+          )}
+          <p className="text-sm font-semibold text-foreground truncate flex-1">{folder.name}</p>
+          <span className="text-[10px] text-muted-foreground tabular-nums">{count}</span>
+          <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
+        </div>
+        {canEdit && (
+          <div className="absolute top-1 right-1 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={(e) => { e.stopPropagation(); setNewFolderParentId(folder.id); setNewFolderSeedNoteId(null); setNewFolderName(""); setNewFolderOpen(true); }}
+              className="p-1 rounded hover:bg-background/80"
+              aria-label="New subfolder"
+              title="New subfolder"
+            >
+              <FolderPlus className="h-3 w-3 text-muted-foreground" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setMoveFolderDialogFor(folder); }}
+              className="p-1 rounded hover:bg-background/80"
+              aria-label="Move folder"
+              title="Move folder"
+            >
+              <MoveRight className="h-3 w-3 text-muted-foreground" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setColorFolder(folder); setColorValue(folder.color || "hsl(45, 85%, 50%)"); }}
+              className="p-1 rounded hover:bg-background/80"
+              aria-label="Folder color"
+            >
+              <Palette className="h-3 w-3 text-muted-foreground" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setRenameFolder(folder); setRenameValue(folder.name); }}
+              className="p-1 rounded hover:bg-background/80"
+              aria-label="Rename folder"
+            >
+              <Pencil className="h-3 w-3 text-muted-foreground" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setDeleteFolder(folder); }}
+              className="p-1 rounded hover:bg-background/80"
+              aria-label="Delete folder"
+            >
+              <Trash2 className="h-3 w-3 text-destructive" />
+            </button>
+          </div>
+        )}
+
+        {/* Open: show child folders + notes inline */}
+        {isOpen && (
+          <div onClick={(e) => e.stopPropagation()} className="mt-3 space-y-3">
+            {childFolders.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 items-start">
+                {childFolders.map((cf) => renderFolder(cf, depth + 1))}
+              </div>
+            )}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {folderNotes.length === 0 && childFolders.length === 0 ? (
+                <p className="col-span-2 md:col-span-3 text-[11px] text-muted-foreground italic text-center py-2">
+                  Empty — drag a note or folder here.
+                </p>
+              ) : (
+                folderNotes.map((n) => <div key={n.id}>{renderNote(n)}</div>)
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div
       onDragOver={(e) => {
-        if (!canEdit || !dragNoteId) return;
+        if (!canEdit) return;
+        if (!dragNoteId && !dragFolderId) return;
         // root drop only when not over a folder
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
@@ -357,115 +504,17 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
       {/* Top toolbar */}
       {canEdit && (
         <div className="flex items-center gap-2 mb-3">
-          <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => { setNewFolderSeedNoteId(null); setNewFolderName(""); setNewFolderOpen(true); }}>
+          <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => { setNewFolderSeedNoteId(null); setNewFolderParentId(null); setNewFolderName(""); setNewFolderOpen(true); }}>
             <FolderPlus className="h-3.5 w-3.5" /> New Folder
           </Button>
-          <span className="text-[11px] text-muted-foreground italic">Tip: long-press a note for options, or drag a note onto a folder.</span>
+          <span className="text-[11px] text-muted-foreground italic">Tip: long-press a note for options. Drag notes or folders onto another folder to nest them.</span>
         </div>
       )}
 
-      {/* Folders row */}
-      {folders.length > 0 && (
+      {/* Folders row (top-level only; nested ones render inside) */}
+      {rootFolders.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4 items-start">
-          {folders.map((folder) => {
-            const isOpen = openFolderIds.has(folder.id);
-            const count = notesInFolder(folder.id).length;
-            const dragOver = dragOverFolderId === folder.id;
-            return (
-              <div
-                key={folder.id}
-                onDragOver={(e) => {
-                  if (!canEdit || !dragNoteId) return;
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setDragOverFolderId(folder.id);
-                }}
-                onDragLeave={() => setDragOverFolderId((cur) => (cur === folder.id ? null : cur))}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleDropOnFolder(folder.id);
-                }}
-                onClick={() =>
-                  setOpenFolderIds((prev) => {
-                    const next = new Set(prev);
-                    next.has(folder.id) ? next.delete(folder.id) : next.add(folder.id);
-                    return next;
-                  })
-                }
-                className={`group relative rounded-2xl border-2 border-dashed p-3 pr-24 cursor-pointer transition-all self-start ${
-                  isOpen ? "col-span-2 md:col-span-3" : ""
-                } ${
-                  dragOver
-                    ? "border-primary bg-primary/10 scale-[1.02]"
-                    : "hover:opacity-90"
-                }`}
-                style={
-                  dragOver
-                    ? undefined
-                    : folder.color
-                    ? {
-                        background: folder.color.includes("gradient")
-                          ? folder.color
-                          : `${folder.color}22`,
-                        borderColor: folder.color.includes("gradient") ? "transparent" : folder.color,
-                      }
-                    : { borderColor: "hsl(45 90% 55% / 0.5)", background: "hsl(45 90% 55% / 0.08)" }
-                }
-              >
-                <div className="flex items-center gap-2">
-                  {isOpen ? (
-                    <FolderOpen className="h-5 w-5 shrink-0" style={{ color: folder.color && !folder.color.includes("gradient") ? folder.color : "hsl(38 92% 45%)" }} />
-                  ) : (
-                    <Folder className="h-5 w-5 shrink-0" style={{ color: folder.color && !folder.color.includes("gradient") ? folder.color : "hsl(38 92% 45%)" }} />
-                  )}
-                  <p className="text-sm font-semibold text-foreground truncate flex-1">{folder.name}</p>
-                  <span className="text-[10px] text-muted-foreground tabular-nums">{count}</span>
-                  <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
-                </div>
-                {canEdit && (
-                  <div className="absolute top-1 right-1 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setColorFolder(folder); setColorValue(folder.color || "hsl(45, 85%, 50%)"); }}
-                      className="p-1 rounded hover:bg-background/80"
-                      aria-label="Folder color"
-                    >
-                      <Palette className="h-3 w-3 text-muted-foreground" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setRenameFolder(folder); setRenameValue(folder.name); }}
-                      className="p-1 rounded hover:bg-background/80"
-                      aria-label="Rename folder"
-                    >
-                      <Pencil className="h-3 w-3 text-muted-foreground" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setDeleteFolder(folder); }}
-                      className="p-1 rounded hover:bg-background/80"
-                      aria-label="Delete folder"
-                    >
-                      <Trash2 className="h-3 w-3 text-destructive" />
-                    </button>
-                  </div>
-                )}
-
-                {/* Open: show contained notes inline */}
-                {isOpen && (
-                  <div onClick={(e) => e.stopPropagation()} className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {notesInFolder(folder.id).length === 0 ? (
-                      <p className="col-span-2 md:col-span-3 text-[11px] text-muted-foreground italic text-center py-2">
-                        Empty — drag a note here.
-                      </p>
-                    ) : (
-                      notesInFolder(folder.id).map((n) => (
-                        <div key={n.id}>{renderNote(n)}</div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {rootFolders.map((folder) => renderFolder(folder, 0))}
         </div>
       )}
 
