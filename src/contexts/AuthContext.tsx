@@ -81,11 +81,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [isBypass]);
 
-  const activateBypass = () => {
-    localStorage.setItem('keen_bypass_mode', 'true');
-    setIsBypass(true);
-    setUser(BYPASS_USER);
-    setLoading(false);
+  const activateBypass = async () => {
+    // Use a per-browser real Supabase account so all DB operations
+    // (notes, events, announcements, folders, etc.) work natively under RLS.
+    setLoading(true);
+    let creds = localStorage.getItem('keen_demo_account');
+    let email: string;
+    let password: string;
+    if (creds) {
+      try {
+        const parsed = JSON.parse(creds);
+        email = parsed.email;
+        password = parsed.password;
+      } catch {
+        creds = null as any;
+      }
+    }
+    if (!creds) {
+      const rand = Math.random().toString(36).slice(2, 10);
+      email = `demo-${rand}-${Date.now().toString(36)}@keenly.preview`;
+      password = `Demo!${Math.random().toString(36).slice(2, 12)}Aa1`;
+      localStorage.setItem('keen_demo_account', JSON.stringify({ email, password }));
+    }
+
+    // Try sign in first; if it fails, sign up (auto-confirm is enabled).
+    let { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInErr) {
+      const { error: signUpErr } = await supabase.auth.signUp({ email, password });
+      if (signUpErr) {
+        console.error('Demo activation failed:', signUpErr);
+        setLoading(false);
+        return;
+      }
+      // Try sign-in again in case sign-up didn't return a session
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        await supabase.auth.signInWithPassword({ email, password });
+      }
+    }
+    // onAuthStateChange will populate user/session.
+    localStorage.removeItem('keen_bypass_mode');
+    setIsBypass(false);
   };
 
   const signUp = async (email: string, password: string) => {
