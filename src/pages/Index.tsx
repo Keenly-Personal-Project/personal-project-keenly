@@ -394,7 +394,7 @@ const Index = () => {
                           )}
                         </div>
                         <div className="w-full py-3 text-center">
-                          <span className="text-sm font-semibold text-primary-foreground">{cls.name}</span>
+                          <span className="text-sm font-semibold text-primary-foreground" style={{ fontFamily: "Calibri, 'Trebuchet MS', sans-serif" }}>{cls.name}</span>
                         </div>
                       </button>
                       {canEdit && (
