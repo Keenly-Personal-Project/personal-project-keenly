@@ -44,11 +44,15 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const getRedirectPath = () => {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    return redirect && redirect.startsWith('/') ? redirect : '/';
+  };
+
   useEffect(() => {
     if (!loading && user) {
-      const params = new URLSearchParams(window.location.search);
-      const redirect = params.get('redirect');
-      navigate(redirect && redirect.startsWith('/') ? redirect : '/');
+      navigate(getRedirectPath());
     }
   }, [user, loading, navigate]);
 
@@ -164,6 +168,7 @@ const Auth = () => {
         title: isLogin ? "Welcome back!" : "Account created!",
         description: isLogin ? "You have successfully logged in." : "You're now signed in.",
       });
+      navigate(getRedirectPath());
     } finally {
       setIsLoading(false);
     }
