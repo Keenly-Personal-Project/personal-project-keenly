@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { CheckCircle2, XCircle, Loader2, Clock, RotateCcw } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Clock, RotateCcw, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
