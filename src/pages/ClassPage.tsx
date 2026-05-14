@@ -273,7 +273,7 @@ async function toPlayableUrl(stored: string | null | undefined): Promise<string>
 
 const ClassPage = () => {
   const { className } = useParams<{ className: string }>();
-  const { user, loading } = useAuth();
+  const { user, loading, isBypass } = useAuth();
   const { profile } = useProfile();
   const directory = useUserDirectory();
   const navigate = useNavigate();
