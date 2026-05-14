@@ -516,7 +516,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
                   >
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-sm font-semibold text-foreground">
-                        Assembly #{idx + 1}: {assembly.title}
+                        {assembly.title || `Assembly #${idx + 1}`}
                       </h4>
                       {isExpired && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-medium">
