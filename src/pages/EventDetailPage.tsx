@@ -53,6 +53,14 @@ const EventImageCarousel = ({ images }: { images: string[] }) => {
     return () => stopTimer();
   }, [stopTimer]);
 
+  // Preload all images so navigation is instant
+  useEffect(() => {
+    images.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, [images]);
+
   const goTo = (next: number, dir: "left" | "right") => {
     if (isAnimating || next === current) return;
     setDirection(dir);
