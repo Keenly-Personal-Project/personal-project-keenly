@@ -68,6 +68,19 @@ const Index = () => {
   const [joinCode, setJoinCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const COLLAPSED_FOLDERS_KEY = 'keen_collapsed_folders_v1';
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(COLLAPSED_FOLDERS_KEY) || '[]')); } catch { return new Set(); }
+  });
+  const toggleFolder = (key: string) => {
+    setCollapsedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      try { localStorage.setItem(COLLAPSED_FOLDERS_KEY, JSON.stringify(Array.from(next))); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
   const fetchClasses = useCallback(async () => {
     if (!user) return;
     setLoadingClasses(true);
