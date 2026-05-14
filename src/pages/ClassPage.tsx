@@ -391,6 +391,13 @@ const ClassPage = () => {
     };
     fetchAll();
 
+    if (isBypass) {
+      // Demo mode: refresh on local storage events
+      const handler = () => fetchAll();
+      window.addEventListener("demo_keen_content_updated", handler);
+      return () => { cancelled = true; window.removeEventListener("demo_keen_content_updated", handler); };
+    }
+
     const channel = supabase
       .channel(`keen-content-${slug}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "announcements", filter: `class_slug=eq.${slug}` }, fetchAll)
@@ -422,7 +429,7 @@ const ClassPage = () => {
       })
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(channel); };
-  }, [slug]);
+  }, [slug, isBypass]);
 
   // Fetch the current user's role from the database (source of truth).
   const fetchMyRole = useCallback(async () => {
