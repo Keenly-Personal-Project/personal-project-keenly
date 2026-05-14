@@ -323,8 +323,12 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
         onDragStart={(e) => {
           if (!canEdit) return;
           setDragNoteId(note.id);
+          setDragFolderId(null);
           e.dataTransfer.effectAllowed = "move";
-          try { e.dataTransfer.setData("text/plain", `note:${note.id}`); } catch {}
+          try {
+            e.dataTransfer.setData("application/x-keen-note-id", note.id);
+            e.dataTransfer.setData("text/plain", `note:${note.id}`);
+          } catch {}
         }}
         onDragEnd={() => setDragNoteId(null)}
         onPointerDown={(e) => startPress(note, e)}
@@ -386,7 +390,10 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
           setDragNoteId(null);
           e.dataTransfer.effectAllowed = "move";
           // Required for Firefox / some mobile browsers — drag is cancelled without data.
-          try { e.dataTransfer.setData("text/plain", `folder:${folder.id}`); } catch {}
+          try {
+            e.dataTransfer.setData("application/x-keen-folder-id", folder.id);
+            e.dataTransfer.setData("text/plain", `folder:${folder.id}`);
+          } catch {}
         }}
         onDragEnd={() => setDragFolderId(null)}
         onDragOver={(e) => {
@@ -401,8 +408,9 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
         onDrop={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          if (droppingForbidden) return;
-          handleDropOnFolder(folder.id);
+          const payload = getDragPayload(e);
+          if (payload?.type === "folder" && getDescendantIds(payload.id).has(folder.id)) return;
+          handleDropOnFolder(folder.id, payload);
         }}
         onContextMenu={(e) => {
           if (!canEdit) return;
