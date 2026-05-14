@@ -597,7 +597,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
                           <span className="h-4 w-4 rounded-full shrink-0" style={{ background: statusConfig[status].color }} />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground">
-                              Assembly #{idx + 1}: {assembly.title}
+                              {assembly.title || `Assembly #${idx + 1}`}
                             </p>
                             <p className="text-xs text-muted-foreground">{formatDate(assembly.created_at)}</p>
                           </div>
@@ -643,7 +643,7 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
                   </button>
                   <div>
                     <h3 className="text-base font-semibold text-foreground mb-1">
-                      Assembly #{idx + 1}: {selectedAssembly.title}
+                      {selectedAssembly.title || `Assembly #${idx + 1}`}
                     </h3>
                     <p className="text-xs text-muted-foreground">{formatDate(selectedAssembly.created_at)}</p>
                   </div>
