@@ -147,6 +147,14 @@ const Index = () => {
     }
   }, [user, loading, navigate, fetchClasses]);
 
+  // Keep module cache in sync with local mutations (rename, delete, etc.)
+  useEffect(() => {
+    if (user && !loadingClasses) {
+      cachedClasses = classes;
+      cachedForUserId = user.id;
+    }
+  }, [classes, user, loadingClasses]);
+
   // Refresh when other parts of the app indicate a change (e.g. join request approved)
   useEffect(() => {
     const handler = () => fetchClasses();
