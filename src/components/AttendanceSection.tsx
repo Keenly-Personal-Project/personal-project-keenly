@@ -675,6 +675,9 @@ export default function AttendanceSection({ classSlug, previewRole }: { classSlu
                       <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => handleShare(selectedAssembly.qr_token)}>
                         <Share2 className="h-3 w-3" /> Share
                       </Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => window.open(signInUrl(selectedAssembly.qr_token), "_blank")}>
+                        <ExternalLink className="h-3 w-3" /> Open in Tab
+                      </Button>
                     </div>
                   </div>
 
