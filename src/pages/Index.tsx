@@ -225,6 +225,29 @@ const Index = () => {
       return;
     }
 
+    if (isBypass) {
+      const existing = loadDemoKeens();
+      const slug = existing.some(k => k.slug === baseSlug)
+        ? `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`
+        : baseSlug;
+      const code = generateHexCode();
+      const newKeen: ClassItem = {
+        id: `demo-${Date.now()}`,
+        name, slug, code, icon: "BookOpen",
+        image: null, color: null, folder: null,
+        created_by: user.id, role: 'owner',
+      };
+      const next = [...existing, newKeen];
+      saveDemoKeens(next);
+      setClasses(next);
+      toast.success(`Keen created! Code: ${code}`);
+      setNewClassName("");
+      setCreateDialogOpen(false);
+      setSubmitting(false);
+      navigate(`/class/${slug}`);
+      return;
+    }
+
     // Try a few times in case of slug or code collision
     for (let attempt = 0; attempt < 5; attempt++) {
       const slug = attempt === 0 ? baseSlug : `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
