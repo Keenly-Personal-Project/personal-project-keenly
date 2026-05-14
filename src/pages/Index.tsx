@@ -431,7 +431,7 @@ const Index = () => {
                           <Folder className="h-4 w-4" />
                           <h2
                             className="text-lg"
-                            style={{ fontFamily: "'Courier New', monospace" }}
+                            style={{ fontFamily: "Calibri, 'Trebuchet MS', sans-serif" }}
                           >
                             {key || 'Unfiled'}
                           </h2>
