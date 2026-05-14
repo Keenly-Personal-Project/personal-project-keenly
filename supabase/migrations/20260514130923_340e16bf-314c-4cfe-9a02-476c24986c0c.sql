@@ -1,0 +1,2 @@
+ALTER TABLE public.note_folders ADD COLUMN IF NOT EXISTS parent_id uuid REFERENCES public.note_folders(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS note_folders_parent_id_idx ON public.note_folders(parent_id);

@@ -61,6 +61,7 @@ interface NoteFolder {
   id: string;
   name: string;
   color?: string | null;
+  parentId?: string | null;
 }
 
 interface EventItem {
@@ -380,7 +381,7 @@ const ClassPage = () => {
           setAnnouncements(a.map(mapAnnouncement));
           setNotes(n.map(mapNote));
           setEvents(e.map(mapEvent));
-          setFolders(f.map((x: any) => ({ id: x.id, name: x.name, color: x.color })));
+          setFolders(f.map((x: any) => ({ id: x.id, name: x.name, color: x.color, parentId: x.parent_id || x.parentId || null })));
         } catch { /* ignore */ }
         return;
       }
@@ -394,7 +395,7 @@ const ClassPage = () => {
       if (aRes.data) setAnnouncements(aRes.data.map(mapAnnouncement));
       if (nRes.data) setNotes(nRes.data.map(mapNote));
       if (eRes.data) setEvents(eRes.data.map(mapEvent));
-      if (fRes.data) setFolders(fRes.data.map((f: any) => ({ id: f.id, name: f.name, color: f.color })));
+      if (fRes.data) setFolders(fRes.data.map((f: any) => ({ id: f.id, name: f.name, color: f.color, parentId: f.parent_id || null })));
     };
     fetchAll();
 
