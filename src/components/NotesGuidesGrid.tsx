@@ -585,22 +585,67 @@ export default function NotesGuidesGrid({ classSlug, className, notes, folders, 
         </div>
       )}
 
+      {/* Folder context menu (right-click / long-press on folder) */}
+      {folderMenuFor && canEdit && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="fixed z-50 min-w-[200px] rounded-md border border-border bg-popover shadow-lg py-1 animate-in fade-in zoom-in-95 duration-150"
+          style={{
+            left: Math.min(folderMenuFor.x, window.innerWidth - 220),
+            top: Math.min(folderMenuFor.y, window.innerHeight - 220),
+          }}
+        >
+          <button
+            onClick={() => {
+              setNewFolderParentId(folderMenuFor.folder.id);
+              setNewFolderSeedNoteId(null);
+              setNewFolderName("");
+              setNewFolderOpen(true);
+              setFolderMenuFor(null);
+            }}
+            className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent flex items-center gap-2"
+          >
+            <FolderPlus className="h-4 w-4" /> New subfolder
+          </button>
+          <button
+            onClick={() => { setMoveFolderDialogFor(folderMenuFor.folder); setFolderMenuFor(null); }}
+            className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent flex items-center gap-2"
+          >
+            <MoveRight className="h-4 w-4" /> Move folder to…
+          </button>
+          {folderMenuFor.folder.parentId && (
+            <button
+              onClick={() => { moveFolderToFolder(folderMenuFor.folder.id, null); setFolderMenuFor(null); }}
+              className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent flex items-center gap-2"
+            >
+              <X className="h-4 w-4" /> Move to top level
+            </button>
+          )}
+        </div>
+      )}
+
       {/* New folder dialog */}
       <Dialog open={newFolderOpen} onOpenChange={(o) => !o && setNewFolderOpen(false)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{newFolderSeedNoteId ? "Create folder from note" : "New folder"}</DialogTitle>
+            <DialogTitle>
+              {newFolderSeedNoteId
+                ? "Create folder from note"
+                : newFolderParentId
+                ? `New subfolder in "${folders.find((f) => f.id === newFolderParentId)?.name || "folder"}"`
+                : "New folder"}
+            </DialogTitle>
           </DialogHeader>
           <Input
             placeholder="Folder name"
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
             autoFocus
-            onKeyDown={(e) => { if (e.key === "Enter") createFolder(newFolderName, newFolderSeedNoteId); }}
+            onKeyDown={(e) => { if (e.key === "Enter") createFolder(newFolderName, newFolderSeedNoteId, newFolderParentId); }}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNewFolderOpen(false)}>Cancel</Button>
-            <Button onClick={() => createFolder(newFolderName, newFolderSeedNoteId)}>Create</Button>
+            <Button variant="outline" onClick={() => { setNewFolderOpen(false); setNewFolderParentId(null); }}>Cancel</Button>
+            <Button onClick={() => createFolder(newFolderName, newFolderSeedNoteId, newFolderParentId)}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
